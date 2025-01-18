@@ -1,0 +1,20 @@
+{
+  "name": "quality-dashboard",
+  "version": "2.0.0",
+  "description": "",
+  "main": "ecosystem.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devopsplaybook-io/quality-dashboard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/devopsplaybook-io/quality-dashboard/issues"
+  },
+  "homepage": "https://github.com/devopsplaybook-io/quality-dashboard#readme"
+}
