@@ -1,24 +1,109 @@
-import * as fse from "fs-extra";
+import Fastify from "fastify";
+import { watchFile } from "fs-extra";
 import * as path from "path";
-import { AppApi } from "./AppApi";
 import { Config } from "./Config";
-import { ReportsDB } from "./db/ReportsDB";
-import { UsersDB } from "./db/UsersDB";
-import { SettingsDB } from "./db/SettingsDB";
-import { Logger } from "./utils-std-ts/logger";
+import { Logger } from "./utils-std-ts/Logger";
+import { Auth } from "./users/Auth";
+import { ReportsDataInit } from "./reports/ReportsData";
+import { SettingsRoutes } from "./settings/SettingsRoutes";
+import { UsersRoutes } from "./users/UsersRoutes";
+import { ReportsRoutes, ReportsRoutesInit } from "./reports/ReportsRoutes";
+import { ReportsIdRoutes } from "./reports/ReportsIdRoutes";
+import { StandardTracerInitTelemetry, StandardTracerStartSpan } from "./utils-std-ts/StandardTracer";
+import { SqlDbUtilsInit } from "./utils-std-ts/SqlDbUtils";
+import { StandardTracerApiRegisterHooks } from "./StandardTracerApi";
 
 const logger = new Logger(path.basename(__filename));
 
+logger.info("====== Quality Dashboard Server ======");
+
 Promise.resolve().then(async () => {
-  await fse.ensureDir(Config.PROCESSOR_DIR);
-  await fse.ensureDir(Config.PROCESSOR_DIR_USER);
-  await fse.ensureDir(Config.DB_DIR);
-  await fse.ensureDir(Config.REPORT_DIR);
-  await SettingsDB.init();
-  await ReportsDB.init();
-  await UsersDB.init();
-  AppApi.start();
+  //
+  const config = new Config();
+  await config.reload();
+  watchFile(config.CONFIG_FILE, () => {
+    logger.info(`Config updated: ${config.CONFIG_FILE}`);
+    config.reload();
+  });
+
+  StandardTracerInitTelemetry(config);
+
+  const span = StandardTracerStartSpan("init");
+
+  await SqlDbUtilsInit(span, config);
+  await Auth.init(span, config);
+  await ReportsDataInit(span, config)
+  await ReportsRoutesInit(span, config)
+
+  span.end();
+
+  // await SettingsDB.init();
+  // await UsersDB.init();
+  const fastify = Fastify({
+    logger: false,
+    ignoreTrailingSlash: true,
+  });
+
+  /* eslint-disable @typescript-eslint/no-var-requires */
+
+  fastify.register(require("@fastify/cors"), {
+    origin: config.CORS_POLICY_ORIGIN,
+    methods: 'GET,PUT,POST,DELETE'
+  });
+  fastify.register(require('@fastify/multipart'),{
+    attachFieldsToBody: true 
+  });
+  StandardTracerApiRegisterHooks(fastify, config);
+
+  fastify.register(new SettingsRoutes().getRoutes, {
+    prefix: "/api/settings",
+  });
+
+  fastify.register(new UsersRoutes().getRoutes, {
+    prefix: "/api/users",
+  });
+
+  fastify.register(new ReportsRoutes().getRoutes, {
+    prefix: "/api/reports",
+  });
+  fastify.register(new ReportsIdRoutes().getRoutes, {
+    prefix: "/api/reports/:reportId",
+  });
+
+
+  // fastify.register(require("./routes/ReportsAdd"));
+  // fastify.register(require("./routes/ReportsDelete"));
+  // fastify.register(require("./routes/ReportsList"));
+  // fastify.register(require("./routes/UsersAdd"));
+  // fastify.register(require("./routes/UsersChangePassword"));
+  // fastify.register(require("./routes/UsersList"));
+  // fastify.register(require("./routes/UsersLogin"));
+  // fastify.register(require("./routes/UsersStatus"));
+  // fastify.register(require("./routes/SettingsGet"));
+  // fastify.register(require("./routes/SettingsUpdate"));
+
+  if (process.env.DEV_MODE === "dev") {
+    fastify.register(require("./routes/UsersReset"));
+    fastify.register(require("./routes/ReportsReset"));
+  }
+
+  // fastify.register(require('@fastify/static'), {
+  //   root: path.join(Config.REPORT_DIR),
+  //   prefix: `${Config.API_BASE_PATH}/reports_data/`,
+  // });
+
+  fastify.listen({ port: config.API_PORT, host: "0.0.0.0" },  (err) => {
+    if (err) {
+      logger.error(err)
+      fastify.log.error(err);
+      process.exit(1);
+    }
+    logger.info("API Listerning");
+  });
+
+
 }).catch(err => {
+  console.log(err)
   logger.error(err.message);
   process.exit(1);
 });

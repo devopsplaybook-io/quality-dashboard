@@ -1,5 +1,5 @@
-const cacheName = "qualitydashboard-pwa";
-const filesToCache = ["/", "/index.html"];
+const cacheName = "hello-pwa";
+const filesToCache = ["/", "/index.html", "/index.css"];
 
 /* Start the service worker and cache all of the app's content */
 self.addEventListener("install", function (e) {

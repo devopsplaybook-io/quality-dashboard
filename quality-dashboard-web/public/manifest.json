@@ -1,18 +1,14 @@
 {
-  "name": "quality-dashboard",
+  "name": "QualityDashboard",
   "short_name": "QualityDashboard",
-  "start_url": "./",
+  "lang": "en-US",
+  "start_url": "/sources",
   "display": "standalone",
-  "background_color": "#f0f0f0",
-  "theme_color": "#3949ab",
+  "background_color": "#12191f",
+  "theme_color": "#12191f",
   "icons": [
     {
-      "src": "./img/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "./img/icons/icon-512x512.png",
+      "src": "images/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
