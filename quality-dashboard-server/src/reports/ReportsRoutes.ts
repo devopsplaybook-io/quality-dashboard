@@ -20,6 +20,7 @@ export function ReportsRoutesInit(context: Span, configIn: Config) {
 export class ReportsRoutes {
   //
   public async getRoutes(fastify: FastifyInstance): Promise<void> {
+    //
     fastify.get("/", async (req, res) => {
       logger.debug(`[${req.method}] ${req.url}`);
       // const userSession = await Auth.getUserSession(req);

@@ -1,4 +1,4 @@
-import jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 const AUTH_TOKEN_KEY = "auth_token";
 
@@ -16,7 +16,7 @@ export class AuthService {
     await localStorage.setItem(AUTH_TOKEN_KEY, token);
   }
 
-  public static async removeToken(): Promise<void> {
+  public static async removeToken(token: string): Promise<void> {
     await localStorage.removeItem(AUTH_TOKEN_KEY);
   }
 
@@ -30,6 +30,15 @@ export class AuthService {
         return null;
       }
       return storedKey;
+    } else {
+      return null;
+    }
+  }
+
+  public static async getTokenInfo() {
+    const storedKey = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (storedKey) {
+      return jwtDecode(storedKey);
     } else {
       return null;
     }
