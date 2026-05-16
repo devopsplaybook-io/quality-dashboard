@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page">
     <h2>Create Admin Account</h2>
     <div class="form">
       <div class="form-label">Username:</div>
@@ -37,9 +37,7 @@ export default defineComponent({
       useRouter().push({ path: "/users/login" });
     }
 
-
-
-    await ApplicationSetttingsStore().refresh()
+    await ApplicationSetttingsStore().refresh();
     if (ApplicationSetttingsStore().isInitialized) {
       useRouter().push({ path: "/users/login" });
     }
@@ -52,24 +50,23 @@ export default defineComponent({
             `${(await Config.get()).SERVER_URL}/users`,
             {
               name: this.account.name,
-              password: this.account.password
+              password: this.account.password,
             },
-            await AuthService.getAuthHeader()
+            await AuthService.getAuthHeader(),
           )
           .then(async (response) => {
-            return axios
-              .post(
-                `${(await Config.get()).SERVER_URL}/users/login`,
-                {
-                  name: this.account.name,
-                  password: this.account.password
-                },
-                await AuthService.getAuthHeader()
-              )
+            return axios.post(
+              `${(await Config.get()).SERVER_URL}/users/login`,
+              {
+                name: this.account.name,
+                password: this.account.password,
+              },
+              await AuthService.getAuthHeader(),
+            );
           })
           .then((response) => {
             AlertService.send({ text: `User Created`, type: "info" });
-            useRouter().push({ path: "/settings" });      
+            useRouter().push({ path: "/settings" });
           })
           .catch(handleError);
       } else {
@@ -78,8 +75,6 @@ export default defineComponent({
           text: "Username or password missing",
         });
       }
-
-
 
       // if (!this.account.name || !this.account.password) {
       //   AlertService.send({ text: `Username/Password missing`, type: "error" });
@@ -93,5 +88,4 @@ export default defineComponent({
   },
 });
 </script>
-<style>
-</style>
+<style></style>

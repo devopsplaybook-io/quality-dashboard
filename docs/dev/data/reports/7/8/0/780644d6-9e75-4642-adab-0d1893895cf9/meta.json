@@ -1,0 +1,35 @@
+{
+  "id": "780644d6-9e75-4642-adab-0d1893895cf9",
+  "reportKey": "quality-dashboard/security/trivy",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "critical",
+      "type": "count",
+      "value": 0
+    },
+    {
+      "name": "high",
+      "type": "count",
+      "value": 1
+    },
+    {
+      "name": "medium",
+      "type": "count",
+      "value": 14
+    },
+    {
+      "name": "low",
+      "type": "count",
+      "value": 36
+    },
+    {
+      "name": "scanned_layers",
+      "type": "count",
+      "value": 52
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-16T21:49:47.976Z"
+}

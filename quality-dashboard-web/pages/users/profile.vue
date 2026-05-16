@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page">
     <h1>User</h1>
     <div class="form">
       <p>You are logged in</p>
@@ -26,7 +26,7 @@ export default defineComponent({
   },
 
   async created() {
-    if (!await AuthenticationStore().ensureAuthenticated()) {
+    if (!(await AuthenticationStore().ensureAuthenticated())) {
       useRouter().push({ path: "/users/login" });
     }
   },
@@ -50,5 +50,4 @@ export default defineComponent({
 });
 </script>
 
-<style>
-</style>
+<style></style>

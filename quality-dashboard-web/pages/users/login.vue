@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page">
     <h2>User</h2>
     <div class="form">
       <div class="form-label">Username:</div>
@@ -30,11 +30,11 @@ export default defineComponent({
   },
 
   async created() {
-    if (!await UserService.isInitialized()) {
+    if (!(await UserService.isInitialized())) {
       useRouter().push({ path: "/users/initialize" });
     }
 
-    await ApplicationSetttingsStore().refresh()
+    await ApplicationSetttingsStore().refresh();
   },
   methods: {
     async login() {
@@ -42,7 +42,7 @@ export default defineComponent({
         UserService.login(this.account.name, this.account.password)
           .then((res) => {
             AuthService.saveToken(res.data.token);
-            useRouter().push({ path: "/" });      
+            useRouter().push({ path: "/" });
           })
           .catch(handleError);
       } else {
@@ -56,5 +56,4 @@ export default defineComponent({
 });
 </script>
 
-<style>
-</style>
+<style></style>

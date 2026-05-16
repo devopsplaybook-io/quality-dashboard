@@ -1,0 +1,35 @@
+{
+  "id": "30531e75-6363-417d-b7af-bed27de6178e",
+  "reportKey": "quality-dashboard/ssl/expiry",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "certificates_checked",
+      "type": "count",
+      "value": 6
+    },
+    {
+      "name": "expiring_within_30d",
+      "type": "count",
+      "value": 1
+    },
+    {
+      "name": "expiring_within_7d",
+      "type": "count",
+      "value": 0
+    },
+    {
+      "name": "expired",
+      "type": "count",
+      "value": 0
+    },
+    {
+      "name": "oldest_expiry_days",
+      "type": "duration",
+      "value": 23
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-16T22:11:12.414Z"
+}

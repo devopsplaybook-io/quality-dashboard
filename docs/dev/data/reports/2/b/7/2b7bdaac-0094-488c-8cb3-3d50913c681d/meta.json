@@ -1,0 +1,40 @@
+{
+  "id": "2b7bdaac-0094-488c-8cb3-3d50913c681d",
+  "reportKey": "quality-dashboard/ci/pipeline",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "total_minutes",
+      "type": "duration",
+      "value": 8.5
+    },
+    {
+      "name": "setup_seconds",
+      "type": "duration",
+      "value": 23
+    },
+    {
+      "name": "test_seconds",
+      "type": "duration",
+      "value": 184
+    },
+    {
+      "name": "build_seconds",
+      "type": "duration",
+      "value": 127
+    },
+    {
+      "name": "deploy_seconds",
+      "type": "duration",
+      "value": 45
+    },
+    {
+      "name": "queued_seconds",
+      "type": "duration",
+      "value": 12
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-16T22:10:45.645Z"
+}

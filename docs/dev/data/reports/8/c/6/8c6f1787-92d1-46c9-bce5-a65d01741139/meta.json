@@ -1,0 +1,40 @@
+{
+  "id": "8c6f1787-92d1-46c9-bce5-a65d01741139",
+  "reportKey": "quality-dashboard/dependencies/audit",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "total_dependencies",
+      "type": "count",
+      "value": 834
+    },
+    {
+      "name": "critical_vulnerabilities",
+      "type": "count",
+      "value": 0
+    },
+    {
+      "name": "high_vulnerabilities",
+      "type": "count",
+      "value": 2
+    },
+    {
+      "name": "moderate_vulnerabilities",
+      "type": "count",
+      "value": 7
+    },
+    {
+      "name": "outdated_packages",
+      "type": "count",
+      "value": 23
+    },
+    {
+      "name": "direct_deps",
+      "type": "count",
+      "value": 42
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-16T22:11:12.063Z"
+}

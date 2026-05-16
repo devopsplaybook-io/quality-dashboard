@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboards-page">
+  <div class="page dashboards-page">
     <div class="page-header">
       <h2>Dashboards</h2>
       <button
@@ -11,7 +11,7 @@
       </button>
     </div>
 
-    <div v-if="dashboardsStore.lastError" class="error">
+    <div v-if="dashboardsStore.lastError && !selectedId" class="error">
       {{ dashboardsStore.lastError }}
     </div>
 
@@ -24,43 +24,86 @@
       No dashboards yet.
     </div>
 
-    <ul v-else class="dashboard-list">
-      <li v-for="d in dashboardsStore.dashboards" :key="d.id">
-        <NuxtLink :to="`/dashboards/${d.id}`" class="dashboard-name">{{
-          d.name
-        }}</NuxtLink>
-        <div class="levels-scroll-wrap">
-          <button
-            class="scroll-arrow scroll-left"
-            @click="scrollLevels($event, -1)"
-            :title="'Scroll left'"
-          >
-            <i class="bi bi-chevron-left"></i>
-          </button>
-          <span class="levels-summary">
-            {{ summarizeLevels(d.levels) }}
-          </span>
-          <button
-            class="scroll-arrow scroll-right"
-            @click="scrollLevels($event, 1)"
-            :title="'Scroll right'"
-          >
-            <i class="bi bi-chevron-right"></i>
-          </button>
-        </div>
-        <div
-          v-if="authenticationStore.isAuthenticated"
-          class="dashboard-actions"
+    <template v-else>
+      <div class="dashboards-tabs-wrap">
+        <button
+          class="scroll-arrow scroll-left"
+          @click="scrollTabs($event, -1)"
+          title="Scroll left"
         >
-          <button class="icon-btn" @click="openEdit(d)" title="Edit">
-            <i class="bi bi-pencil"></i>
-          </button>
-          <button class="icon-btn danger" @click="onDelete(d)" title="Delete">
-            <i class="bi bi-trash"></i>
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="dashboards-tabs" ref="tabsRef">
+          <button
+            v-for="d in dashboardsStore.dashboards"
+            :key="d.id"
+            class="tab-item"
+            :class="{ active: selectedId === d.id }"
+            @click="selectDashboard(d.id)"
+          >
+            {{ d.name }}
           </button>
         </div>
-      </li>
-    </ul>
+        <button
+          class="scroll-arrow scroll-right"
+          @click="scrollTabs($event, 1)"
+          title="Scroll right"
+        >
+          <i class="bi bi-chevron-right"></i>
+        </button>
+      </div>
+
+      <div class="dashboard-content">
+        <div v-if="loadingAggregate" class="loading">Loading...</div>
+
+        <div v-else-if="!selectedAggregate" class="empty">
+          Select a dashboard to view its reports.
+        </div>
+
+        <div v-else-if="dashboardsStore.lastError" class="error">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          {{ dashboardsStore.lastError }}
+        </div>
+
+        <div v-else>
+          <div class="dashboard-header">
+            <h3>{{ selectedAggregate.dashboard.name }}</h3>
+            <div class="header-actions">
+              <button
+                v-if="authenticationStore.isAuthenticated"
+                class="icon-btn"
+                @click="openEdit(selectedAggregate.dashboard)"
+                title="Edit dashboard"
+              >
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button
+                v-if="authenticationStore.isAuthenticated"
+                class="icon-btn danger"
+                @click="deleteSelected"
+                title="Delete dashboard"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <p class="levels-summary">
+            Levels: <code>{{ levelsSummary }}</code>
+          </p>
+
+          <div v-if="selectedAggregate.tree.length === 0" class="empty">
+            No reports match this dashboard yet.
+          </div>
+
+          <DashboardNode
+            v-for="(node, i) in selectedAggregate.tree"
+            :key="`${i}-${node.label}`"
+            :node="node"
+          />
+        </div>
+      </div>
+    </template>
 
     <div v-if="showCreate || showEdit" class="modal">
       <div class="modal-card">
@@ -110,13 +153,20 @@
 
 <script setup lang="ts">
 import { AuthService } from "~~/services/AuthService";
-import type { Dashboard, DashboardLevel } from "~~/stores/DashboardsStore";
+import type {
+  Dashboard,
+  DashboardAggregate,
+  DashboardLevel,
+} from "~~/stores/DashboardsStore";
 
 const dashboardsStore = DashboardsStore();
 const tagsStore = TagsStore();
+const reportsStore = ReportsStore();
 const authenticationStore = AuthenticationStore();
 const applicationSettingsStore = ApplicationSetttingsStore();
 const router = useRouter();
+
+const tabsRef = ref<HTMLElement | null>(null);
 
 const showCreate = ref(false);
 const showEdit = ref(false);
@@ -124,7 +174,20 @@ const editingDashboard = ref<Dashboard | null>(null);
 const editName = ref("");
 const editLevels = ref<DashboardLevel[]>([]);
 
+const selectedId = ref<string | null>(null);
+const selectedAggregate = ref<DashboardAggregate | null>(null);
+const loadingAggregate = ref(false);
+
 const availableTagNames = computed(() => tagsStore.allTags.map((t) => t.tag));
+
+const levelsSummary = computed(() => {
+  if (!selectedAggregate.value) return "";
+  return (
+    selectedAggregate.value.dashboard.levels
+      .map((l) => (l.value ? `${l.tag}=${l.value}` : l.tag))
+      .join(" › ") || "(none)"
+  );
+});
 
 function getValuesForTag(tagName: string): string[] {
   const tagAgg = tagsStore.allTags.find((t) => t.tag === tagName);
@@ -144,25 +207,41 @@ onMounted(async () => {
       return;
     }
   }
-  await Promise.all([tagsStore.fetchAll(), dashboardsStore.fetchAll()]);
+  await Promise.all([
+    tagsStore.fetchAll(),
+    dashboardsStore.fetchAll(),
+    reportsStore.fetchReports(),
+  ]);
+  if (dashboardsStore.dashboards.length > 0) {
+    selectDashboard(dashboardsStore.dashboards[0].id);
+  }
 });
 
-function summarizeLevels(levels: DashboardLevel[]): string {
-  if (!levels || levels.length === 0) return "(no levels)";
-  return levels
-    .map((l) => (l.value ? `${l.tag}=${l.value}` : l.tag))
-    .join(" › ");
+async function selectDashboard(id: string): Promise<void> {
+  selectedId.value = id;
+  loadingAggregate.value = true;
+  try {
+    selectedAggregate.value = await dashboardsStore.fetchAggregate(id);
+  } finally {
+    loadingAggregate.value = false;
+  }
+  if (selectedAggregate.value) {
+    editName.value = selectedAggregate.value.dashboard.name;
+    editLevels.value = selectedAggregate.value.dashboard.levels.map((l) => ({
+      tag: l.tag,
+      value: l.value || "",
+    }));
+  }
 }
 
-function scrollLevels(ev: MouseEvent, dir: number): void {
+function scrollTabs(ev: MouseEvent, dir: number): void {
   const btn = ev.currentTarget as HTMLElement;
   if (!btn) return;
-  const wrap = btn.closest(".levels-scroll-wrap") as HTMLElement | null;
+  const wrap = btn.closest(".dashboards-tabs-wrap") as HTMLElement | null;
   if (!wrap) return;
-  const span = wrap.querySelector(".levels-summary") as HTMLElement | null;
-  if (!span) return;
-  const scrollAmount = 120;
-  span.scrollBy({ left: dir * scrollAmount, behavior: "smooth" });
+  const tabs = wrap.querySelector(".dashboards-tabs") as HTMLElement | null;
+  if (!tabs) return;
+  tabs.scrollBy({ left: dir * 200, behavior: "smooth" });
 }
 
 function addLevel(): void {
@@ -203,27 +282,49 @@ async function saveEdit(): Promise<void> {
 
   if (editingDashboard.value) {
     await dashboardsStore.update(editingDashboard.value.id, name, cleaned);
+    await selectDashboard(editingDashboard.value.id);
   } else {
     const created = await dashboardsStore.create(name, cleaned);
-    router.push(`/dashboards/${created.id}`);
-    return;
+    selectedId.value = created.id;
+    selectedAggregate.value = {
+      dashboard: created,
+      tree: [],
+    };
   }
   cancelEdit();
   await dashboardsStore.fetchAll();
 }
 
+async function deleteSelected(): Promise<void> {
+  if (!selectedAggregate.value) return;
+  if (!confirm(`Delete dashboard "${selectedAggregate.value.dashboard.name}"?`))
+    return;
+  const deletedId = selectedAggregate.value.dashboard.id;
+  await dashboardsStore.remove(deletedId);
+  selectedAggregate.value = null;
+  selectedId.value = null;
+  if (dashboardsStore.dashboards.length > 0) {
+    selectDashboard(dashboardsStore.dashboards[0].id);
+  }
+}
+
 async function onDelete(d: Dashboard): Promise<void> {
   if (!confirm(`Delete dashboard "${d.name}"?`)) return;
   await dashboardsStore.remove(d.id);
+  if (selectedId.value === d.id) {
+    selectedAggregate.value = null;
+    selectedId.value = null;
+    if (dashboardsStore.dashboards.length > 0) {
+      selectDashboard(dashboardsStore.dashboards[0].id);
+    }
+  }
   await dashboardsStore.fetchAll();
 }
 
 async function onDeleteFromModal(): Promise<void> {
   if (!editingDashboard.value) return;
-  if (!confirm(`Delete dashboard "${editingDashboard.value.name}"?`)) return;
-  await dashboardsStore.remove(editingDashboard.value.id);
+  await onDelete(editingDashboard.value);
   cancelEdit();
-  await dashboardsStore.fetchAll();
 }
 </script>
 
@@ -237,51 +338,45 @@ async function onDeleteFromModal(): Promise<void> {
   align-items: center;
   margin-bottom: 0.8em;
 }
-.dashboard-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.dashboard-list li {
-  padding: 0.5em 0.6em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  margin-bottom: 0.4em;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.6em;
-  background: #fff;
-}
-.dashboard-name {
-  font-weight: 600;
-  color: #0d47a1;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.dashboard-name:hover {
-  text-decoration: underline;
-}
-.levels-scroll-wrap {
+.dashboards-tabs-wrap {
   display: flex;
   align-items: center;
   gap: 0.2em;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
+  margin-bottom: 0.8em;
 }
-.levels-summary {
-  font-size: 0.8em;
-  color: #607d8b;
-  font-family: ui-monospace, monospace;
+.dashboards-tabs {
+  display: flex;
+  gap: 0.3em;
   overflow-x: auto;
-  white-space: nowrap;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  padding: 0.1em 0;
+  padding: 0.2em 0;
+  flex: 1;
 }
-.levels-summary::-webkit-scrollbar {
+.dashboards-tabs::-webkit-scrollbar {
   display: none;
+}
+.tab-item {
+  white-space: nowrap;
+  padding: 0.35em 0.8em;
+  border: 1px solid #cfd8dc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85em;
+  color: #455a64;
+  flex-shrink: 0;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.tab-item:hover {
+  background: #eceff1;
+}
+.tab-item.active {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1976d2;
 }
 .scroll-arrow {
   background: transparent;
@@ -289,30 +384,60 @@ async function onDeleteFromModal(): Promise<void> {
   color: #90a4ae;
   cursor: pointer;
   padding: 0 0.1em;
-  font-size: 0.7em;
+  font-size: 0.8em;
   flex-shrink: 0;
-  opacity: 0;
+  opacity: 0.4;
   transition: opacity 0.15s;
 }
-.levels-scroll-wrap:hover .scroll-arrow {
+.dashboards-tabs-wrap:hover .scroll-arrow {
   opacity: 1;
 }
 .scroll-arrow:hover {
   color: #455a64;
 }
-.dashboard-actions {
-  display: flex;
-  gap: 0.3em;
-  flex-shrink: 0;
+.dashboard-content {
+  border: 1px solid #cfd8dc;
+  border-radius: 4px;
+  padding: 0.8em;
+  background: #fff;
 }
-.empty,
-.error {
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-bottom: 0;
+}
+.dashboard-header h3 {
+  margin: 0;
+}
+.header-actions {
+  display: flex;
+  gap: 0.4em;
+}
+.levels-summary {
+  font-size: 0.85em;
+  color: #607d8b;
+  margin: 0.2em 0 1em;
+}
+.levels-summary code {
+  font-family: ui-monospace, monospace;
+}
+.loading,
+.empty {
   text-align: center;
-  padding: 1em;
+  padding: 1.5em;
   color: #78909c;
 }
 .error {
+  text-align: center;
+  padding: 1em;
   color: #bf360c;
+  background: #fff3e0;
+  border: 1px solid #ffccbc;
+  border-radius: 4px;
+  margin-bottom: 0.8em;
 }
 .modal {
   position: fixed;
@@ -341,6 +466,7 @@ async function onDeleteFromModal(): Promise<void> {
   border: 1px solid #cfd8dc;
   border-radius: 4px;
   margin-top: 0.2em;
+  box-sizing: border-box;
 }
 .hint {
   font-size: 0.8em;
@@ -393,7 +519,38 @@ async function onDeleteFromModal(): Promise<void> {
   border-color: #c62828;
 }
 @media (prefers-color-scheme: dark) {
-  .dashboard-list li,
+  .icon-btn {
+    background: transparent;
+    border-color: #455a64;
+    color: #cfd8dc;
+  }
+  .icon-btn.danger:hover {
+    color: #ff6659;
+    border-color: #ff6659;
+  }
+  .dashboards-tabs-wrap .tab-item {
+    background: #1e2a32;
+    color: #cfd8dc;
+    border-color: #455a64;
+  }
+  .tab-item:hover {
+    background: #263238;
+  }
+  .tab-item.active {
+    background: #1976d2;
+    color: #fff;
+    border-color: #1976d2;
+  }
+  .dashboard-content {
+    background: #1e2a32;
+    border-color: #455a64;
+    color: #cfd8dc;
+  }
+  .error {
+    background: #3e2723;
+    color: #ffab91;
+    border-color: #5d4037;
+  }
   .modal-card,
   .modal-card input,
   .btn-secondary,
@@ -401,9 +558,6 @@ async function onDeleteFromModal(): Promise<void> {
     background: #1e2a32;
     color: #cfd8dc;
     border-color: #455a64;
-  }
-  .dashboard-name {
-    color: #82b1ff;
   }
   .btn-danger {
     background: #b71c1c;

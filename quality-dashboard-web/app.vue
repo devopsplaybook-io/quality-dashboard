@@ -1,3 +1,21 @@
+<script setup>
+function updateAppHeight() {
+  const height = window.visualViewport?.height ?? window.innerHeight;
+  document.documentElement.style.setProperty("--app-height", `${height}px`);
+}
+
+onMounted(() => {
+  updateAppHeight();
+  window.addEventListener("resize", updateAppHeight);
+  window.visualViewport?.addEventListener("resize", updateAppHeight);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", updateAppHeight);
+  window.visualViewport?.removeEventListener("resize", updateAppHeight);
+});
+</script>
+
 <template>
   <div id="page-layout">
     <header>
@@ -13,23 +31,24 @@
 <style>
 /* Layout */
 
-.page {
-  overflow-y: auto;
-  height: calc(100vh - 5em);
-  padding: 0em 1em;
-}
-
 #page-layout {
-  width: auto;
-  height: 100vh;
+  height: var(--app-height, 100dvh);
   display: grid;
-  overflow: hidden;
   grid-template-rows: 4em 1fr;
+  overflow: hidden !important;
+  width: 100vw;
 }
 
 header,
 main {
   padding: 0.5em;
+  overflow: hidden;
+}
+
+.page {
+  height: 100%;
+  overflow-y: auto;
+  padding: 0em 1em;
 }
 
 #page-alert-messages {

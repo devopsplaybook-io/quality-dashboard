@@ -1,0 +1,35 @@
+{
+  "id": "dd2ede1a-c065-4683-ba8d-09874124c852",
+  "reportKey": "quality-dashboard/lighthouse/performance",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "performance",
+      "type": "percentage",
+      "value": 72
+    },
+    {
+      "name": "accessibility",
+      "type": "percentage",
+      "value": 89
+    },
+    {
+      "name": "best_practices",
+      "type": "percentage",
+      "value": 95
+    },
+    {
+      "name": "seo",
+      "type": "percentage",
+      "value": 91
+    },
+    {
+      "name": "largest_contentful_paint_ms",
+      "type": "duration",
+      "value": 2500
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-16T21:49:48.511Z"
+}

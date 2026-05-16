@@ -1,0 +1,35 @@
+{
+  "id": "a11801ad-0e3e-4a5c-95f9-0ca203de6ccb",
+  "reportKey": "quality-dashboard/coverage/lines",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "lines",
+      "type": "percentage",
+      "value": 82.4
+    },
+    {
+      "name": "branches",
+      "type": "percentage",
+      "value": 76.1
+    },
+    {
+      "name": "functions",
+      "type": "percentage",
+      "value": 88.9
+    },
+    {
+      "name": "statements",
+      "type": "percentage",
+      "value": 81.7
+    },
+    {
+      "name": "uncovered_lines",
+      "type": "count",
+      "value": 1240
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-16T22:10:43.619Z"
+}

@@ -1,5 +1,5 @@
 <template>
-  <div class="report-detail-page">
+  <div class="page report-detail-page">
     <NuxtLink to="/reports" class="back-link">
       <i class="bi bi-arrow-left"></i> Back to reports
     </NuxtLink>
@@ -32,6 +32,38 @@
           <code>{{ report.key }}</code>
         </p>
       </div>
+
+      <section class="versions-section">
+        <div class="versions-header">
+          <h3>
+            {{
+              showHistory ? `Versions (${versions.length})` : "Latest Version"
+            }}
+          </h3>
+          <button
+            v-if="versions.length > 1"
+            class="btn-secondary btn-history-toggle"
+            @click="showHistory = !showHistory"
+          >
+            <i
+              :class="showHistory ? 'bi bi-chevron-up' : 'bi bi-clock-history'"
+            ></i>
+            {{
+              showHistory
+                ? "Show latest only"
+                : `Show history (${versions.length - 1} more)`
+            }}
+          </button>
+        </div>
+        <div v-if="versions.length === 0" class="empty">No versions yet.</div>
+        <VersionCard
+          v-for="v in displayVersions"
+          :key="v.id"
+          :version="v"
+          :can-delete="authenticationStore.isAuthenticated"
+          @delete="onDeleteVersion"
+        />
+      </section>
 
       <section class="tags-section">
         <h3>Tags</h3>
@@ -71,18 +103,6 @@
         </div>
       </section>
 
-      <section class="versions-section">
-        <h3>Versions ({{ versions.length }})</h3>
-        <div v-if="versions.length === 0" class="empty">No versions yet.</div>
-        <VersionCard
-          v-for="v in versions"
-          :key="v.id"
-          :version="v"
-          :can-delete="authenticationStore.isAuthenticated"
-          @delete="onDeleteVersion"
-        />
-      </section>
-
       <section v-if="authenticationStore.isAuthenticated" class="danger-zone">
         <button class="btn-danger" @click="onDeleteReport">
           <i class="bi bi-trash"></i> Delete report (and all its versions)
@@ -113,8 +133,14 @@ const versions = ref<ReportVersion[]>([]);
 const editingName = ref(false);
 const newDisplayName = ref("");
 const editableTags = ref<{ tag: string; value: string }[]>([]);
+const showHistory = ref(false);
 
 const availableTagNames = computed(() => tagsStore.allTags.map((t) => t.tag));
+
+const displayVersions = computed(() => {
+  if (showHistory.value) return versions.value;
+  return versions.value.length > 0 ? [versions.value[0]] : [];
+});
 
 function getValuesForTag(tagName: string): string[] {
   const tagAgg = tagsStore.allTags.find((t) => t.tag === tagName);
@@ -289,6 +315,20 @@ async function onDeleteReport(): Promise<void> {
 .versions-section,
 .danger-zone {
   margin-top: 1.5em;
+}
+.versions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5em;
+  margin-bottom: 0.6em;
+}
+.versions-header h3 {
+  margin: 0;
+}
+.btn-history-toggle {
+  font-size: 0.8em;
+  white-space: nowrap;
 }
 .tags-hint {
   font-size: 0.85em;

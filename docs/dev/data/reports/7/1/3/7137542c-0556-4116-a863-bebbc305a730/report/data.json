@@ -1,0 +1,1 @@
+{"metrics":[{"name":"build_time_seconds","type":"duration","value":127},{"name":"cache_hits","type":"count","value":43},{"name":"cache_misses","type":"count","value":12},{"name":"cache_hit_rate","type":"percentage","value":78.2}]}

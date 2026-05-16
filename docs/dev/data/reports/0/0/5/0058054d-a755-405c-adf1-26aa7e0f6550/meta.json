@@ -1,0 +1,35 @@
+{
+  "id": "0058054d-a755-405c-adf1-26aa7e0f6550",
+  "reportKey": "quality-dashboard/database/queries",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "avg_query_ms",
+      "type": "duration",
+      "value": 12
+    },
+    {
+      "name": "slow_queries_gt_1s",
+      "type": "count",
+      "value": 3
+    },
+    {
+      "name": "active_connections",
+      "type": "count",
+      "value": 8
+    },
+    {
+      "name": "pool_utilization",
+      "type": "percentage",
+      "value": 44
+    },
+    {
+      "name": "deadlocks",
+      "type": "count",
+      "value": 0
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-16T21:49:48.185Z"
+}

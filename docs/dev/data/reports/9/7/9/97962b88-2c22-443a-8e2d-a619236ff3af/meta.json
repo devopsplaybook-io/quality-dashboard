@@ -1,0 +1,30 @@
+{
+  "id": "97962b88-2c22-443a-8e2d-a619236ff3af",
+  "reportKey": "quality-dashboard/lint/eslint",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "errors",
+      "type": "count",
+      "value": 3
+    },
+    {
+      "name": "warnings",
+      "type": "count",
+      "value": 15
+    },
+    {
+      "name": "files_scanned",
+      "type": "count",
+      "value": 142
+    },
+    {
+      "name": "fixable",
+      "type": "count",
+      "value": 8
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-16T22:10:43.391Z"
+}

@@ -1,0 +1,35 @@
+{
+  "id": "ff2af822-9b86-4e04-af26-22b7d4e84820",
+  "reportKey": "quality-dashboard/a11y/audit",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "score",
+      "type": "percentage",
+      "value": 89
+    },
+    {
+      "name": "violations_critical",
+      "type": "count",
+      "value": 0
+    },
+    {
+      "name": "violations_serious",
+      "type": "count",
+      "value": 3
+    },
+    {
+      "name": "violations_moderate",
+      "type": "count",
+      "value": 8
+    },
+    {
+      "name": "elements_checked",
+      "type": "count",
+      "value": 312
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-16T22:11:12.281Z"
+}

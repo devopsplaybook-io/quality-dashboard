@@ -1,0 +1,40 @@
+{
+  "id": "4e9c67c7-c452-425f-8a63-06f98e85e494",
+  "reportKey": "quality-dashboard/kubernetes/health",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "nodes_ready",
+      "type": "count",
+      "value": 5
+    },
+    {
+      "name": "nodes_not_ready",
+      "type": "count",
+      "value": 0
+    },
+    {
+      "name": "pods_running",
+      "type": "count",
+      "value": 47
+    },
+    {
+      "name": "pods_pending",
+      "type": "count",
+      "value": 1
+    },
+    {
+      "name": "pods_crashlooping",
+      "type": "count",
+      "value": 0
+    },
+    {
+      "name": "cpu_utilization",
+      "type": "percentage",
+      "value": 62
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-16T22:10:44.669Z"
+}

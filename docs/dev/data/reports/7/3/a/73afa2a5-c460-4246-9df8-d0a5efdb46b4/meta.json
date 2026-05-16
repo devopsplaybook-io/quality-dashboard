@@ -1,0 +1,35 @@
+{
+  "id": "73afa2a5-c460-4246-9df8-d0a5efdb46b4",
+  "reportKey": "quality-dashboard/git/hygiene",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "total_branches",
+      "type": "count",
+      "value": 28
+    },
+    {
+      "name": "stale_branches_gt_90d",
+      "type": "count",
+      "value": 6
+    },
+    {
+      "name": "merged_branches_not_deleted",
+      "type": "count",
+      "value": 4
+    },
+    {
+      "name": "open_pull_requests",
+      "type": "count",
+      "value": 5
+    },
+    {
+      "name": "avg_branch_age_days",
+      "type": "duration",
+      "value": 47
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-16T22:11:12.465Z"
+}

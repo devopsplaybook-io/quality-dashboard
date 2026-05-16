@@ -1,13 +1,10 @@
 <template>
-  <div class="reports-page">
+  <div class="page reports-page">
     <div class="reports-header">
       <h2>Reports</h2>
       <div class="reports-actions">
         <span v-if="reportsStore.isFetching" class="reports-loading">
           <i class="bi bi-arrow-repeat spin"></i> Loading...
-        </span>
-        <span v-else-if="reportsStore.lastFetched" class="reports-fetched">
-          Updated {{ relativeFetched }}
         </span>
         <button
           class="reports-refresh"
@@ -25,12 +22,12 @@
       {{ reportsStore.lastError }}
     </div>
 
-    <div class="reports-filter">
-      <i class="bi bi-search"></i>
+    <div>
       <input
         v-model="searchQuery"
         type="search"
-        class="reports-filter-input"
+        name="search"
+        aria-label="Search"
         placeholder="Filter by name, key, or tag…"
       />
     </div>
@@ -62,13 +59,11 @@
         v-for="report in filteredReports"
         :key="report.key"
         class="report-item"
+        @click="$router.push(`/reports/${encodeURIComponent(report.key)}`)"
       >
-        <NuxtLink
-          :to="`/reports/${encodeURIComponent(report.key)}`"
-          class="report-key"
-        >
+        <span class="report-key">
           {{ report.displayName || report.key }}
-        </NuxtLink>
+        </span>
         <span class="report-meta">
           <span v-for="tag in report.tags" :key="tag.tag" class="tag-chip">
             {{ tag.tag }}={{ tag.value }}
@@ -77,15 +72,11 @@
         </span>
         <div v-if="report.latestVersion" class="report-latest">
           <span class="latest-metrics">
-            <span
+            <MetricChip
               v-for="metric in report.latestVersion.metrics"
               :key="metric.name"
-              class="metric-chip"
-              :class="metricClass(metric)"
-              :title="metric.name"
-            >
-              {{ metricLabel(metric) }}
-            </span>
+              :metric="metric"
+            />
           </span>
           <span
             class="latest-date"
@@ -101,12 +92,12 @@
           <span class="latest-empty">No versions yet</span>
         </div>
         <div v-if="authenticationStore.isAuthenticated" class="report-actions">
-          <button class="icon-btn" @click="openEdit(report)" title="Edit">
+          <button class="icon-btn" @click.stop="openEdit(report)" title="Edit">
             <i class="bi bi-pencil"></i>
           </button>
           <button
             class="icon-btn danger"
-            @click="onDelete(report)"
+            @click.stop="onDelete(report)"
             title="Delete"
           >
             <i class="bi bi-trash"></i>
@@ -214,35 +205,6 @@ function relativeDate(iso: string): string {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   return `${days}d ago`;
-}
-
-function metricLabel(metric: Metric): string {
-  switch (metric.type) {
-    case "percentage":
-      return `${metric.value}%`;
-    case "duration":
-      if (metric.value >= 60) {
-        return `${(metric.value / 60).toFixed(1)}m`;
-      }
-      return `${metric.value}s`;
-    case "boolean":
-      return metric.value ? "✓" : "✗";
-    default:
-      return String(metric.value);
-  }
-}
-
-function metricClass(metric: Metric): string {
-  switch (metric.type) {
-    case "boolean":
-      return metric.value ? "metric-good" : "metric-bad";
-    case "percentage":
-      if (metric.value >= 80) return "metric-good";
-      if (metric.value >= 50) return "metric-warn";
-      return "metric-bad";
-    default:
-      return "";
-  }
 }
 
 onMounted(async () => {
@@ -371,29 +333,6 @@ async function onDelete(report: Report): Promise<void> {
     transform: rotate(360deg);
   }
 }
-.reports-filter {
-  display: flex;
-  align-items: center;
-  gap: 0.4em;
-  margin-bottom: 0.6em;
-  padding: 0.3em 0.5em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  background: #fff;
-  color: #90a4ae;
-}
-.reports-filter-input {
-  border: none;
-  background: transparent;
-  padding: 0.2em 0;
-  outline: none;
-  flex: 1;
-  font-size: 0.85em;
-  color: #455a64;
-}
-.reports-filter-input::placeholder {
-  color: #b0bec5;
-}
 .reports-error {
   background-color: #fff3e0;
   color: #bf360c;
@@ -429,6 +368,10 @@ async function onDelete(report: Report): Promise<void> {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4em 0.6em;
+  cursor: pointer;
+}
+.report-item:hover {
+  border-color: #90a4ae;
 }
 .report-key {
   font-weight: 600;
@@ -475,27 +418,6 @@ async function onDelete(report: Report): Promise<void> {
   align-items: center;
   gap: 0.3em;
   flex-wrap: wrap;
-}
-.metric-chip {
-  font-size: 0.75em;
-  padding: 0.1em 0.4em;
-  border-radius: 3px;
-  background: #eceff1;
-  color: #455a64;
-  font-family: ui-monospace, monospace;
-  white-space: nowrap;
-}
-.metric-good {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-.metric-warn {
-  background: #fff8e1;
-  color: #f57f17;
-}
-.metric-bad {
-  background: #ffebee;
-  color: #c62828;
 }
 .latest-date {
   font-size: 0.75em;
@@ -593,17 +515,6 @@ async function onDelete(report: Report): Promise<void> {
     border-color: #455a64;
     color: #cfd8dc;
   }
-  .reports-filter {
-    background: #1e2a32;
-    border-color: #455a64;
-    color: #78909c;
-  }
-  .reports-filter-input {
-    color: #cfd8dc;
-  }
-  .reports-filter-input::placeholder {
-    color: #546e7a;
-  }
   .reports-error {
     background-color: #3e2723;
     color: #ffab91;
@@ -620,6 +531,9 @@ async function onDelete(report: Report): Promise<void> {
   .report-item {
     background: #1e2a32;
     border-color: #455a64;
+  }
+  .report-item:hover {
+    border-color: #607d8b;
   }
   .report-latest {
     border-top-color: #37474f;
