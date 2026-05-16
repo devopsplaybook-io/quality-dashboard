@@ -2,26 +2,27 @@ import { StandardMeter, StandardTracer } from "@devopsplaybook.io/otel-utils";
 import { StandardTracerFastifyRegisterHooks } from "@devopsplaybook.io/otel-utils-fastify";
 import fastifyCors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
-import * as fse from "fs-extra";
+import fastifyStatic from "@fastify/static";
 import Fastify from "fastify";
+import * as fse from "fs-extra";
 import { watchFile } from "fs-extra";
 import { Config } from "./Config";
-import { Auth } from "./users/Auth";
-import { SettingsDB } from "./settings/SettingsDB";
-import { SettingsRoutes } from "./settings/SettingsRoutes";
-import { UsersRoutes } from "./users/UsersRoutes";
-import { ReportsRoutes, ReportsRoutesInit } from "./reports/ReportsRoutes";
-import { TagsRoutes } from "./reports/TagsRoutes";
-import { DashboardsRoutes } from "./reports/DashboardsRoutes";
-import { FileStorageInit } from "./reports/FileStorage";
-import { ProcessorRegistryInit } from "./reports/ProcessorRegistry";
-import { SqlDbUtilsInit } from "./utils-std-ts/SqlDbUtils";
 import {
   OTelLogger,
   OTelSetMeter,
   OTelSetTracer,
   OTelTracer,
 } from "./OTelContext";
+import { DashboardsRoutes } from "./reports/DashboardsRoutes";
+import { FileStorageInit } from "./reports/FileStorage";
+import { ProcessorRegistryInit } from "./reports/ProcessorRegistry";
+import { ReportsRoutes, ReportsRoutesInit } from "./reports/ReportsRoutes";
+import { TagsRoutes } from "./reports/TagsRoutes";
+import { SettingsDB } from "./settings/SettingsDB";
+import { SettingsRoutes } from "./settings/SettingsRoutes";
+import { Auth } from "./users/Auth";
+import { UsersRoutes } from "./users/UsersRoutes";
+import { SqlDbUtilsInit } from "./utils-std-ts/SqlDbUtils";
 
 const logger = OTelLogger().createModuleLogger("app");
 
@@ -100,6 +101,22 @@ Promise.resolve()
 
     fastify.get("/api/status", async () => {
       return { started: true };
+    });
+    fastify.register(fastifyStatic, {
+      root: path.join(__dirname, "../web"),
+      prefix: "/",
+      wildcard: false,
+    });
+
+    fastify.setNotFoundHandler((request, reply) => {
+      if (
+        request.raw.url &&
+        !request.raw.url.startsWith("/api/") &&
+        !path.extname(request.raw.url)
+      ) {
+        return reply.sendFile("index.html");
+      }
+      reply.status(404).send({ error: "Not Found" });
     });
 
     fastify.listen({ port: config.API_PORT, host: "0.0.0.0" }, (err) => {
