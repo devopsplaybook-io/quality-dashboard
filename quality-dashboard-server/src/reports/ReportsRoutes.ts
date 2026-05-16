@@ -1,140 +1,440 @@
-import { Auth } from "../users/Auth";
-import { Config } from "../Config";
-import { FastifyInstance, RequestGenericInterface } from "fastify";
-import { Logger } from "../utils-std-ts/Logger";
-import { ReportsData, ReportsDataAdd, ReportsDataGetDataDir, ReportsDataGetTmpDir } from "./ReportsData";
-import { Span } from "@opentelemetry/sdk-trace-base";
-import { StandardTracerGetSpanFromRequest } from "../utils-std-ts/StandardTracer";
 import * as fse from "fs-extra";
 import * as path from "path";
-import * as targz from "targz";
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { Auth } from "../users/Auth";
+import { Config } from "../Config";
+import { OTelLogger, OTelRequestSpan } from "../OTelContext";
+import { ReportsRepository } from "./ReportsRepository";
+import { TagsRepository } from "./TagsRepository";
+import { HttpError, ReportsService } from "./ReportsService";
+import { listProcessors } from "./ProcessorRegistry";
+import { resolveSafeReportFile } from "./FileStorage";
+import { SettingsDB } from "../settings/SettingsDB";
 import { Report } from "./models/Report";
+import { ReportVersion } from "./models/ReportVersion";
 
-const logger = new Logger("ReportsRoutes");
+const logger = OTelLogger().createModuleLogger("ReportsRoutes");
 let config: Config;
 
-export function ReportsRoutesInit(context: Span, configIn: Config) {
+const RECENT_DEFAULT_LIMIT = 100;
+const RECENT_MAX_LIMIT = 500;
+
+export function ReportsRoutesInit(_context: unknown, configIn: Config): void {
   config = configIn;
 }
+
+const TEXT_EXT_TO_MIME: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".htm": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
+};
 
 export class ReportsRoutes {
   //
   public async getRoutes(fastify: FastifyInstance): Promise<void> {
     //
-    fastify.get("/", async (req, res) => {
-      logger.debug(`[${req.method}] ${req.url}`);
-      // const userSession = await Auth.getUserSession(req);
-      // const isDashboardPublic = (await SettingsDB.get()).isDashboardPublic;
-      // if (!isDashboardPublic && !auth.authenticated) {
-      //   return res.status(403).send({});
-      // }
-      return res.status(200).send(await ReportsData.list(StandardTracerGetSpanFromRequest(req)));
+    fastify.get("/processors", async (req, res) => {
+      logger.info(`[${req.method}] ${req.url}`);
+      return res.status(200).send({ processors: listProcessors() });
     });
 
-    interface AddReportRequest extends RequestGenericInterface {
-      Body: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        json: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        file: any;
-      };
-    }
-    fastify.post<AddReportRequest>("/", async (req, res) => {
-      const context = StandardTracerGetSpanFromRequest(req);
+    // ---- Recent versions (chronological feed) -----------------------------
+    fastify.get("/recent", async (req, res) => {
       logger.info(`[${req.method}] ${req.url}`);
-      // const userSession = await Auth.getUserSession(req);
+      if (!(await ensureCanRead(req, res))) {
+        return;
+      }
+      const q = req.query as { limit?: string; since?: string };
+      let limit = Number(q.limit || RECENT_DEFAULT_LIMIT);
+      if (!Number.isFinite(limit) || limit <= 0) {
+        limit = RECENT_DEFAULT_LIMIT;
+      }
+      if (limit > RECENT_MAX_LIMIT) {
+        limit = RECENT_MAX_LIMIT;
+      }
+      const span = OTelRequestSpan(req);
+      const versions = await ReportsRepository.listRecentVersions(
+        span,
+        limit,
+        q.since,
+      );
+      const reports = await ReportsRepository.listReports(span);
+      const reportsByKey = new Map(reports.map((r) => [r.key, r]));
+      const tagsByKey = await TagsRepository.listTagsForReports(
+        span,
+        Array.from(new Set(versions.map((v) => v.reportKey))),
+      );
+      return res.status(200).send({
+        versions: versions.map((v) =>
+          toApiVersion(v, reportsByKey.get(v.reportKey) || null, tagsByKey),
+        ),
+      });
+    });
 
-      // if (!auth.authenticated && !auth.validUploadToken ) {
-      //   return res.status(403).send({});
-      // }
+    // ---- Reports list -----------------------------------------------------
+    fastify.get("/", async (req, res) => {
+      logger.info(`[${req.method}] ${req.url}`);
+      if (!(await ensureCanRead(req, res))) {
+        return;
+      }
+      const span = OTelRequestSpan(req);
+      const reports = await ReportsRepository.listReports(span);
+      const tagsByKey = await TagsRepository.listTagsForReports(
+        span,
+        reports.map((r) => r.key),
+      );
+      return res.status(200).send({
+        reports: reports.map((r) => toApiReport(r, tagsByKey.get(r.key) || [])),
+      });
+    });
 
-      if (!req.headers["content-type"].startsWith("multipart/form-data")) {
-        return res.status(400).send({ error: "Request must be multipart/form-data" });
+    // ---- Single report ----------------------------------------------------
+    fastify.get<{ Params: { key: string } }>("/:key", async (req, res) => {
+      logger.info(`[${req.method}] ${req.url}`);
+      if (!(await ensureCanRead(req, res))) {
+        return;
       }
-      if (!req.body.json) {
-        return res.status(403).send({ error: "Field Missing: 'json'" });
+      const span = OTelRequestSpan(req);
+      const report = await ReportsRepository.getReport(span, req.params.key);
+      if (!report) {
+        return res.status(404).send({ error: "Report not found" });
       }
-      if (!req.body.json.value.name) {
-        return res.status(403).send({ error: "Data Missing: 'name'" });
-      }
-      if (!req.body.json.value.processor) {
-        return res.status(403).send({ error: "Data Missing: 'processor'" });
-      }
-      if (!req.body.json.value.labels) {
-        return res.status(403).send({ error: "Data Missing: 'labels'" });
-      }
+      const tags = await TagsRepository.listTagsForReport(span, report.key);
+      return res.status(200).send({ report: toApiReport(report, tags) });
+    });
 
-      const report = new Report();
-      report.name = req.body.json.value.name;
-      report.processor = req.body.json.value.processor;
-      report.labels = req.body.json.value.labels;
-      report.dateCreated = new Date();
-      report.info.labels = report.labels;
+    // ---- Update displayName ----------------------------------------------
+    fastify.put<{
+      Params: { key: string };
+      Body: { displayName?: string | null };
+    }>("/:key", async (req, res) => {
+      logger.info(`[${req.method}] ${req.url}`);
+      if (!(await ensureAuthenticated(req, res))) {
+        return;
+      }
+      const span = OTelRequestSpan(req);
+      const ok = await ReportsRepository.updateDisplayName(
+        span,
+        req.params.key,
+        typeof req.body?.displayName === "string" ? req.body.displayName : null,
+      );
+      if (!ok) {
+        return res.status(404).send({ error: "Report not found" });
+      }
+      return res.status(200).send({});
+    });
 
-      // File
-      await fse.ensureDir(ReportsDataGetTmpDir(report));
-      if (req.body.file && path.extname(req.body.file.filename) === ".gz") {
-        await fse.writeFile(`${ReportsDataGetTmpDir(report)}/report.tar.gz`, await req.body.file.toBuffer());
-        await extractTo(
-          `${ReportsDataGetTmpDir(report)}/_report.tar.gz`,
-          `${ReportsDataGetTmpDir(report)}/report`
-        ).catch((err) => {
-          logger.error(`Failed to extract report: ${err.message}`);
-          throw new Error(`Failed to extract report: ${err.message}`);
+    // ---- Delete a report (and all its versions) ---------------------------
+    fastify.delete<{ Params: { key: string } }>("/:key", async (req, res) => {
+      logger.info(`[${req.method}] ${req.url}`);
+      if (!(await ensureAuthenticated(req, res))) {
+        return;
+      }
+      const ok = await ReportsService.deleteReport(
+        OTelRequestSpan(req),
+        req.params.key,
+      );
+      if (!ok) {
+        return res.status(404).send({ error: "Report not found" });
+      }
+      return res.status(200).send({});
+    });
+
+    // ---- List versions for a report ---------------------------------------
+    fastify.get<{ Params: { key: string } }>(
+      "/:key/versions",
+      async (req, res) => {
+        logger.info(`[${req.method}] ${req.url}`);
+        if (!(await ensureCanRead(req, res))) {
+          return;
+        }
+        const span = OTelRequestSpan(req);
+        const report = await ReportsRepository.getReport(span, req.params.key);
+        if (!report) {
+          return res.status(404).send({ error: "Report not found" });
+        }
+        const versions = await ReportsRepository.listVersions(span, report.key);
+        const tags = await TagsRepository.listTagsForReport(span, report.key);
+        const tagsMap = new Map<string, ReturnType<typeof toApiTag>[]>();
+        tagsMap.set(report.key, tags.map(toApiTag));
+        return res.status(200).send({
+          versions: versions.map((v) =>
+            toApiVersion(v, report, new Map([[report.key, tags]])),
+          ),
         });
-      } else if (req.body.file && path.extname(req.body.file.filename) === ".html") {
-        await fse.ensureDir(`${ReportsDataGetTmpDir(report)}/report`);
-        await fse.writeFile(`${ReportsDataGetTmpDir(report)}/report/report.html`, await req.body.file.toBuffer());
-      } else if (req.body.json) {
-        await fse.ensureDir(`${ReportsDataGetTmpDir(report)}/report`);
-        await fse.writeJson(`${ReportsDataGetTmpDir(report)}/report/data.json`, req.body.json.value);
-      } else {
-        return res.status(400).send({ error: "ERR: Wrong report data: file (html or tar.gz) or json expected" });
-      }
+      },
+    );
 
-      // Report Record
+    // ---- Get a single version --------------------------------------------
+    fastify.get<{ Params: { key: string; versionId: string } }>(
+      "/:key/versions/:versionId",
+      async (req, res) => {
+        logger.info(`[${req.method}] ${req.url}`);
+        if (!(await ensureCanRead(req, res))) {
+          return;
+        }
+        const span = OTelRequestSpan(req);
+        const version = await ReportsRepository.getVersion(
+          span,
+          req.params.versionId,
+        );
+        if (!version || version.reportKey !== req.params.key) {
+          return res.status(404).send({ error: "Version not found" });
+        }
+        const report = await ReportsRepository.getReport(
+          span,
+          version.reportKey,
+        );
+        const tags = await TagsRepository.listTagsForReport(
+          span,
+          version.reportKey,
+        );
+        return res.status(200).send({
+          version: toApiVersion(
+            version,
+            report,
+            new Map([[version.reportKey, tags]]),
+          ),
+        });
+      },
+    );
 
-      let processor;
-      if (fse.existsSync(`${config.PROCESSORS_CUSTOM_DIR}/${report.processor}.js`)) {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        processor = require(`${config.PROCESSORS_CUSTOM_DIR}/${report.processor}.js`);
-      } else if (fse.existsSync(`${config.PROCESSORS_SYSTEM_DIR}/${report.processor}.js`)) {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        processor = require(`${config.PROCESSORS_SYSTEM_DIR}/${report.processor}.js`);
-      }
-      if (!processor) {
-        logger.error(`Processor not found: ${report.processor}`);
-        return res.status(404).send({ error: "ERR: Procesor not found" });
-      }
+    // ---- Delete a single version -----------------------------------------
+    fastify.delete<{ Params: { key: string; versionId: string } }>(
+      "/:key/versions/:versionId",
+      async (req, res) => {
+        logger.info(`[${req.method}] ${req.url}`);
+        if (!(await ensureAuthenticated(req, res))) {
+          return;
+        }
+        const span = OTelRequestSpan(req);
+        const version = await ReportsRepository.getVersion(
+          span,
+          req.params.versionId,
+        );
+        if (!version || version.reportKey !== req.params.key) {
+          return res.status(404).send({ error: "Version not found" });
+        }
+        await ReportsService.deleteVersion(span, version.id);
+        return res.status(200).send({});
+      },
+    );
+
+    // ---- Serve files belonging to a version ------------------------------
+    fastify.get<{ Params: { key: string; versionId: string; "*": string } }>(
+      "/:key/versions/:versionId/file/*",
+      async (req, res) => {
+        logger.info(`[${req.method}] ${req.url}`);
+        if (!(await ensureCanRead(req, res))) {
+          return;
+        }
+        const span = OTelRequestSpan(req);
+        const version = await ReportsRepository.getVersion(
+          span,
+          req.params.versionId,
+        );
+        if (!version || version.reportKey !== req.params.key) {
+          return res.status(404).send({ error: "Version not found" });
+        }
+        if (!version.hasFile) {
+          return res.status(404).send({ error: "Version has no file" });
+        }
+        const relative =
+          (req.params as Record<string, string>)["*"] ||
+          version.fileEntrypoint ||
+          "";
+        const safe = await resolveSafeReportFile(version.id, relative);
+        if (!safe) {
+          return res.status(404).send({ error: "File not found" });
+        }
+        const ext = path.extname(safe).toLowerCase();
+        const mime = TEXT_EXT_TO_MIME[ext] || "application/octet-stream";
+        res.header("Content-Type", mime);
+        res.header("Content-Disposition", "inline");
+        return res.send(fse.createReadStream(safe));
+      },
+    );
+
+    // ---- Upload a new version --------------------------------------------
+    fastify.post("/", async (req, res) => {
+      logger.info(`[${req.method}] ${req.url}`);
       try {
-        report.results = await processor.analyse(`${ReportsDataGetTmpDir(report)}/report`);
+        if (!(await ensureCanWrite(req, res))) {
+          return;
+        }
+        const ct = String(req.headers["content-type"] || "");
+        if (!ct.startsWith("multipart/form-data")) {
+          return res
+            .status(400)
+            .send({ error: "Request must be multipart/form-data" });
+        }
+        const parsed = await parseMultipart(req);
+        const meta = parsed.meta;
+        if (!meta || typeof meta !== "object") {
+          return res
+            .status(400)
+            .send({ error: "Field required: 'meta' (JSON)" });
+        }
+        const span = OTelRequestSpan(req);
+        const { report, version } = await ReportsService.ingest(span, config, {
+          key: meta.key || meta.name,
+          displayName: meta.displayName ?? null,
+          processor: meta.processor,
+          jsonPayload: meta.jsonPayload,
+          file: parsed.file,
+        });
+        const tags = await TagsRepository.listTagsForReport(span, report.key);
+        return res.status(201).send({
+          version: toApiVersion(version, report, new Map([[report.key, tags]])),
+          report: toApiReport(report, tags),
+        });
       } catch (err) {
-        logger.error(`Procesor processing report: ${err}`);
-        return res.status(404).send({ error: "ERR: Procesor processing report" });
+        if (err instanceof HttpError) {
+          return res.status(err.status).send({ error: err.message });
+        }
+        logger.error(`Ingest failed: ${(err as Error).message}`);
+        return res
+          .status(500)
+          .send({ error: `Ingest failed: ${(err as Error).message}` });
       }
+    });
 
-      await fse.move(ReportsDataGetTmpDir(report), ReportsDataGetDataDir(report));
-      await ReportsDataAdd(context, report);
-      return res.status(201).send({});
+    // ---- Delete all reports ----------------------------------------------
+    fastify.delete("/", async (req, res) => {
+      logger.info(`[${req.method}] ${req.url}`);
+      if (!(await ensureAuthenticated(req, res))) {
+        return;
+      }
+      await ReportsService.deleteAll(OTelRequestSpan(req));
+      return res.status(200).send({});
     });
   }
 }
 
-function extractTo(src: string, dest: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    targz.decompress(
-      {
-        dest,
-        src,
-      },
-      async (err) => {
-        if (err) {
-          logger.error(err);
-          reject(err);
-        } else {
-          resolve();
-        }
-      }
+function toApiReport(
+  report: Report,
+  tags: { tag: string; value: string }[],
+): Record<string, unknown> {
+  return {
+    key: report.key,
+    displayName: report.displayName,
+    dateCreated: report.dateCreated.toISOString(),
+    tags: tags.map(toApiTag),
+  };
+}
+
+function toApiTag(t: { tag: string; value: string }): {
+  tag: string;
+  value: string;
+} {
+  return { tag: t.tag, value: t.value };
+}
+
+function toApiVersion(
+  v: ReportVersion,
+  report: Report | null,
+  tagsByKey: Map<string, { tag: string; value: string }[]>,
+): Record<string, unknown> {
+  return {
+    id: v.id,
+    reportKey: v.reportKey,
+    reportDisplayName: report?.displayName || null,
+    processor: v.processor,
+    metrics: v.metrics,
+    info: v.info,
+    hasFile: v.hasFile,
+    fileEntrypoint: v.fileEntrypoint,
+    dateCreated: v.dateCreated.toISOString(),
+    tags: (tagsByKey.get(v.reportKey) || []).map(toApiTag),
+  };
+}
+
+async function ensureCanRead(
+  req: FastifyRequest,
+  res: FastifyReply,
+): Promise<boolean> {
+  const settings = await SettingsDB.get(OTelRequestSpan(req));
+  if (settings.isDashboardPublic) {
+    return true;
+  }
+  const userSession = await Auth.getUserSession(req);
+  if (!userSession.isAuthenticated) {
+    res.status(403).send({ error: "Access Denied" });
+    return false;
+  }
+  return true;
+}
+
+async function ensureAuthenticated(
+  req: FastifyRequest,
+  res: FastifyReply,
+): Promise<boolean> {
+  const userSession = await Auth.getUserSession(req);
+  if (!userSession.isAuthenticated) {
+    res.status(403).send({ error: "Access Denied" });
+    return false;
+  }
+  return true;
+}
+
+async function ensureCanWrite(
+  req: FastifyRequest,
+  res: FastifyReply,
+): Promise<boolean> {
+  const userSession = await Auth.getUserSession(req);
+  if (userSession.isAuthenticated) {
+    return true;
+  }
+  const settings = await SettingsDB.get(OTelRequestSpan(req));
+  const headerToken = String(req.headers["x-upload-token"] || "").trim();
+  if (
+    settings.uploadToken &&
+    headerToken &&
+    headerToken === settings.uploadToken
+  ) {
+    return true;
+  }
+  res.status(403).send({ error: "Access Denied" });
+  return false;
+}
+
+interface ParsedMultipart {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  meta: any;
+  file?: { filename: string; buffer: Buffer };
+}
+
+async function parseMultipart(req: FastifyRequest): Promise<ParsedMultipart> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const reqAny = req as any;
+  if (typeof reqAny.parts !== "function") {
+    throw new HttpError(
+      500,
+      "Multipart parser not registered (requires @fastify/multipart)",
     );
-  });
+  }
+  const result: ParsedMultipart = { meta: undefined };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for await (const part of reqAny.parts()) {
+    if (part.type === "file") {
+      const buf = await part.toBuffer();
+      result.file = { filename: part.filename, buffer: buf };
+    } else if (part.fieldname === "meta") {
+      try {
+        result.meta = JSON.parse(part.value);
+      } catch {
+        throw new HttpError(400, "'meta' field must be valid JSON");
+      }
+    }
+  }
+  return result;
 }

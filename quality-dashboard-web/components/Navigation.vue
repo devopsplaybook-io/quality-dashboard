@@ -7,10 +7,19 @@
     </ul>
     <ul class="menu-links">
       <li>
-        <NuxtLink to="/"><i class="bi bi-bar-chart-line-fill"></i></NuxtLink>
+        <NuxtLink to="/reports" title="Reports"
+          ><i class="bi bi-bar-chart-line-fill"></i
+        ></NuxtLink>
+      </li>
+      <li>
+        <NuxtLink to="/dashboards" title="Dashboards"
+          ><i class="bi bi-grid-1x2-fill"></i
+        ></NuxtLink>
       </li>
       <li v-if="authenticationStore.isAuthenticated">
-        <NuxtLink to="/users/profile"><i class="bi bi-person-circle"></i></NuxtLink>
+        <NuxtLink to="/users/profile"
+          ><i class="bi bi-person-circle"></i
+        ></NuxtLink>
       </li>
       <li v-if="authenticationStore.isAuthenticated">
         <NuxtLink to="/settings"><i class="bi bi-gear-fill"></i></NuxtLink>
@@ -35,7 +44,11 @@ export default {
       setTimeout(async () => {
         // Renew session tocken
         axios
-          .post(`${(await Config.get()).SERVER_URL}/users/session`, {}, await AuthService.getAuthHeader())
+          .post(
+            `${(await Config.get()).SERVER_URL}/users/session`,
+            {},
+            await AuthService.getAuthHeader(),
+          )
           .then((res) => {
             AuthService.saveToken(res.data.token);
           });

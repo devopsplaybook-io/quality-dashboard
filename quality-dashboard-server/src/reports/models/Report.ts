@@ -1,21 +1,19 @@
-import { v4 as uuidv4 } from "uuid";
-import { Label } from "./Labels";
-import { ReportResult } from "./ReportResult";
-
+/**
+ * A logical, named report. Multiple uploads with the same key produce
+ * additional ReportVersion entries — but the Report itself remains a single
+ * row keyed by `key`.
+ */
 export class Report {
-  public id: string;
-  public name: string;
-  public processor: string;
-  public labels: any;
-  public results: ReportResult[];
+  /** Unique stable identifier (slug-like). Set by the uploader. */
+  public key: string;
+  /** Optional human-readable label. Falls back to `key` if absent. */
+  public displayName: string | null;
+  /** When this report key was first seen. */
   public dateCreated: Date;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public info: any;
 
   constructor() {
-    this.id = uuidv4();
-    this.labels = {};
-    this.results = [];
-    this.info = {};
+    this.key = "";
+    this.displayName = null;
+    this.dateCreated = new Date();
   }
 }

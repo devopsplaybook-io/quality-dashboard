@@ -1,10 +1,13 @@
 <template>
-  <div>    
+  <div>
     <h1>Settting</h1>
     <div class="form">
       <div class="form-field">
-        <input type="checkbox" id="isDashboardPublic" v-model="config.isDashboardPublic" />&nbsp;&nbsp;Make Dashboard
-        Public
+        <input
+          type="checkbox"
+          id="isDashboardPublic"
+          v-model="config.isDashboardPublic"
+        />&nbsp;&nbsp;Make Dashboard Public
       </div>
       <div class="form-label">Upload Token:</div>
       <div class="form-field">
@@ -30,8 +33,21 @@ export default defineComponent({
   },
 
   async created() {
-    if (!await AuthenticationStore().ensureAuthenticated()) {
+    if (!(await AuthenticationStore().ensureAuthenticated())) {
       useRouter().push({ path: "/users/login" });
+      return;
+    }
+    try {
+      const res = await axios.get(
+        `${(await Config.get()).SERVER_URL}/settings`,
+        await AuthService.getAuthHeader(),
+      );
+      if (res.data) {
+        this.config.isDashboardPublic = !!res.data.isDashboardPublic;
+        this.config.uploadToken = res.data.uploadToken || "";
+      }
+    } catch (err) {
+      handleError(err);
     }
   },
 
@@ -44,7 +60,7 @@ export default defineComponent({
             isDashboardPublic: this.config.isDashboardPublic,
             uploadToken: this.config.uploadToken,
           },
-          await AuthService.getAuthHeader()
+          await AuthService.getAuthHeader(),
         )
         .catch(handleError);
     },
@@ -52,5 +68,4 @@ export default defineComponent({
 });
 </script>
 
-<style>
-</style>
+<style></style>

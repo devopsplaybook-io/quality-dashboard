@@ -1,267 +1,468 @@
 <template>
-  <div class="report-list">
-    <h2>Reports</h2>
-    <i class="bi-arrow-clockwise action-icon" icon="sync" v-on:click="refreshReports()"> </i>
-    <div class="report-group" v-for="group in reportsStore.groups" :key="group.name">
-      <h3>{{ group.name }}</h3>
-      <div class="report-project" v-for="project in group.projects" :key="project.name">
-        <h4>{{ project.name }}</h4>
-        <div class="report-version" v-for="version in project.versions" :key="version.name">
-          <div>
-            <h5>{{ version.name }}</h5>
-            <i class="bi-trash-fill action-icon"
-              icon="trash-alt"
-              v-on:click="deleteVersion(group.name, project.name, version.name)"
-              v-if="authenticationStore.isAuthenticated"
-            ></i>
-          </div>
-          <div class="report-reports">
-            <div class="report-report" v-for="report in version.reports" :key="report.name">
-              <div class="report-title">
-                <a
-                  v-if="report.result.link"
-                  target="_blank"
-                  :href="getReportUrl(group.name, project.name, version.name, report.name, report.result.link)"
-                  >{{ report.name }}</a
-                >
-                <span v-else>{{ report.name }}</span>
-              </div>
-              <div class="report-metrics">
-                <span v-if="report.result.success" class="report-metric quality-success">
-                  <i class="bi-check-circle"></i>
-                  x{{ report.result.success }}
-                </span>
-                <span v-if="report.result.warning" class="report-metric quality-warning">
-                  <i class="bi-exclamation-diamond"></i>
-                  x{{ report.result.warning }}
-                </span>
-                <span v-if="report.result.error" class="report-metric quality-error">
-                  <i class="bi-radioactive"></i>
-                  x{{ report.result.error }}
-                </span>
-                <span v-if="report.result.coverage" class="report-metric">
-                  {{ getCoverage(report.result.coverage) }}
-                  <i class="bi-percent"></i>
-                </span>
-                <span v-if="report.result.total" class="report-metric">All x{{ report.result.total }}</span>
-                <div class="report-timing">
-                  <div class="report-duration">
-                    {{ displayDuration(report.result.duration) }}
-                  </div>
-                  <div class="report-date">
-                    {{ dateToRelative(new Date(report.date)) }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+  <div class="reports-page">
+    <div class="reports-header">
+      <h2>Reports</h2>
+      <div class="reports-actions">
+        <span v-if="reportsStore.isFetching" class="reports-loading">
+          <i class="bi bi-arrow-repeat spin"></i> Loading...
+        </span>
+        <span v-else-if="reportsStore.lastFetched" class="reports-fetched">
+          Updated {{ relativeFetched }}
+        </span>
+        <button
+          class="reports-refresh"
+          :disabled="reportsStore.isFetching"
+          title="Refresh"
+          @click="refresh"
+        >
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+    </div>
+
+    <div v-if="reportsStore.lastError" class="reports-error">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      {{ reportsStore.lastError }}
+    </div>
+
+    <div
+      v-if="!reportsStore.isFetching && reportsStore.reports.length === 0"
+      class="reports-empty"
+    >
+      <p>No reports yet.</p>
+      <p class="reports-empty-hint">
+        Upload a report via <code>POST /api/reports</code> with a multipart
+        payload <code>meta = { key, processor, displayName? }</code>.
+      </p>
+    </div>
+
+    <ul class="reports-list">
+      <li
+        v-for="report in reportsStore.reports"
+        :key="report.key"
+        class="report-item"
+      >
+        <NuxtLink
+          :to="`/reports/${encodeURIComponent(report.key)}`"
+          class="report-key"
+        >
+          {{ report.displayName || report.key }}
+        </NuxtLink>
+        <span class="report-meta">
+          <span v-for="tag in report.tags" :key="tag.tag" class="tag-chip">
+            {{ tag.tag }}={{ tag.value }}
+          </span>
+          <span class="report-date">{{ formatDate(report.dateCreated) }}</span>
+        </span>
+        <div v-if="authenticationStore.isAuthenticated" class="report-actions">
+          <button class="icon-btn" @click="openEdit(report)" title="Edit">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button
+            class="icon-btn danger"
+            @click="onDelete(report)"
+            title="Delete"
+          >
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </li>
+    </ul>
+
+    <div v-if="showEdit" class="modal">
+      <div class="modal-card">
+        <h3>Edit report</h3>
+        <label>Display name</label>
+        <input v-model="editDisplayName" placeholder="Display name" />
+        <label>Tags</label>
+        <p class="hint">Tags apply to all versions of this report.</p>
+        <div v-for="(t, i) in editTags" :key="i" class="tag-row">
+          <AutocompleteInput
+            v-model="t.tag"
+            :suggestions="availableTagNames"
+            placeholder="tag"
+          />
+          <span>=</span>
+          <AutocompleteInput
+            v-model="t.value"
+            :suggestions="getValuesForTag(t.tag)"
+            placeholder="value"
+          />
+          <button class="icon-btn danger" @click="removeEditTag(i)">
+            <i class="bi bi-x-circle"></i>
+          </button>
+        </div>
+        <button class="btn-secondary" @click="addEditTag">
+          <i class="bi bi-plus"></i> Add tag
+        </button>
+        <div class="modal-actions">
+          <button class="btn-secondary" @click="cancelEdit">Cancel</button>
+          <button class="btn-primary" @click="saveEdit">Save</button>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-const reportsStore = ReportsStore();
-const authenticationStore = AuthenticationStore();
-</script>
-
-<script>
+<script setup lang="ts">
 import { AuthService } from "~~/services/AuthService";
-import Config from "~~/services/Config.ts";
+import type { Report } from "~~/stores/ReportsStore";
 
-export default {
-  data() {
-    return {
-      groups: [],
-    };
-  },
-  async created() {
-    await ApplicationSetttingsStore().refresh()
-    if (!await AuthService.isAuthenticated() && ApplicationSetttingsStore().isInitialized && !ApplicationSetttingsStore().isDashboardPublic) {
-      useRouter().push({ path: "/users/login" });
-    }
-    await ReportsStore().fetch();
-  },
+const reportsStore = ReportsStore();
+const tagsStore = TagsStore();
+const authenticationStore = AuthenticationStore();
+const applicationSettingsStore = ApplicationSetttingsStore();
 
-  methods: {
-    async refreshReports() {
-      await ReportsStore().fetch();
-    },
+const now = ref(Date.now());
+let nowTimer: ReturnType<typeof setInterval> | null = null;
 
-  //   async deleteVersion(group, project, version) {
-  //     if (confirm(`Delete version ${version}?`)) {
-  //       try {
-  //         await ReportService.deleteVersion(group, project, version);
-  //         this.refreshReports();
-  //       } catch (err) {
-  //         AlertService.send({ text: `ERR: Error deleting version (${err.message})`, type: "error" });
-  //       }
-  //     }
-  //   },
+const showEdit = ref(false);
+const editingReport = ref<Report | null>(null);
+const editDisplayName = ref("");
+const editTags = ref<{ tag: string; value: string }[]>([]);
 
-  //   async checkAuthentication() {
-  //     await UserService.checkAuthentication().catch((err) => {
-  //       AlertService.send({ text: `ERR: Connection to server failed (${err.message})`, type: "error" });
-  //     });
-  //   },
+const availableTagNames = computed(() => tagsStore.allTags.map((t) => t.tag));
 
-    getCoverage(coverageInput) {
-      if (typeof coverageInput === "number") {
-        return coverageInput.toString();
-      } else if (typeof coverageInput === "string") {
-        return coverageInput.replace("%", "");
-      }
-      return coverageInput;
-    },
+function getValuesForTag(tagName: string): string[] {
+  const tagAgg = tagsStore.allTags.find((t) => t.tag === tagName);
+  return tagAgg ? tagAgg.values : [];
+}
 
-    getReportUrl(
-      groupName,
-      projectName,
-      versionName,
-      reportName,
-      reportLink
-    ) {
-      if (reportLink.indexOf("http") === 0) {
-        return reportLink;
-      } else {
-        return (
-          import.meta.env.VITE_APP_BASEPATH_SERVER +
-          "/reports_data/" +
-          groupName +
-          "/" +
-          projectName +
-          "/" +
-          versionName +
-          "/" +
-          reportName +
-          "/report/" +
-          reportLink
-        );
-      }
-    },
+const relativeFetched = computed(() => {
+  if (!reportsStore.lastFetched) return "";
+  const elapsed = now.value - reportsStore.lastFetched;
+  const sec = Math.floor(elapsed / 1000);
+  if (sec < 5) return "just now";
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} min ago`;
+  return `${Math.floor(min / 60)} h ago`;
+});
 
-    dateToRelative(date) {
-      const msPerMinute = 60 * 1000;
-      const msPerHour = msPerMinute * 60;
-      const msPerDay = msPerHour * 24;
-      const msPerMonth = msPerDay * 30;
-      const msPerYear = msPerDay * 365;
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString() + " " + d.toLocaleTimeString();
+}
 
-      const elapsed = new Date().getTime() - date.getTime();
+onMounted(async () => {
+  await applicationSettingsStore.refresh();
+  const isAuth = await AuthService.isAuthenticated();
+  if (
+    !isAuth &&
+    applicationSettingsStore.isInitialized &&
+    !applicationSettingsStore.isDashboardPublic
+  ) {
+    useRouter().push({ path: "/users/login" });
+    return;
+  }
+  await Promise.all([tagsStore.fetchAll(), reportsStore.fetchReports()]);
+  nowTimer = setInterval(() => {
+    now.value = Date.now();
+  }, 30000);
+});
 
-      if (elapsed < msPerMinute) {
-        return Math.round(elapsed / 1000) + " sec. ago";
-      } else if (elapsed < msPerHour) {
-        return Math.round(elapsed / msPerMinute) + " min. ago";
-      } else if (elapsed < msPerDay) {
-        return Math.round(elapsed / msPerHour) + " h. ago";
-      } else if (elapsed < msPerMonth) {
-        return Math.round(elapsed / msPerDay) + " days ago";
-      } else if (elapsed < msPerYear) {
-        return Math.round(elapsed / msPerMonth) + " months ago";
-      } else {
-        return Math.round(elapsed / msPerYear) + " years ago";
-      }
-    },
+onBeforeUnmount(() => {
+  if (nowTimer !== null) {
+    clearInterval(nowTimer);
+    nowTimer = null;
+  }
+});
 
-    displayDuration(duration) {
-      if (!duration) {
-        return "";
-      } else if (typeof duration !== "number") {
-        return duration;
-      } else if (duration < 1000) {
-        return Math.round(duration) + " ms";
-      } else if (duration < 60 * 1000) {
-        return Math.round(duration / 1000) + " s";
-      } else if (duration < 3600 * 1000) {
-        return Math.round(duration / (60 * 1000)) + " min";
-      } else if (duration < 24 * 3600 * 1000) {
-        return Math.round(duration / (3600 * 1000)) + " h";
-      } else {
-        return Math.round(duration / (24 * 3600 * 1000)) + " h";
-      }
-    },
-  },
-};
+async function refresh(): Promise<void> {
+  await Promise.all([tagsStore.fetchAll(), reportsStore.fetchReports()]);
+}
+
+function openEdit(report: Report): void {
+  editingReport.value = report;
+  showEdit.value = true;
+  editDisplayName.value = report.displayName || "";
+  editTags.value = report.tags.map((t) => ({ ...t }));
+}
+
+function addEditTag(): void {
+  editTags.value.push({ tag: "", value: "" });
+}
+
+function removeEditTag(i: number): void {
+  editTags.value.splice(i, 1);
+}
+
+function cancelEdit(): void {
+  showEdit.value = false;
+  editingReport.value = null;
+  editDisplayName.value = "";
+  editTags.value = [];
+}
+
+async function saveEdit(): Promise<void> {
+  if (!editingReport.value) return;
+  const name = editDisplayName.value.trim() || null;
+  const cleaned = editTags.value
+    .map((t) => ({ tag: t.tag.trim(), value: t.value.trim() }))
+    .filter((t) => t.tag && t.value);
+
+  await Promise.all([
+    reportsStore.setDisplayName(editingReport.value.key, name),
+    tagsStore.setTagsForReport(editingReport.value.key, cleaned),
+  ]);
+  cancelEdit();
+  await refresh();
+}
+
+async function onDelete(report: Report): Promise<void> {
+  if (
+    !confirm(
+      `Delete report "${report.displayName || report.key}" and all its versions?`,
+    )
+  ) {
+    return;
+  }
+  await reportsStore.removeReport(report.key);
+  await refresh();
+}
 </script>
 
 <style scoped>
-.report-project,
-.report-version,
-.report-reports {
-  margin-left: 2vw;
+.reports-page {
+  padding: 0.5em 0.5em 2em;
 }
-.report-version {
-  border-top: 2px solid;
-}
-.report-reports_tmp {
+.reports-header {
   display: flex;
-  flex-wrap: wrap;
-  margin-bottom: 2em;
-  background-color: red;
-}
-.report-reports {
-  display: grid;
-  /* grid-template-columns: repeat(auto-fit, 100px); */
-  grid-template-columns: repeat(auto-fill, minmax(15em, 1fr));
-  gap: 10px;
-  margin: 5px;
-}
-.report-report {
-  width: 100%;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.2);
-  padding: 0.4em 0.8em;
-  margin-bottom: 0.8em;
-  margin-right: 0.8em;
-}
-.report-title {
-  font-size: 90%;
-  text-align: center;
-  width: 100%;
-  border-bottom: 2px dotted #888;
-  padding-bottom: 0.2em;
-  margin-bottom: 0.6em;
-}
-.report-title a:any-link {
-  color: #0d47a1;
-  word-wrap: break-word;
-}
-.report-metrics {
-  display: flex;
-  flex-wrap: wrap;
-  width: 100%;
+  align-items: center;
   justify-content: space-between;
+  margin-bottom: 0.8em;
+  flex-wrap: wrap;
+  gap: 0.5em;
 }
-.report-metric {
-  font-size: 90%;
-  width: 30%;
-  padding-bottom: 0.4em;
+.reports-header h2 {
+  margin: 0;
 }
-.report-timing {
-  font-size: 70%;
-  width: 100%;
-  color: #888;
+.reports-actions {
   display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: 0.85em;
+  color: #607d8b;
 }
-.report-duration {
-  width: 50%;
+.reports-refresh {
+  background: transparent;
+  border: 1px solid #cfd8dc;
+  border-radius: 4px;
+  padding: 0.3em 0.6em;
+  cursor: pointer;
+  color: #455a64;
+}
+.reports-refresh:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.reports-loading .spin {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.reports-error {
+  background-color: #fff3e0;
+  color: #bf360c;
+  border: 1px solid #ffccbc;
+  padding: 0.6em 0.8em;
+  border-radius: 4px;
+  margin-bottom: 0.8em;
+}
+.reports-empty {
+  text-align: center;
+  color: #78909c;
+  padding: 2em 1em;
+  border: 1px dashed #cfd8dc;
+  border-radius: 6px;
+}
+.reports-empty-hint code {
+  background-color: #eceff1;
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+}
+.reports-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.report-item {
+  padding: 0.6em 0.8em;
+  border: 1px solid #cfd8dc;
+  border-radius: 4px;
+  margin-bottom: 0.4em;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6em;
+}
+.report-key {
+  font-weight: 600;
+  color: #0d47a1;
+  text-decoration: none;
+}
+.report-key:hover {
+  text-decoration: underline;
+}
+.report-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.tag-chip {
+  background: #e3f2fd;
+  color: #1565c0;
+  padding: 0.15em 0.5em;
+  border-radius: 3px;
+  font-size: 0.8em;
+  font-family: ui-monospace, monospace;
 }
 .report-date {
-  text-align: right;
-  width: 50%;
+  font-size: 0.8em;
+  color: #78909c;
 }
-.quality-success {
-  color: #43a047;
+.report-actions {
+  display: flex;
+  gap: 0.3em;
+  flex-shrink: 0;
 }
-.quality-warning {
-  color: #ff7043;
+.icon-btn {
+  background: transparent;
+  border: 1px solid #cfd8dc;
+  border-radius: 4px;
+  padding: 0.2em 0.5em;
+  cursor: pointer;
+  color: #455a64;
 }
-.quality-error {
-  color: #e53935;
+.icon-btn.danger:hover {
+  color: #c62828;
+  border-color: #c62828;
 }
-.action-icon {
-  float: right;
-  margin-top: -3em;
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-card {
+  background: #fff;
+  border-radius: 6px;
+  padding: 1em 1.2em;
+  width: min(520px, 92vw);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-card h3 {
+  margin: 0 0 0.5em;
+}
+.modal-card label {
+  display: block;
+  margin-top: 0.5em;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+.modal-card input {
+  width: 100%;
+  padding: 0.3em 0.5em;
+  border: 1px solid #cfd8dc;
+  border-radius: 4px;
+  margin-top: 0.2em;
+  box-sizing: border-box;
+}
+.hint {
+  font-size: 0.8em;
+  color: #78909c;
+  margin: 0.2em 0;
+}
+.tag-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  margin-bottom: 0.3em;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5em;
+  margin-top: 1em;
+}
+.btn-primary,
+.btn-secondary {
+  padding: 0.3em 0.8em;
+  border-radius: 4px;
+  border: 1px solid #cfd8dc;
+  cursor: pointer;
+  background: #fff;
+}
+.btn-primary {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1976d2;
+}
+@media (prefers-color-scheme: dark) {
+  .reports-refresh {
+    border-color: #455a64;
+    color: #cfd8dc;
+  }
+  .reports-error {
+    background-color: #3e2723;
+    color: #ffab91;
+    border-color: #5d4037;
+  }
+  .reports-empty {
+    border-color: #37474f;
+    color: #90a4ae;
+  }
+  .reports-empty-hint code {
+    background-color: #263238;
+    color: #cfd8dc;
+  }
+  .report-item {
+    background: #1e2a32;
+    border-color: #455a64;
+  }
+  .report-key {
+    color: #82b1ff;
+  }
+  .tag-chip {
+    background: #1a3a5c;
+    color: #82b1ff;
+  }
+  .icon-btn {
+    background: transparent;
+    border-color: #455a64;
+    color: #cfd8dc;
+  }
+  .icon-btn.danger:hover {
+    color: #ff6659;
+    border-color: #ff6659;
+  }
+  .modal-card {
+    background: #1e2a32;
+    color: #cfd8dc;
+  }
+  .modal-card input {
+    background: #263238;
+    color: #cfd8dc;
+    border-color: #455a64;
+  }
+  .btn-secondary {
+    background: #1e2a32;
+    color: #cfd8dc;
+    border-color: #455a64;
+  }
 }
 </style>

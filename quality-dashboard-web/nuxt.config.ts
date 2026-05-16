@@ -1,6 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   ssr: false,
+  experimental: {
+    viteEnvironmentApi: true,
+  },
   app: {
     head: {
       charset: "utf-16",
@@ -14,8 +17,14 @@ export default defineNuxtConfig({
         { rel: "manifest", href: "/manifest.json" },
         { rel: "icon", href: "/icon.png" },
         { rel: "stylesheet", href: "/styles.css" },
-        { rel: "stylesheet", href: "https://unpkg.com/@picocss/pico@latest/css/pico.min.css" },
-        { rel: "stylesheet", href: "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" },
+        {
+          rel: "stylesheet",
+          href: "https://unpkg.com/@picocss/pico@latest/css/pico.min.css",
+        },
+        {
+          rel: "stylesheet",
+          href: "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css",
+        },
       ],
     },
   },

@@ -2,7 +2,7 @@
 
 echo "Testing Container Images"
 
-UPLOAD_SERVER="http://localhost:8080/api"
+UPLOAD_SERVER="http://localhost:8080"
 
 rm -f /tmp/test-trivy-html.tpl
 wget -O /tmp/test-trivy-html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
@@ -28,8 +28,10 @@ for NAMESPACE in $(kubectl get namespace --no-headers | cut -d' ' -f1); do
                 ${CONTAINER_IMAGE}
 
             curl -X POST \
+                -H "X-Upload-Token: $UPLOAD_TOKEN" \
+                -F 'meta={"key":"quality-dashboard/container-images/'${NAMESPACE}'/'${POD}'_'${CONTAINER}'","displayName":"Trivy: '${NAMESPACE}'/'${POD}'/'${CONTAINER}'","processor":"trivy-html"}' \
                 -F report=@"/tmp/test-trivy/report.html" \
-                ${UPLOAD_SERVER}/reports/quality-dashboard/container-images/${NAMESPACE}/${POD}_${CONTAINER}/trivy-html
+                ${UPLOAD_SERVER}/api/reports
 
             rm -fr /tmp/test-trivy
 

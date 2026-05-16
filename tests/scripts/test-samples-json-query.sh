@@ -14,14 +14,26 @@ fi
 echo "Report Server: ${UPLOAD_SERVER}"
 
 # --------------------------------------------------
-# Test Json Processor with Query
+# Test Json Processor with Query (deprecated — jsonPayload goes in meta)
 # --------------------------------------------------
+# The new API no longer supports query-string jsonPayload. Use the meta field instead.
+# Example:
+# curl -X POST \
+#     -H "X-Upload-Token: $UPLOAD_TOKEN" \
+#     -F 'meta={"key":"quality-dashboard/integration/test-processors-query","displayName":"Test Processors Query","processor":"json","jsonPayload":{"success":10,"error":9,"warning":8,"total":27,"coverage":80}};type=application/json' \
+#     ${UPLOAD_SERVER}/api/reports
 
-cd "${APP_DIR}/test/scripts"
+cd "${APP_DIR}/tests/scripts"
 
+# Upload a report with file + jsonPayload in meta
 curl -X POST \
-    -F report=@"./report.html" \
-    ${UPLOAD_SERVER}/api/reports/quality-dashboard/integration/master/test-processors-query/json?data_json=%7B\"success\"%3A10,\"error\"%3A9,\"warning\"%3A8,\"total\"%3A27,\"coverage\"%3A80%7D
+    -H "X-Upload-Token: $UPLOAD_TOKEN" \
+    -F 'meta={"key":"quality-dashboard/integration/test-processors-query","displayName":"Test Processors Query","processor":"json","jsonPayload":{"metrics":[{"name":"success","type":"count","value":10},{"name":"error","type":"count","value":9},{"name":"warning","type":"count","value":8},{"name":"total","type":"count","value":27},{"name":"coverage","type":"percentage","value":80}]}}' \
+    -F file=@"./report.html" \
+    ${UPLOAD_SERVER}/api/reports
 
+# Upload JSON-only (no file)
 curl -X POST \
-    ${UPLOAD_SERVER}/api/reports/quality-dashboard/integration/master/test-processors-query-nofile/json?data_json=%7B\"success\"%3A10,\"error\"%3A9,\"warning\"%3A8,\"total\"%3A27,\"coverage\"%3A80%7D
+    -H "X-Upload-Token: $UPLOAD_TOKEN" \
+    -F 'meta={"key":"quality-dashboard/integration/test-processors-query-nofile","displayName":"Test Processors Query No File","processor":"json","jsonPayload":{"metrics":[{"name":"success","type":"count","value":10},{"name":"error","type":"count","value":9},{"name":"warning","type":"count","value":8},{"name":"total","type":"count","value":27},{"name":"coverage","type":"percentage","value":80}]}}' \
+    ${UPLOAD_SERVER}/api/reports

@@ -36,6 +36,6 @@ echo "Result: ${NB_SUCCESS}, ${NB_ERROR}"
 
 
 curl -X POST \
-    -d '{"link":"https://github.com/DidierHoarau/quality-dashboard", "success": '${NB_SUCCESS}', "error": '${NB_ERROR}' }' \
-    -H "Content-Type: application/json" \
-    ${UPLOAD_SERVER}/api/reports/quality-dashboard/integration/master/docker-hub/json
+    -H "X-Upload-Token: $UPLOAD_TOKEN" \
+    -F 'meta={"key":"quality-dashboard/docker-hub","displayName":"Docker Hub Builds","processor":"json","jsonPayload":{"metrics":[{"name":"success","type":"count","value":'${NB_SUCCESS}'},{"name":"error","type":"count","value":'${NB_ERROR}'}]}}' \
+    ${UPLOAD_SERVER}/api/reports

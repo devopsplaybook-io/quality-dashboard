@@ -4,26 +4,32 @@ import { v4 as uuidv4 } from "uuid";
 import { User } from "./model/User";
 import { UserSession } from "./model/UserSession";
 import { Config } from "../Config";
-import { Logger } from "../utils-std-ts/Logger";
 import { Span } from "@opentelemetry/sdk-trace-base";
-import { StandardTracerStartSpan } from "../utils-std-ts/StandardTracer";
-import { SqlDbUtilsQuerySQL } from "../utils-std-ts/SqlDbUtils";
+import { OTelLogger, OTelTracer } from "../OTelContext";
+import {
+  SqlDbUtilsExecSQL,
+  SqlDbUtilsQuerySQL,
+} from "../utils-std-ts/SqlDbUtils";
 
-const logger = new Logger(path.basename(__filename));
+const logger = OTelLogger().createModuleLogger("Auth");
 let config: Config;
 
 export class Auth {
   //
   public static async init(context: Span, configIn: Config) {
     config = configIn;
-    const span = StandardTracerStartSpan("Auth_init", context);
-    const authKeyRaw = await SqlDbUtilsQuerySQL(span, 'SELECT * FROM metadata WHERE type="auth_token"');
+    const span = OTelTracer().startSpan("Auth_init", context);
+    const authKeyRaw = SqlDbUtilsQuerySQL(
+      span,
+      "SELECT * FROM metadata WHERE type='auth_token'",
+    );
     if (authKeyRaw.length == 0) {
       configIn.JWT_KEY = uuidv4();
-      await SqlDbUtilsQuerySQL(span, 'INSERT INTO metadata (type, value, dateCreated) VALUES ("auth_token", ?, ?)', [
-        configIn.JWT_KEY,
-        new Date().toISOString(),
-      ]);
+      SqlDbUtilsExecSQL(
+        span,
+        "INSERT INTO metadata (type, value, dateCreated) VALUES ('auth_token', ?, ?)",
+        [configIn.JWT_KEY, new Date().toISOString()] as never[],
+      );
     } else {
       configIn.JWT_KEY = authKeyRaw[0].value;
     }
@@ -37,7 +43,7 @@ export class Auth {
         userId: user.id,
         userName: user.name,
       },
-      config.JWT_KEY
+      config.JWT_KEY,
     );
   }
 
@@ -63,7 +69,10 @@ export class Auth {
     const userSession: UserSession = { isAuthenticated: false };
     if (req.headers.authorization) {
       try {
-        const info = jwt.verify(req.headers.authorization.split(" ")[1], config.JWT_KEY);
+        const info = jwt.verify(
+          req.headers.authorization.split(" ")[1],
+          config.JWT_KEY,
+        );
         userSession.userId = info.userId;
         userSession.isAuthenticated = true;
       } catch (err) {

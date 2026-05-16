@@ -4,7 +4,8 @@
   "description": "",
   "main": "ecosystem.config.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "./docs/dev/run-dev-env.sh",
+    "dependencies": "./docs/dev/run-dev-dependencies-rebuild.sh"
   },
   "repository": {
     "type": "git",
