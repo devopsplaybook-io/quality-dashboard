@@ -8,6 +8,11 @@
 
     <div v-else-if="!aggregate" class="not-found">Dashboard not found.</div>
 
+    <div v-else-if="dashboardsStore.lastError" class="error">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      {{ dashboardsStore.lastError }}
+    </div>
+
     <div v-else>
       <div class="dashboard-header">
         <h2>{{ aggregate.dashboard.name }}</h2>
@@ -208,6 +213,15 @@ async function onDelete(): Promise<void> {
   padding: 1.5em;
   color: #78909c;
 }
+.error {
+  text-align: center;
+  padding: 1em;
+  color: #bf360c;
+  background: #fff3e0;
+  border: 1px solid #ffccbc;
+  border-radius: 4px;
+  margin-bottom: 0.8em;
+}
 .modal {
   position: fixed;
   inset: 0;
@@ -281,6 +295,11 @@ async function onDelete(): Promise<void> {
   color: #c62828;
 }
 @media (prefers-color-scheme: dark) {
+  .error {
+    background: #3e2723;
+    color: #ffab91;
+    border-color: #5d4037;
+  }
   .modal-card,
   .modal-card input,
   .btn-secondary,

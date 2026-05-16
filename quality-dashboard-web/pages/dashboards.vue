@@ -29,9 +29,25 @@
         <NuxtLink :to="`/dashboards/${d.id}`" class="dashboard-name">{{
           d.name
         }}</NuxtLink>
-        <span class="levels-summary">
-          {{ summarizeLevels(d.levels) }}
-        </span>
+        <div class="levels-scroll-wrap">
+          <button
+            class="scroll-arrow scroll-left"
+            @click="scrollLevels($event, -1)"
+            :title="'Scroll left'"
+          >
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <span class="levels-summary">
+            {{ summarizeLevels(d.levels) }}
+          </span>
+          <button
+            class="scroll-arrow scroll-right"
+            @click="scrollLevels($event, 1)"
+            :title="'Scroll right'"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
         <div
           v-if="authenticationStore.isAuthenticated"
           class="dashboard-actions"
@@ -138,6 +154,17 @@ function summarizeLevels(levels: DashboardLevel[]): string {
     .join(" › ");
 }
 
+function scrollLevels(ev: MouseEvent, dir: number): void {
+  const btn = ev.currentTarget as HTMLElement;
+  if (!btn) return;
+  const wrap = btn.closest(".levels-scroll-wrap") as HTMLElement | null;
+  if (!wrap) return;
+  const span = wrap.querySelector(".levels-summary") as HTMLElement | null;
+  if (!span) return;
+  const scrollAmount = 120;
+  span.scrollBy({ left: dir * scrollAmount, behavior: "smooth" });
+}
+
 function addLevel(): void {
   editLevels.value.push({ tag: "", value: "" });
 }
@@ -230,15 +257,48 @@ async function onDeleteFromModal(): Promise<void> {
   font-weight: 600;
   color: #0d47a1;
   text-decoration: none;
+  white-space: nowrap;
 }
 .dashboard-name:hover {
   text-decoration: underline;
+}
+.levels-scroll-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.2em;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 .levels-summary {
   font-size: 0.8em;
   color: #607d8b;
   font-family: ui-monospace, monospace;
-  flex: 1;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0.1em 0;
+}
+.levels-summary::-webkit-scrollbar {
+  display: none;
+}
+.scroll-arrow {
+  background: transparent;
+  border: none;
+  color: #90a4ae;
+  cursor: pointer;
+  padding: 0 0.1em;
+  font-size: 0.7em;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.levels-scroll-wrap:hover .scroll-arrow {
+  opacity: 1;
+}
+.scroll-arrow:hover {
+  color: #455a64;
 }
 .dashboard-actions {
   display: flex;

@@ -25,6 +25,27 @@
       {{ reportsStore.lastError }}
     </div>
 
+    <div class="reports-filter">
+      <i class="bi bi-search"></i>
+      <input
+        v-model="searchQuery"
+        type="search"
+        class="reports-filter-input"
+        placeholder="Filter by name, key, or tag…"
+      />
+    </div>
+
+    <div
+      v-if="
+        !reportsStore.isFetching &&
+        filteredReports.length === 0 &&
+        reportsStore.reports.length > 0
+      "
+      class="reports-empty"
+    >
+      <p>No reports match your filter.</p>
+    </div>
+
     <div
       v-if="!reportsStore.isFetching && reportsStore.reports.length === 0"
       class="reports-empty"
@@ -36,9 +57,9 @@
       </p>
     </div>
 
-    <ul class="reports-list">
+    <ul v-if="filteredReports.length > 0" class="reports-list">
       <li
-        v-for="report in reportsStore.reports"
+        v-for="report in filteredReports"
         :key="report.key"
         class="report-item"
       >
@@ -66,7 +87,12 @@
               {{ metricLabel(metric) }}
             </span>
           </span>
-          <span class="latest-date" :title="'Latest scan: ' + formatDate(report.latestVersion.dateCreated)">
+          <span
+            class="latest-date"
+            :title="
+              'Latest scan: ' + formatDate(report.latestVersion.dateCreated)
+            "
+          >
             <i class="bi bi-clock"></i>
             {{ relativeDate(report.latestVersion.dateCreated) }}
           </span>
@@ -142,6 +168,20 @@ const editDisplayName = ref("");
 const editTags = ref<{ tag: string; value: string }[]>([]);
 
 const availableTagNames = computed(() => tagsStore.allTags.map((t) => t.tag));
+
+const searchQuery = ref("");
+
+const filteredReports = computed(() => {
+  const q = searchQuery.value.toLowerCase().trim();
+  if (!q) return reportsStore.reports;
+  return reportsStore.reports.filter((r) => {
+    if ((r.displayName || "").toLowerCase().includes(q)) return true;
+    if (r.key.toLowerCase().includes(q)) return true;
+    if (r.tags.some((t) => `${t.tag}=${t.value}`.toLowerCase().includes(q)))
+      return true;
+    return false;
+  });
+});
 
 function getValuesForTag(tagName: string): string[] {
   const tagAgg = tagsStore.allTags.find((t) => t.tag === tagName);
@@ -330,6 +370,29 @@ async function onDelete(report: Report): Promise<void> {
   to {
     transform: rotate(360deg);
   }
+}
+.reports-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin-bottom: 0.6em;
+  padding: 0.3em 0.5em;
+  border: 1px solid #cfd8dc;
+  border-radius: 4px;
+  background: #fff;
+  color: #90a4ae;
+}
+.reports-filter-input {
+  border: none;
+  background: transparent;
+  padding: 0.2em 0;
+  outline: none;
+  flex: 1;
+  font-size: 0.85em;
+  color: #455a64;
+}
+.reports-filter-input::placeholder {
+  color: #b0bec5;
 }
 .reports-error {
   background-color: #fff3e0;
@@ -529,6 +592,17 @@ async function onDelete(report: Report): Promise<void> {
   .reports-refresh {
     border-color: #455a64;
     color: #cfd8dc;
+  }
+  .reports-filter {
+    background: #1e2a32;
+    border-color: #455a64;
+    color: #78909c;
+  }
+  .reports-filter-input {
+    color: #cfd8dc;
+  }
+  .reports-filter-input::placeholder {
+    color: #546e7a;
   }
   .reports-error {
     background-color: #3e2723;

@@ -74,6 +74,7 @@ export const DashboardsStore = defineStore("DashboardsStore", {
           `${(await Config.get()).SERVER_URL}/dashboards/${id}/aggregate`,
           await AuthService.getAuthHeader(),
         );
+        this.lastError = null;
         return {
           dashboard: res.data.dashboard,
           tree: res.data.tree,

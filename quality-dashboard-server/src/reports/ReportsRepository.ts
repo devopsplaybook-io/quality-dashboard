@@ -283,11 +283,12 @@ export class ReportsRepository {
       const rows = SqlDbUtilsQuerySQL(
         span,
         `SELECT v.* FROM report_versions v
-         INNER JOIN (
-            SELECT report_key, MAX(date_created) AS max_date
-            FROM report_versions GROUP BY report_key
-         ) lv
-         ON v.report_key = lv.report_key AND v.date_created = lv.max_date
+         WHERE v.id IN (
+            SELECT v2.id FROM report_versions v2
+            WHERE v2.report_key = v.report_key
+            ORDER BY v2.date_created DESC
+            LIMIT 1
+         )
          ORDER BY v.date_created DESC`,
       );
       return ReportsRepository.attachMetrics(span, rows);
