@@ -54,6 +54,26 @@
           </span>
           <span class="report-date">{{ formatDate(report.dateCreated) }}</span>
         </span>
+        <div v-if="report.latestVersion" class="report-latest">
+          <span class="latest-metrics">
+            <span
+              v-for="metric in report.latestVersion.metrics"
+              :key="metric.name"
+              class="metric-chip"
+              :class="metricClass(metric)"
+              :title="metric.name"
+            >
+              {{ metricLabel(metric) }}
+            </span>
+          </span>
+          <span class="latest-date" :title="'Latest scan: ' + formatDate(report.latestVersion.dateCreated)">
+            <i class="bi bi-clock"></i>
+            {{ relativeDate(report.latestVersion.dateCreated) }}
+          </span>
+        </div>
+        <div v-else class="report-latest report-latest-empty">
+          <span class="latest-empty">No versions yet</span>
+        </div>
         <div v-if="authenticationStore.isAuthenticated" class="report-actions">
           <button class="icon-btn" @click="openEdit(report)" title="Edit">
             <i class="bi bi-pencil"></i>
@@ -106,7 +126,7 @@
 
 <script setup lang="ts">
 import { AuthService } from "~~/services/AuthService";
-import type { Report } from "~~/stores/ReportsStore";
+import type { Metric, Report } from "~~/stores/ReportsStore";
 
 const reportsStore = ReportsStore();
 const tagsStore = TagsStore();
@@ -144,16 +164,59 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString() + " " + d.toLocaleTimeString();
 }
 
+function relativeDate(iso: string): string {
+  const elapsed = now.value - new Date(iso).getTime();
+  const sec = Math.floor(elapsed / 1000);
+  if (sec < 60) return "just now";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hrs = Math.floor(min / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+function metricLabel(metric: Metric): string {
+  switch (metric.type) {
+    case "percentage":
+      return `${metric.value}%`;
+    case "duration":
+      if (metric.value >= 60) {
+        return `${(metric.value / 60).toFixed(1)}m`;
+      }
+      return `${metric.value}s`;
+    case "boolean":
+      return metric.value ? "✓" : "✗";
+    default:
+      return String(metric.value);
+  }
+}
+
+function metricClass(metric: Metric): string {
+  switch (metric.type) {
+    case "boolean":
+      return metric.value ? "metric-good" : "metric-bad";
+    case "percentage":
+      if (metric.value >= 80) return "metric-good";
+      if (metric.value >= 50) return "metric-warn";
+      return "metric-bad";
+    default:
+      return "";
+  }
+}
+
 onMounted(async () => {
   await applicationSettingsStore.refresh();
   const isAuth = await AuthService.isAuthenticated();
-  if (
-    !isAuth &&
-    applicationSettingsStore.isInitialized &&
-    !applicationSettingsStore.isDashboardPublic
-  ) {
-    useRouter().push({ path: "/users/login" });
-    return;
+  if (!isAuth) {
+    if (!applicationSettingsStore.isInitialized) {
+      useRouter().push({ path: "/users/initialize" });
+      return;
+    }
+    if (!applicationSettingsStore.isDashboardPublic) {
+      useRouter().push({ path: "/users/login" });
+      return;
+    }
   }
   await Promise.all([tagsStore.fetchAll(), reportsStore.fetchReports()]);
   nowTimer = setInterval(() => {
@@ -300,9 +363,9 @@ async function onDelete(report: Report): Promise<void> {
   margin-bottom: 0.4em;
   background: #fff;
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.6em;
+  gap: 0.4em 0.6em;
 }
 .report-key {
   font-weight: 600;
@@ -318,6 +381,7 @@ async function onDelete(report: Report): Promise<void> {
   gap: 0.5em;
   flex-wrap: wrap;
   flex: 1;
+  min-width: 0;
 }
 .tag-chip {
   background: #e3f2fd;
@@ -330,6 +394,55 @@ async function onDelete(report: Report): Promise<void> {
 .report-date {
   font-size: 0.8em;
   color: #78909c;
+}
+.report-latest {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding-top: 0.3em;
+  border-top: 1px solid #eceff1;
+  margin-top: 0.1em;
+}
+.report-latest-empty {
+  border-top-color: transparent;
+}
+.latest-metrics {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  flex-wrap: wrap;
+}
+.metric-chip {
+  font-size: 0.75em;
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+  background: #eceff1;
+  color: #455a64;
+  font-family: ui-monospace, monospace;
+  white-space: nowrap;
+}
+.metric-good {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.metric-warn {
+  background: #fff8e1;
+  color: #f57f17;
+}
+.metric-bad {
+  background: #ffebee;
+  color: #c62828;
+}
+.latest-date {
+  font-size: 0.75em;
+  color: #90a4ae;
+  white-space: nowrap;
+}
+.latest-empty {
+  font-size: 0.75em;
+  color: #b0bec5;
+  font-style: italic;
 }
 .report-actions {
   display: flex;
@@ -433,6 +546,28 @@ async function onDelete(report: Report): Promise<void> {
   .report-item {
     background: #1e2a32;
     border-color: #455a64;
+  }
+  .report-latest {
+    border-top-color: #37474f;
+  }
+  .metric-chip {
+    background: #37474f;
+    color: #cfd8dc;
+  }
+  .metric-good {
+    background: #1b5e20;
+    color: #a5d6a7;
+  }
+  .metric-warn {
+    background: #e65100;
+    color: #ffe0b2;
+  }
+  .metric-bad {
+    background: #b71c1c;
+    color: #ef9a9a;
+  }
+  .latest-empty {
+    color: #546e7a;
   }
   .report-key {
     color: #82b1ff;

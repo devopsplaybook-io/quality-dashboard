@@ -124,13 +124,15 @@ function getValuesForTag(tagName: string): string[] {
 onMounted(async () => {
   await applicationSettingsStore.refresh();
   const isAuth = await AuthService.isAuthenticated();
-  if (
-    !isAuth &&
-    applicationSettingsStore.isInitialized &&
-    !applicationSettingsStore.isDashboardPublic
-  ) {
-    router.push({ path: "/users/login" });
-    return;
+  if (!isAuth) {
+    if (!applicationSettingsStore.isInitialized) {
+      router.push({ path: "/users/initialize" });
+      return;
+    }
+    if (!applicationSettingsStore.isDashboardPublic) {
+      router.push({ path: "/users/login" });
+      return;
+    }
   }
   await Promise.all([tagsStore.fetchAll(), refresh()]);
 });

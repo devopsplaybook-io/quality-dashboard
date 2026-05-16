@@ -92,8 +92,17 @@ export class ReportsRoutes {
         span,
         reports.map((r) => r.key),
       );
+      const latestVersions =
+        await ReportsRepository.listLatestVersionsPerReport(span);
+      const latestByKey = new Map(latestVersions.map((v) => [v.reportKey, v]));
       return res.status(200).send({
-        reports: reports.map((r) => toApiReport(r, tagsByKey.get(r.key) || [])),
+        reports: reports.map((r) =>
+          toApiReport(
+            r,
+            tagsByKey.get(r.key) || [],
+            latestByKey.get(r.key) || null,
+          ),
+        ),
       });
     });
 
@@ -323,13 +332,23 @@ export class ReportsRoutes {
 function toApiReport(
   report: Report,
   tags: { tag: string; value: string }[],
+  latestVersion: ReportVersion | null = null,
 ): Record<string, unknown> {
-  return {
+  const result: Record<string, unknown> = {
     key: report.key,
     displayName: report.displayName,
     dateCreated: report.dateCreated.toISOString(),
     tags: tags.map(toApiTag),
   };
+  if (latestVersion) {
+    result.latestVersion = {
+      id: latestVersion.id,
+      processor: latestVersion.processor,
+      metrics: latestVersion.metrics,
+      dateCreated: latestVersion.dateCreated.toISOString(),
+    };
+  }
+  return result;
 }
 
 function toApiTag(t: { tag: string; value: string }): {

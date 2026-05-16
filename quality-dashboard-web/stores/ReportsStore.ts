@@ -20,6 +20,12 @@ export interface Report {
   displayName: string | null;
   dateCreated: string;
   tags: ReportTag[];
+  latestVersion?: {
+    id: string;
+    processor: string;
+    metrics: Metric[];
+    dateCreated: string;
+  };
 }
 
 /** One upload of a Report. */
