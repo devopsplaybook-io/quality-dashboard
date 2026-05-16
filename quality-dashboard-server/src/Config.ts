@@ -22,7 +22,7 @@ export class Config implements ConfigOTelInterface {
   public CORS_POLICY_ORIGIN: string;
   public TMP_DIR = process.env.TMP_DIR || "/tmp";
   public DATA_DIR = process.env.DATA_DIR || "/data";
-  public REPORT_DIR = process.env.DATA_DIR + "/reports" || "/data/reports";
+  public REPORT_DIR = this.DATA_DIR + "/reports";
   public JWT_KEY: string = uuidv4();
   public LOG_LEVEL = "info";
   public PROCESSORS_CUSTOM_DIR = path.join(__dirname, "../processors_custom");
@@ -34,31 +34,33 @@ export class Config implements ConfigOTelInterface {
   );
 
   // OpenTelemetry configuration
-  public OPENTELEMETRY_COLLECTOR_HTTP_TRACES: string =
-    process.env.OPENTELEMETRY_COLLECTOR_HTTP_TRACES ||
-    process.env.OPENTELEMETRY_COLLECTOR_HTTP ||
-    "";
-  public OPENTELEMETRY_COLLECTOR_HTTP_METRICS: string =
-    process.env.OPENTELEMETRY_COLLECTOR_HTTP_METRICS || "";
-  public OPENTELEMETRY_COLLECTOR_HTTP_LOGS: string =
-    process.env.OPENTELEMETRY_COLLECTOR_HTTP_LOGS || "";
+  public OPENTELEMETRY_COLLECTOR_HTTP_TRACES: string = "";
+  public OPENTELEMETRY_COLLECTOR_HTTP_METRICS: string = "";
+  public OPENTELEMETRY_COLLECTOR_HTTP_LOGS: string = "";
   public OPENTELEMETRY_COLLECTOR_EXPORT_LOGS_INTERVAL_SECONDS: number = 5;
   public OPENTELEMETRY_COLLECTOR_EXPORT_METRICS_INTERVAL_SECONDS: number = 10;
-  public OPENTELEMETRY_COLLECTOR_AWS =
-    process.env.OPENTELEMETRY_COLLECTOR_AWS === "true";
-  public OPENTELEMETRY_COLLECT_AUTHORIZATION_HEADER =
-    process.env.OPENTELEMETRY_COLLECT_AUTHORIZATION_HEADER || "";
+  public OPENTELEMETRY_COLLECTOR_AWS = false;
+  public OPENTELEMETRY_COLLECT_AUTHORIZATION_HEADER: string = "";
 
   public async reload(): Promise<void> {
     const content = await fse.readJson(this.CONFIG_FILE);
     const setIfSet = (field: string, displayLog = true) => {
-      if (content[field]) {
+      let fromEnv = "defaults";
+      if (process.env[field]) {
+        this[field] = process.env[field];
+        fromEnv = "environment";
+      } else if (content[field]) {
         this[field] = content[field];
+        fromEnv = "config";
       }
       if (displayLog) {
-        logger.info(`Configuration Value: ${field}: ${this[field]}`);
+        logger.info(
+          `Configuration Value: ${field}: ${this[field]} (from ${fromEnv})`,
+        );
       } else {
-        logger.info(`Configuration Value: ${field}: ********************`);
+        logger.info(
+          `Configuration Value: ${field}: ******************** (from ${fromEnv})`,
+        );
       }
     };
     logger.info(`Configuration Value: CONFIG_FILE: ${this.CONFIG_FILE}`);
@@ -71,7 +73,12 @@ export class Config implements ConfigOTelInterface {
     setIfSet("PROCESSORS_CUSTOM_DIR");
     setIfSet("PROCESSOR_TIMEOUT_MS");
     setIfSet("MAX_UPLOAD_BYTES");
-    setIfSet("OPENTELEMETRY_COLLECTOR_HTTP");
+    setIfSet("OPENTELEMETRY_COLLECTOR_HTTP_TRACES");
+    setIfSet("OPENTELEMETRY_COLLECTOR_HTTP_METRICS");
+    setIfSet("OPENTELEMETRY_COLLECTOR_HTTP_LOGS");
+    setIfSet("OPENTELEMETRY_COLLECTOR_EXPORT_LOGS_INTERVAL_SECONDS");
+    setIfSet("OPENTELEMETRY_COLLECTOR_EXPORT_METRICS_INTERVAL_SECONDS");
     setIfSet("OPENTELEMETRY_COLLECTOR_AWS");
+    setIfSet("OPENTELEMETRY_COLLECT_AUTHORIZATION_HEADER", false);
   }
 }

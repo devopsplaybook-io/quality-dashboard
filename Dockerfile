@@ -25,6 +25,7 @@ RUN apk add --no-cache gzip
 COPY --from=builder /opt/src/quality-dashboard-server/node_modules /opt/app/quality-dashboard/node_modules
 COPY --from=builder /opt/src/quality-dashboard-server/dist /opt/app/quality-dashboard/dist
 COPY --from=builder /opt/src/quality-dashboard-web/.output/public /opt/app/quality-dashboard/web
+COPY quality-dashboard-server/processors_system /opt/app/quality-dashboard/processors_system
 COPY quality-dashboard-server/config.json /opt/app/quality-dashboard/config.json
 COPY quality-dashboard-server/sql /opt/app/quality-dashboard/sql
 
