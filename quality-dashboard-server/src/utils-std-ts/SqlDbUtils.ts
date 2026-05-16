@@ -18,8 +18,32 @@ export async function SqlDbUtilsInit(
   await fs.ensureDir(config.DATA_DIR);
   database = new Database(`${config.DATA_DIR}/database.db`);
   SqlDbUtilsExecSQLFile(span, `${SQL_DIR}/init-0000.sql`);
-  SqlDbUtilsExecSQLFile(span, `${SQL_DIR}/init-0001.sql`);
-  SqlDbUtilsExecSQLFile(span, `${SQL_DIR}/init-schema.sql`);
+  const initFiles = (await fs.readdir(`${SQL_DIR}`)).sort();
+  let dbVersionApplied = 0;
+  const dbVersionQuery = SqlDbUtilsQuerySQL(
+    span,
+    "SELECT MAX(value) as maxVerion FROM metadata WHERE type='db_version'",
+  );
+  if (dbVersionQuery[0].maxVerion) {
+    dbVersionApplied = Number(dbVersionQuery[0].maxVerion);
+  }
+  logger.info(`Current DB Version: ${dbVersionApplied}`, span);
+  for (const initFile of initFiles) {
+    const regex = /init-(\d+).sql/g;
+    const match = regex.exec(initFile);
+    if (match) {
+      const dbVersionInitFile = Number(match[1]);
+      if (dbVersionInitFile > dbVersionApplied) {
+        logger.info(`Loading init file: ${initFile}`, span);
+        SqlDbUtilsExecSQLFile(span, `${SQL_DIR}/${initFile}`);
+        SqlDbUtilsExecSQL(
+          span,
+          "INSERT INTO metadata (type, value, dateCreated) VALUES ('db_version',?,?)",
+          [dbVersionInitFile, new Date().toISOString()],
+        );
+      }
+    }
+  }
   span.end();
 }
 
