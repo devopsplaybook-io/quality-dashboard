@@ -6,6 +6,7 @@ import fastifyStatic from "@fastify/static";
 import Fastify from "fastify";
 import * as fse from "fs-extra";
 import { watchFile } from "fs-extra";
+import * as path from "path";
 import { Config } from "./Config";
 import {
   OTelLogger,
