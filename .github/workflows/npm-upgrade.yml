@@ -13,4 +13,4 @@ jobs:
       contents: write
       pull-requests: write
     with:
-      npm_services: '["quality-dashboard-proxy", "quality-dashboard-server", "quality-dashboard-web"]'
+      npm_services: '["otel-light-proxy", "otel-light-server", "otel-light-web"]'
