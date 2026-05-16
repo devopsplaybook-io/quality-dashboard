@@ -7,7 +7,7 @@
     "lint": "eslint src || true",
     "test": "jest --coverage || true",
     "test:dev": "jest --watch --coverage",
-    "dev": "ts-node-dev ./src/app.ts"
+    "dev": "ts-node-dev ./src/App.ts"
   },
   "dependencies": {
     "@devopsplaybook.io/otel-utils": "^1.0.18",
