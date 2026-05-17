@@ -121,15 +121,79 @@ trivy image --format html -o report.html my-image:latest
 
 ---
 
+## `kyverno-reports.sh`
+
+Uploads a **Kyverno** PolicyReport YAML file. Sends the output of
+`kubectl get polr -o yaml` (or `kubectl get cpolr -o yaml`) to the
+[`kyverno`](/README.md) processor, which parses the reports and extracts
+pass/fail/warn/error audit counts.
+
+### Extra Parameters
+
+| Argument        | Description                                      | Required |
+| --------------- | ------------------------------------------------ | -------- |
+| `-file`         | Path to existing Kyverno PolicyReport YAML       | no\*     |
+| `-namespace`    | Kubernetes namespace to fetch PolicyReports from | no\*     |
+| `-cluster-wide` | Fetch ClusterPolicyReports (flag, no value)      | no\*     |
+
+**\*** Either `-file` or `-namespace` / `-cluster-wide` must be provided.
+
+### Examples
+
+**Upload a pre-existing YAML file:**
+
+```bash
+kubectl get polr -n default -o yaml > reports.yaml
+
+./scripts/kyverno-reports.sh \
+  -key kyverno/policyreports/ns/default \
+  -file reports.yaml \
+  -server http://localhost:8080 \
+  -token s3cr3t
+```
+
+**Fetch from a namespace and upload in one step:**
+
+```bash
+./scripts/kyverno-reports.sh \
+  -key kyverno/policyreports/ns/default \
+  -namespace default \
+  -server http://localhost:8080 \
+  -token s3cr3t
+```
+
+**Upload ClusterPolicyReports with custom display name:**
+
+```bash
+./scripts/kyverno-reports.sh \
+  -key kyverno/clusterpolicyreports \
+  -cluster-wide \
+  -display-name "Kyverno ClusterPolicyReports" \
+  -server http://localhost:8080 \
+  -token s3cr3t
+```
+
+**With environment variables:**
+
+```bash
+export QD_SERVER=http://localhost:8080
+export QD_TOKEN=s3cr3t
+
+./scripts/kyverno-reports.sh -key kyverno/policyreports/ns/default -namespace default
+```
+
+---
+
 ## Processors Reference
 
 The metrics extracted by each script correspond to these quality-dashboard
 system processors:
 
-| Script          | Processor    | Source                            |
-| --------------- | ------------ | --------------------------------- |
-| `npm-audit.sh`  | `json`       | `processors_system/json.js`       |
-| `trivy-scan.sh` | `trivy-html` | `processors_system/trivy-html.js` |
+| Script               | Processor    | Source                            |
+| -------------------- | ------------ | --------------------------------- |
+| `npm-audit.sh`       | `json`       | `processors_system/json.js`       |
+| `trivy-scan.sh`      | `trivy-html` | `processors_system/trivy-html.js` |
+| `kyverno-reports.sh` | `kyverno`    | `processors_system/kyverno.js`    |
 
 For custom processors or additional upload scenarios, refer to the
 [quality-dashboard documentation](/README.md).

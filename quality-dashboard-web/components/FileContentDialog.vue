@@ -4,14 +4,13 @@
       <div class="file-content-header">
         <h3 class="file-content-title">{{ fileName }}</h3>
         <div class="file-content-header-actions">
-          <a
-            :href="downloadUrl"
+          <button
             class="btn-primary"
-            download
             title="Download file"
+            @click="downloadFile"
           >
             <i class="bi bi-download"></i> Download
-          </a>
+          </button>
           <button class="btn-secondary" title="Close" @click="$emit('close')">
             <i class="bi bi-x-lg"></i>
           </button>
@@ -33,6 +32,33 @@
 <script setup lang="ts">
 import { AuthService } from "~~/services/AuthService";
 import axios from "axios";
+
+async function downloadFile(): Promise<void> {
+  try {
+    const token = await AuthService.getToken();
+    if (!token) {
+      window.open(props.downloadUrl, "_blank");
+      return;
+    }
+    const response = await fetch(props.fileUrl + "?download=1", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      throw new Error(`Download failed (${response.status})`);
+    }
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = props.fileName || "report";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error("Download failed", err);
+  }
+}
 
 const props = defineProps<{
   visible: boolean;

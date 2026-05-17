@@ -8,16 +8,14 @@
         <span class="version-card-processor">{{ version.processor }}</span>
       </div>
       <div class="version-card-actions">
-        <a
+        <button
           v-if="version.hasFile && version.fileEntrypoint"
           class="version-card-link"
-          :href="downloadUrl"
-          rel="noopener"
           title="Download report file"
-          download
+          @click="downloadFile"
         >
           <i class="bi bi-download"></i>
-        </a>
+        </button>
         <button
           v-if="version.hasFile && version.fileEntrypoint && isTextFile"
           class="version-card-link"
@@ -74,6 +72,7 @@
 </template>
 
 <script setup lang="ts">
+import { AuthService } from "~~/services/AuthService";
 import type { ReportVersion } from "~~/stores/ReportsStore";
 import Config from "~~/services/Config";
 import { FileUtils } from "~~/services/FileUtils";
@@ -110,6 +109,33 @@ const isTextFile = computed(() => {
 });
 
 const showFileDialog = ref(false);
+
+async function downloadFile(): Promise<void> {
+  try {
+    const token = await AuthService.getToken();
+    if (!token) {
+      window.open(downloadUrl.value, "_blank");
+      return;
+    }
+    const response = await fetch(fileUrl.value + "?download=1", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      throw new Error(`Download failed (${response.status})`);
+    }
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = props.version.fileEntrypoint || "report";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error("Download failed", err);
+  }
+}
 
 function onDelete(): void {
   if (
