@@ -1,6 +1,3 @@
--- Complete database schema for quality-dashboard
--- This file creates all tables for the current design (reports with versions, tags, and dashboards)
-
 -- Logical reports (stable key, optional display name)
 CREATE TABLE IF NOT EXISTS reports (
     key TEXT PRIMARY KEY NOT NULL,
@@ -47,12 +44,3 @@ CREATE TABLE IF NOT EXISTS report_tags (
 
 CREATE INDEX IF NOT EXISTS idx_report_tags_tag ON report_tags(tag);
 CREATE INDEX IF NOT EXISTS idx_report_tags_tag_value ON report_tags(tag, value);
-
--- User-defined dashboards with ordered levels
-CREATE TABLE IF NOT EXISTS dashboards (
-    id TEXT PRIMARY KEY NOT NULL,
-    name TEXT NOT NULL,
-    levels TEXT NOT NULL DEFAULT '[]',
-    date_created TEXT NOT NULL,
-    date_modified TEXT NOT NULL
-);

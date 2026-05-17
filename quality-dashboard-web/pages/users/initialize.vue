@@ -89,7 +89,11 @@ async function createAdmin() {
       password: account.password,
     });
     AuthService.saveToken(loginRes.data.token);
-    AlertService.send({ text: "User Created", type: "info" });
+    await AuthenticationStore().refreshFromToken();
+    EventBus.emit(EventTypes.ALERT_MESSAGE, {
+      text: "User Created",
+      type: "info",
+    });
     router.push({ path: "/settings" });
   } catch (err) {
     handleError(err);

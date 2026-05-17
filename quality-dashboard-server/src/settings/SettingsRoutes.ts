@@ -34,9 +34,10 @@ export class SettingsRoutes {
     fastify.put<UpdateSettingsRequest>("/", async (req, res) => {
       logger.info(`[${req.method}] ${req.url}`);
       const context = OTelRequestSpan(req);
-      const userSession = await Auth.getUserSession(req);
-      if (!userSession.isAuthenticated) {
-        return res.status(403).send({ error: "Access Denied" });
+      try {
+        await Auth.mustBeAdmin(req, res);
+      } catch {
+        return;
       }
       const next = await SettingsDB.update(context, {
         isDashboardPublic: req.body.isDashboardPublic,

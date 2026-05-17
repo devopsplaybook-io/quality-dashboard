@@ -1,1 +1,0 @@
-{"metrics":[{"name":"certificates_checked","type":"count","value":6},{"name":"expiring_within_30d","type":"count","value":1},{"name":"expiring_within_7d","type":"count","value":0},{"name":"expired","type":"count","value":0},{"name":"oldest_expiry_days","type":"duration","value":23}]}

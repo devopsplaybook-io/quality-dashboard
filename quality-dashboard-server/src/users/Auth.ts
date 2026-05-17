@@ -42,6 +42,8 @@ export class Auth {
         exp: Math.floor(Date.now() / 1000) + config.JWT_VALIDITY_DURATION,
         userId: user.id,
         userName: user.name,
+        role: user.role,
+        permissions: user.permissions,
       },
       config.JWT_KEY,
     );
@@ -65,6 +67,25 @@ export class Auth {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public static async mustBeAdmin(req: any, res: any): Promise<void> {
+    if (req.headers.authorization) {
+      try {
+        const info = jwt.verify(
+          req.headers.authorization.split(" ")[1],
+          config.JWT_KEY,
+        );
+        if (info.role === "admin") {
+          return;
+        }
+      } catch (err) {
+        // fall through
+      }
+    }
+    res.status(403).send({ error: "Access Denied" });
+    throw new Error("Access Denied");
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static async getUserSession(req: any): Promise<UserSession> {
     const userSession: UserSession = { isAuthenticated: false };
     if (req.headers.authorization) {
@@ -74,6 +95,9 @@ export class Auth {
           config.JWT_KEY,
         );
         userSession.userId = info.userId;
+        userSession.userName = info.userName;
+        userSession.role = info.role;
+        userSession.permissions = info.permissions;
         userSession.isAuthenticated = true;
       } catch (err) {
         logger.error(err);

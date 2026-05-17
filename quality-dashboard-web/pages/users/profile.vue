@@ -24,6 +24,15 @@
         <p class="section-desc">Update your account password.</p>
 
         <div class="field-row">
+          <label class="field-label">Current Password</label>
+          <input
+            type="password"
+            v-model="oldPassword"
+            placeholder="Enter current password"
+            class="field-input"
+          />
+        </div>
+        <div class="field-row">
           <label class="field-label">New Password</label>
           <input
             type="password"
@@ -47,12 +56,13 @@
 <script setup lang="ts">
 import axios from "axios";
 import Config from "~~/services/Config.ts";
-import { handleError } from "~~/services/EventBus";
+import { handleError, EventBus, EventTypes } from "~~/services/EventBus";
 import { AuthService } from "~~/services/AuthService";
 
 const router = useRouter();
 
 const newPassword = ref("");
+const oldPassword = ref("");
 const saving = ref(false);
 
 onMounted(async () => {
@@ -68,18 +78,25 @@ function logout() {
 
 async function changePassword() {
   if (!newPassword.value) {
-    AlertService.send({ text: "Password is required", type: "error" });
+    EventBus.emit(EventTypes.ALERT_MESSAGE, {
+      text: "Password is required",
+      type: "error",
+    });
     return;
   }
   saving.value = true;
   try {
     await axios.put(
       `${(await Config.get()).SERVER_URL}/users/password`,
-      { password: newPassword.value },
+      { password: newPassword.value, passwordOld: oldPassword.value },
       await AuthService.getAuthHeader(),
     );
-    AlertService.send({ text: "Password updated", type: "info" });
+    EventBus.emit(EventTypes.ALERT_MESSAGE, {
+      text: "Password updated",
+      type: "info",
+    });
     newPassword.value = "";
+    oldPassword.value = "";
   } catch (err) {
     handleError(err);
   } finally {

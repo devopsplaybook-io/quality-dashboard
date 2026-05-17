@@ -57,7 +57,7 @@
       >
         <ReportCard
           :report="report"
-          :show-actions="authenticationStore.isAuthenticated"
+          :show-actions="authenticationStore.canConfigureReportTags"
           @edit="openEdit"
           @delete="onDelete"
         />
@@ -339,6 +339,11 @@ async function onDelete(report: Report): Promise<void> {
   background: #1976d2;
   color: #fff;
   border-color: #1976d2;
+}
+.reports-loading,
+.reports-search {
+  height: 2.5rem;
+  margin-bottom: 0;
 }
 @media (prefers-color-scheme: dark) {
   .reports-refresh {

@@ -1,5 +1,16 @@
 import { jwtDecode } from "jwt-decode";
 
+export interface JwtTokenInfo {
+  userId: string;
+  userName: string;
+  role: string;
+  permissions: {
+    canConfigureDashboards: boolean;
+    canConfigureReportTags: boolean;
+  };
+  exp: number;
+}
+
 const AUTH_TOKEN_KEY = "auth_token";
 
 export class AuthService {
@@ -16,7 +27,7 @@ export class AuthService {
     await localStorage.setItem(AUTH_TOKEN_KEY, token);
   }
 
-  public static async removeToken(token: string): Promise<void> {
+  public static async removeToken(): Promise<void> {
     await localStorage.removeItem(AUTH_TOKEN_KEY);
   }
 
@@ -35,13 +46,43 @@ export class AuthService {
     }
   }
 
-  public static async getTokenInfo() {
+  public static async getTokenInfo(): Promise<JwtTokenInfo | null> {
     const storedKey = localStorage.getItem(AUTH_TOKEN_KEY);
     if (storedKey) {
-      return jwtDecode(storedKey);
+      try {
+        const decoded: any = jwtDecode(storedKey);
+        if (decoded.exp < Date.now() / 1000) {
+          localStorage.removeItem(AUTH_TOKEN_KEY);
+          return null;
+        }
+        return decoded as JwtTokenInfo;
+      } catch {
+        return null;
+      }
     } else {
       return null;
     }
+  }
+
+  public static async isAdmin(): Promise<boolean> {
+    const info = await AuthService.getTokenInfo();
+    return info?.role === "admin";
+  }
+
+  public static async canConfigureDashboards(): Promise<boolean> {
+    const info = await AuthService.getTokenInfo();
+    if (!info) return false;
+    return (
+      info.role === "admin" || info.permissions?.canConfigureDashboards === true
+    );
+  }
+
+  public static async canConfigureReportTags(): Promise<boolean> {
+    const info = await AuthService.getTokenInfo();
+    if (!info) return false;
+    return (
+      info.role === "admin" || info.permissions?.canConfigureReportTags === true
+    );
   }
 
   public static async getAuthHeader(): Promise<any> {

@@ -2,7 +2,9 @@
   <nav>
     <ul class="menu-links">
       <li>
-        <NuxtLink to="/"><strong>QualityDashboard</strong></NuxtLink>
+        <NuxtLink to="/"
+          ><img src="/icon.svg" alt="QualityDashboard" class="nav-logo"
+        /></NuxtLink>
         <span v-if="pageTitle" class="breadcrumb">
           <span class="breadcrumb-sep">&gt;</span>
           <span class="breadcrumb-title">{{ pageTitle }}</span>
@@ -38,7 +40,7 @@
             ><i class="bi bi-person-circle"></i
           ></NuxtLink>
         </li>
-        <li v-if="authenticationStore.isAuthenticated">
+        <li v-if="authenticationStore.isAdmin">
           <NuxtLink to="/settings"><i class="bi bi-gear-fill"></i></NuxtLink>
         </li>
       </template>
@@ -84,6 +86,7 @@ onMounted(async () => {
         )
         .then((res) => {
           AuthService.saveToken(res.data.token);
+          authenticationStore.refreshFromToken();
         });
     }, 10000);
   }
@@ -91,14 +94,20 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.nav-logo {
+  height: 1.6em;
+  width: auto;
+  vertical-align: middle;
+}
 .menu-links {
   display: flex;
   align-items: center;
   gap: 0;
+  height: 2rem;
 }
 .menu-links li {
   padding-right: 1em;
-  font-size: 1.2em;
+  font-size: 1em;
   display: flex;
   align-items: center;
 }

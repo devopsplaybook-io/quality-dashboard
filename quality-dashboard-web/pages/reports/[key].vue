@@ -81,12 +81,15 @@
             :value-suggestions="tagsStore.valuesForTag(t.tag)"
             tag-placeholder="tag"
             value-placeholder="value"
-            :disabled="!authenticationStore.isAuthenticated"
-            :removable="authenticationStore.isAuthenticated"
+            :disabled="!authenticationStore.canConfigureReportTags"
+            :removable="authenticationStore.canConfigureReportTags"
             @remove="removeTagRow(i)"
           />
         </div>
-        <div v-if="authenticationStore.isAuthenticated" class="tag-actions">
+        <div
+          v-if="authenticationStore.canConfigureReportTags"
+          class="tag-actions"
+        >
           <button class="btn-secondary" @click="addTagRow">
             <i class="bi bi-plus"></i> Add tag
           </button>

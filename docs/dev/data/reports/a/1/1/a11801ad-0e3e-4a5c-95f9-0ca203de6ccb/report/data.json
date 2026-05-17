@@ -1,1 +1,0 @@
-{"metrics":[{"name":"lines","type":"percentage","value":82.4},{"name":"branches","type":"percentage","value":76.1},{"name":"functions","type":"percentage","value":88.9},{"name":"statements","type":"percentage","value":81.7},{"name":"uncovered_lines","type":"count","value":1240}]}

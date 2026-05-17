@@ -1,0 +1,35 @@
+{
+  "id": "4ecb35b3-9a39-4771-8962-7889c81b955c",
+  "reportKey": "quality-dashboard/api/latency",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "p50_ms",
+      "type": "duration",
+      "value": 45
+    },
+    {
+      "name": "p95_ms",
+      "type": "duration",
+      "value": 210
+    },
+    {
+      "name": "p99_ms",
+      "type": "duration",
+      "value": 580
+    },
+    {
+      "name": "requests_per_minute",
+      "type": "count",
+      "value": 1420
+    },
+    {
+      "name": "error_rate",
+      "type": "percentage",
+      "value": 0.3
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-17T09:25:02.763Z"
+}

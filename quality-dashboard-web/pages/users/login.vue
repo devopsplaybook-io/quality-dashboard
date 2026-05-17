@@ -74,6 +74,7 @@ async function login() {
   try {
     const res = await UserService.login(account.name, account.password);
     AuthService.saveToken(res.data.token);
+    await AuthenticationStore().refreshFromToken();
     router.push({ path: "/" });
   } catch (err) {
     handleError(err);

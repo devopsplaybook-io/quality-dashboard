@@ -34,7 +34,7 @@ onUnmounted(() => {
 #page-layout {
   height: var(--app-height, 100dvh);
   display: grid;
-  grid-template-rows: 4em 1fr;
+  grid-template-rows: 2.5em 1fr;
   overflow: hidden !important;
   width: 100vw;
 }

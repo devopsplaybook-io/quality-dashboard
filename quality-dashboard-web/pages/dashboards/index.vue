@@ -41,7 +41,7 @@
           <i class="bi bi-chevron-right"></i>
         </button>
         <button
-          v-if="authenticationStore.isAuthenticated"
+          v-if="authenticationStore.canConfigureDashboards"
           class="btn-primary"
           @click="openCreate"
         >
@@ -80,7 +80,7 @@
                 <i class="bi bi-arrows-collapse"></i>
               </button>
               <button
-                v-if="authenticationStore.isAuthenticated"
+                v-if="authenticationStore.canConfigureDashboards"
                 class="icon-btn"
                 @click="openEdit(selectedData.dashboard)"
                 title="Edit dashboard"
@@ -88,7 +88,7 @@
                 <i class="bi bi-pencil"></i>
               </button>
               <button
-                v-if="authenticationStore.isAuthenticated"
+                v-if="authenticationStore.canConfigureDashboards"
                 class="icon-btn danger"
                 @click="deleteSelected"
                 title="Delete dashboard"

@@ -1,1 +1,0 @@
-{"metrics":[{"name":"total_minutes","type":"duration","value":8.5},{"name":"setup_seconds","type":"duration","value":23},{"name":"test_seconds","type":"duration","value":184},{"name":"build_seconds","type":"duration","value":127},{"name":"deploy_seconds","type":"duration","value":45},{"name":"queued_seconds","type":"duration","value":12}]}

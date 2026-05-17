@@ -9,9 +9,7 @@
       <span v-for="tag in report.tags" :key="tag.tag" class="tag-chip">
         {{ tag.tag }}={{ tag.value }}
       </span>
-      <span class="report-card-date">{{
-        formatDate(report.dateCreated)
-      }}</span>
+      <span class="report-card-date">{{ formatDate(report.dateCreated) }}</span>
     </div>
     <div v-if="report.latestVersion" class="report-card-body">
       <span class="report-card-metrics">
@@ -126,6 +124,9 @@ function relativeDate(iso: string): string {
   border-radius: 4px;
   background: #fff;
   cursor: pointer;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
@@ -137,6 +138,7 @@ function relativeDate(iso: string): string {
 .report-card-header {
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 .report-card-title {
   font-weight: 600;

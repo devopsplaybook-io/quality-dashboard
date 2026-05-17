@@ -1,9 +1,17 @@
 <template>
-  <span class="metric-chip" :class="`metric-chip-${metric.type}`" :title="title">
+  <span
+    class="metric-chip"
+    :class="`metric-chip-${metric.type}`"
+    :title="title"
+  >
     <span class="metric-chip-name">{{ metric.name }}</span>
     <span class="metric-chip-value">
-      <template v-if="metric.type === 'percentage'">{{ formatPercentage(metric.value) }}</template>
-      <template v-else-if="metric.type === 'duration'">{{ formatDuration(metric.value) }}</template>
+      <template v-if="metric.type === 'percentage'">{{
+        formatPercentage(metric.value)
+      }}</template>
+      <template v-else-if="metric.type === 'duration'">{{
+        formatDuration(metric.value)
+      }}</template>
       <template v-else-if="metric.type === 'boolean'">
         <i v-if="metric.value" class="bi bi-check-circle-fill"></i>
         <i v-else class="bi bi-x-circle-fill"></i>
