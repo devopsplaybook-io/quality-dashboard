@@ -1,59 +1,197 @@
 <template>
-  <div class="page">
-    <h2>User</h2>
-    <div class="form">
-      <div class="form-label">Username:</div>
-      <div class="form-field">
-        <input type="name" v-model="account.name" />
+  <div class="page users-page">
+    <div class="users-card">
+      <div class="users-section">
+        <h3 class="section-title">
+          <i class="bi bi-box-arrow-in-right"></i>
+          Sign In
+        </h3>
+        <p class="section-desc">
+          Enter your credentials to access the dashboard.
+        </p>
+
+        <div class="field-row">
+          <label class="field-label">Username</label>
+          <input
+            type="text"
+            v-model="account.name"
+            placeholder="Enter username"
+            class="field-input"
+            @keyup.enter="login"
+          />
+        </div>
+        <div class="field-row">
+          <label class="field-label">Password</label>
+          <input
+            type="password"
+            v-model="account.password"
+            placeholder="Enter password"
+            class="field-input"
+            @keyup.enter="login"
+          />
+        </div>
       </div>
-      <div class="form-label">Password:</div>
-      <div class="form-field">
-        <input type="password" v-model="account.password" />
+
+      <div class="users-actions">
+        <button class="btn-primary" :disabled="loggingIn" @click="login">
+          <i class="bi bi-box-arrow-in-right"></i>
+          {{ loggingIn ? "Signing in…" : "Sign In" }}
+        </button>
       </div>
     </div>
-    <button v-on:click="login()">Login</button>
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import axios from "axios";
 import Config from "~~/services/Config.ts";
 import { handleError, EventBus, EventTypes } from "~~/services/EventBus";
 import { AuthService } from "~~/services/AuthService";
 import { UserService } from "~~/services/UserService";
 
-export default defineComponent({
-  data() {
-    return {
-      account: { password: "", name: "" },
-    };
-  },
+const router = useRouter();
 
-  async created() {
-    if (!(await UserService.isInitialized())) {
-      useRouter().push({ path: "/users/initialize" });
-    }
+const account = reactive({ name: "", password: "" });
+const loggingIn = ref(false);
 
-    await ApplicationSetttingsStore().refresh();
-  },
-  methods: {
-    async login() {
-      if (this.account.name && this.account.password) {
-        UserService.login(this.account.name, this.account.password)
-          .then((res) => {
-            AuthService.saveToken(res.data.token);
-            useRouter().push({ path: "/" });
-          })
-          .catch(handleError);
-      } else {
-        EventBus.emit(EventTypes.ALERT_MESSAGE, {
-          type: "error",
-          text: "Username or password missing",
-        });
-      }
-    },
-  },
+onMounted(async () => {
+  if (!(await UserService.isInitialized())) {
+    router.push({ path: "/users/initialize" });
+    return;
+  }
+  await ApplicationSetttingsStore().refresh();
 });
+
+async function login() {
+  if (!account.name || !account.password) {
+    EventBus.emit(EventTypes.ALERT_MESSAGE, {
+      type: "error",
+      text: "Username or password missing",
+    });
+    return;
+  }
+  loggingIn.value = true;
+  try {
+    const res = await UserService.login(account.name, account.password);
+    AuthService.saveToken(res.data.token);
+    router.push({ path: "/" });
+  } catch (err) {
+    handleError(err);
+  } finally {
+    loggingIn.value = false;
+  }
+}
 </script>
 
-<style></style>
+<style scoped>
+.users-page {
+  display: flex;
+  justify-content: center;
+  padding-top: 2em;
+}
+.users-card {
+  border: 1px solid #cfd8dc;
+  border-radius: 6px;
+  background: #fff;
+  max-width: 400px;
+  width: 100%;
+}
+.users-section {
+  padding: 1.2em 1.2em 0.6em;
+}
+.section-title {
+  margin: 0 0 0.15em;
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  color: #263238;
+}
+.section-desc {
+  margin: 0 0 1em;
+  font-size: 0.85em;
+  color: #78909c;
+}
+.field-row {
+  margin-bottom: 0.8em;
+}
+.field-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85em;
+  color: #37474f;
+  margin-bottom: 0.3em;
+}
+.field-input {
+  display: block;
+  width: 100%;
+  padding: 0.5em 0.6em;
+  border: 1px solid #cfd8dc;
+  border-radius: 4px;
+  font-size: 0.9em;
+  background: #fff;
+  color: #455a64;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.field-input:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+}
+.field-input::placeholder {
+  color: #b0bec5;
+}
+.users-actions {
+  padding: 0.8em 1.2em 1.2em;
+  display: flex;
+  justify-content: flex-end;
+}
+.btn-primary {
+  padding: 0.4em 1em;
+  border-radius: 4px;
+  border: 1px solid #1976d2;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  transition: background 0.15s;
+}
+.btn-primary:hover {
+  background: #1565c0;
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+@media (prefers-color-scheme: dark) {
+  .users-card {
+    background: #1e2a32;
+    border-color: #455a64;
+  }
+  .section-title {
+    color: #cfd8dc;
+  }
+  .section-desc {
+    color: #90a4ae;
+  }
+  .field-label {
+    color: #cfd8dc;
+  }
+  .field-input {
+    background: #263238;
+    color: #cfd8dc;
+    border-color: #455a64;
+  }
+  .field-input:focus {
+    border-color: #64b5f6;
+    box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
+  }
+  .field-input::placeholder {
+    color: #546e7a;
+  }
+}
+</style>

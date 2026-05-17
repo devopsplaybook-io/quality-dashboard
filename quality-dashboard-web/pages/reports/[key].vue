@@ -77,8 +77,8 @@
             class="tag-row"
             v-model:tag="t.tag"
             v-model:value="t.value"
-            :tag-suggestions="availableTagNames"
-            :value-suggestions="getValuesForTag(t.tag)"
+            :tag-suggestions="tagsStore.tagNames"
+            :value-suggestions="tagsStore.valuesForTag(t.tag)"
             tag-placeholder="tag"
             value-placeholder="value"
             :disabled="!authenticationStore.isAuthenticated"
@@ -126,17 +126,10 @@ const newDisplayName = ref("");
 const editableTags = ref<{ tag: string; value: string }[]>([]);
 const showHistory = ref(false);
 
-const availableTagNames = computed(() => tagsStore.allTags.map((t) => t.tag));
-
 const displayVersions = computed(() => {
   if (showHistory.value) return versions.value;
   return versions.value.length > 0 ? [versions.value[0]] : [];
 });
-
-function getValuesForTag(tagName: string): string[] {
-  const tagAgg = tagsStore.allTags.find((t) => t.tag === tagName);
-  return tagAgg ? tagAgg.values : [];
-}
 
 onMounted(async () => {
   await applicationSettingsStore.refresh();

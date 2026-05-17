@@ -1,11 +1,12 @@
 <template>
   <div class="autocomplete-wrapper" ref="wrapperRef">
     <input
-      v-model="inputValue"
+      :value="inputValue"
       :placeholder="placeholder"
       :disabled="disabled"
       @input="onInput"
       @focus="onFocus"
+      @click="onClick"
       @blur="onBlur"
       @keydown.down.prevent="highlightNext"
       @keydown.up.prevent="highlightPrev"
@@ -59,10 +60,13 @@ watch(
   (newVal) => {
     inputValue.value = newVal;
   },
+  { immediate: true },
 );
 
-function onInput(): void {
-  emit("update:modelValue", inputValue.value);
+function onInput(event: Event): void {
+  const val = (event.target as HTMLInputElement).value;
+  inputValue.value = val;
+  emit("update:modelValue", val);
   showDropdown.value = true;
   highlightedIndex.value = -1;
 }
@@ -70,6 +74,15 @@ function onInput(): void {
 function onFocus(): void {
   showDropdown.value = true;
   highlightedIndex.value = -1;
+}
+
+function onClick(): void {
+  // Re-open the dropdown when clicking an already-focused input
+  // (e.g. after a previous selection closed it)
+  if (!showDropdown.value) {
+    showDropdown.value = true;
+    highlightedIndex.value = -1;
+  }
 }
 
 function onBlur(): void {
@@ -104,7 +117,10 @@ function selectHighlighted(): void {
     highlightedIndex.value >= 0 &&
     highlightedIndex.value < filteredSuggestions.value.length
   ) {
-    selectSuggestion(filteredSuggestions.value[highlightedIndex.value]);
+    const val = filteredSuggestions.value[highlightedIndex.value] as string;
+    if (val) {
+      selectSuggestion(val);
+    }
   }
 }
 

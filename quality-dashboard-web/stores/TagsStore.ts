@@ -12,7 +12,23 @@ export const TagsStore = defineStore("TagsStore", {
   state: () => ({
     allTags: [] as TagAggregate[],
     lastError: null as string | null,
+    isLoaded: false,
   }),
+
+  getters: {
+    /** All unique tag names currently known. */
+    tagNames(): string[] {
+      return this.allTags.map((t) => t.tag);
+    },
+
+    /** Lookup known values for a given tag name. */
+    valuesForTag(): (tagName: string) => string[] {
+      return (tagName: string) => {
+        const agg = this.allTags.find((t) => t.tag === tagName);
+        return agg ? agg.values : [];
+      };
+    },
+  },
 
   actions: {
     async fetchAll(): Promise<void> {
@@ -23,9 +39,17 @@ export const TagsStore = defineStore("TagsStore", {
         );
         this.allTags = (res.data.tags || []) as TagAggregate[];
         this.lastError = null;
+        this.isLoaded = true;
       } catch (err) {
         this.lastError = (err as Error).message;
         handleError(err);
+      }
+    },
+
+    /** Only fetch tags if they have not been loaded yet. */
+    async loadIfNeeded(): Promise<void> {
+      if (!this.isLoaded || this.allTags.length === 0) {
+        await this.fetchAll();
       }
     },
 

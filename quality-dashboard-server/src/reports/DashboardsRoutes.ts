@@ -50,45 +50,37 @@ export class DashboardsRoutes {
      * required to render it: latest version per report, its tags and metrics.
      * The actual tree-building / aggregation happens client-side.
      */
-    fastify.get<{ Params: { id: string } }>(
-      "/:id/data",
-      async (req, res) => {
-        logger.info(`[${req.method}] ${req.url}`);
-        if (!(await ensureCanRead(req, res))) {
-          return;
-        }
-        const span = OTelRequestSpan(req);
-        const d = await DashboardsRepository.getById(span, req.params.id);
-        if (!d) {
-          return res.status(404).send({ error: "Dashboard not found" });
-        }
-        const latest = await ReportsRepository.listLatestVersionsPerReport(
-          span,
-        );
-        const allKeys = latest.map((v) => v.reportKey);
-        const tagsByKey = await TagsRepository.listTagsForReports(
-          span,
-          allKeys,
-        );
-        const reports = latest.map((v) => ({
-          key: v.reportKey,
-          tags: (tagsByKey.get(v.reportKey) || []).map((t) => ({
-            tag: t.tag,
-            value: t.value,
-          })),
-          metrics: v.metrics.map((m) => ({
-            name: m.name,
-            type: m.type,
-            value: m.value,
-          })),
-          dateCreated: v.dateCreated.toISOString(),
-        }));
-        return res.status(200).send({
-          dashboard: toApiDashboard(d),
-          reports,
-        });
-      },
-    );
+    fastify.get<{ Params: { id: string } }>("/:id/data", async (req, res) => {
+      logger.info(`[${req.method}] ${req.url}`);
+      if (!(await ensureCanRead(req, res))) {
+        return;
+      }
+      const span = OTelRequestSpan(req);
+      const d = await DashboardsRepository.getById(span, req.params.id);
+      if (!d) {
+        return res.status(404).send({ error: "Dashboard not found" });
+      }
+      const latest = await ReportsRepository.listLatestVersionsPerReport(span);
+      const allKeys = latest.map((v) => v.reportKey);
+      const tagsByKey = await TagsRepository.listTagsForReports(span, allKeys);
+      const reports = latest.map((v) => ({
+        key: v.reportKey,
+        tags: (tagsByKey.get(v.reportKey) || []).map((t) => ({
+          tag: t.tag,
+          value: t.value,
+        })),
+        metrics: v.metrics.map((m) => ({
+          name: m.name,
+          type: m.type,
+          value: m.value,
+        })),
+        dateCreated: v.dateCreated.toISOString(),
+      }));
+      return res.status(200).send({
+        dashboard: toApiDashboard(d),
+        reports,
+      });
+    });
 
     fastify.post<{
       Body: { name?: string; root?: DashboardLevelNode[] };

@@ -3,6 +3,10 @@
     <ul class="menu-links">
       <li>
         <NuxtLink to="/"><strong>QualityDashboard</strong></NuxtLink>
+        <span v-if="pageTitle" class="breadcrumb">
+          <span class="breadcrumb-sep">&gt;</span>
+          <span class="breadcrumb-title">{{ pageTitle }}</span>
+        </span>
       </li>
     </ul>
     <ul class="menu-links">
@@ -50,6 +54,17 @@ import axios from "axios";
 const authenticationStore = AuthenticationStore();
 const applicationSetttingsStore = ApplicationSetttingsStore();
 
+const route = useRoute();
+
+const pageTitle = computed(() => {
+  const path = route.path;
+  if (path === "/reports") return "Reports";
+  if (path === "/dashboards") return "Dashboards";
+  if (path === "/settings") return "Settings";
+  if (path.startsWith("/users/")) return "User";
+  return null;
+});
+
 const initialized = ref<boolean | null>(null);
 
 onMounted(async () => {
@@ -76,8 +91,45 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.menu-links {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
 .menu-links li {
   padding-right: 1em;
   font-size: 1.2em;
+  display: flex;
+  align-items: center;
+}
+.breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  margin-left: 0.15em;
+  font-size: 0.85em;
+  font-weight: 400;
+  color: #78909c;
+}
+.breadcrumb-sep {
+  color: #b0bec5;
+}
+.breadcrumb-title {
+  color: #546e7a;
+  max-width: 18ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (prefers-color-scheme: dark) {
+  .breadcrumb {
+    color: #90a4ae;
+  }
+  .breadcrumb-sep {
+    color: #546e7a;
+  }
+  .breadcrumb-title {
+    color: #b0bec5;
+  }
 }
 </style>

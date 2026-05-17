@@ -57,10 +57,7 @@ function aggregateMetrics(
   reportKeys: string[],
   lookup: ReportLookup,
 ): Metric[] {
-  const accum = new Map<
-    string,
-    { type: Metric["type"]; values: number[] }
-  >();
+  const accum = new Map<string, { type: Metric["type"]; values: number[] }>();
   for (const k of reportKeys) {
     const r = lookup.byKey.get(k);
     if (!r) continue;
@@ -77,7 +74,8 @@ function aggregateMetrics(
   for (const [name, e] of accum.entries()) {
     let value = 0;
     if (e.type === "percentage" || e.type === "boolean") {
-      value = e.values.reduce((a, b) => a + b, 0) / Math.max(1, e.values.length);
+      value =
+        e.values.reduce((a, b) => a + b, 0) / Math.max(1, e.values.length);
     } else {
       value = e.values.reduce((a, b) => a + b, 0);
     }
@@ -153,8 +151,7 @@ function buildNodes(
     placedHere.sort();
 
     const totalReportKeys =
-      placedHere.length +
-      childNodes.reduce((a, c) => a + c.totalReportKeys, 0);
+      placedHere.length + childNodes.reduce((a, c) => a + c.totalReportKeys, 0);
 
     const node: AggregatedNode = {
       path,

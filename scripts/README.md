@@ -24,12 +24,12 @@ apk add curl jq
 
 Every script accepts these standard named arguments:
 
-| Argument         | Description                                      | Required | Default             |
-|------------------|--------------------------------------------------|----------|---------------------|
-| `-key`           | Unique report key                                | yes      | —                   |
-| `-server`        | Quality-dashboard server base URL                | yes*     | `$QD_SERVER`        |
-| `-token`         | Upload token for authentication                  | yes*     | `$QD_TOKEN`         |
-| `-display-name`  | Human-friendly display name shown in the UI      | no       | report key          |
+| Argument        | Description                                 | Required | Default      |
+| --------------- | ------------------------------------------- | -------- | ------------ |
+| `-key`          | Unique report key                           | yes      | —            |
+| `-server`       | Quality-dashboard server base URL           | yes\*    | `$QD_SERVER` |
+| `-token`        | Upload token for authentication             | yes\*    | `$QD_TOKEN`  |
+| `-display-name` | Human-friendly display name shown in the UI | no       | report key   |
 
 **\*** The `-server` and `-token` arguments can be omitted if the corresponding
 environment variables `QD_SERVER` and `QD_TOKEN` are set. Command-line
@@ -45,13 +45,14 @@ them via the [`json`](/README.md) processor.
 
 ### Extra Parameters
 
-| Argument  | Description                                                 | Default |
-|-----------|-------------------------------------------------------------|---------|
-| `-file`   | Path to a saved npm audit JSON file                         | stdin   |
+| Argument | Description                         | Default |
+| -------- | ----------------------------------- | ------- |
+| `-file`  | Path to a saved npm audit JSON file | stdin   |
 
 ### Examples
 
 **Pipe from npm audit:**
+
 ```bash
 npm audit --json | ./scripts/npm-audit.sh \
   -key my-app \
@@ -60,6 +61,7 @@ npm audit --json | ./scripts/npm-audit.sh \
 ```
 
 **From a saved file:**
+
 ```bash
 npm audit --json > audit.json
 
@@ -71,6 +73,7 @@ npm audit --json > audit.json
 ```
 
 **With environment variables:**
+
 ```bash
 export QD_SERVER=http://localhost:8080
 export QD_TOKEN=s3cr3t
@@ -88,13 +91,14 @@ parses the report and counts vulnerabilities by severity.
 
 ### Extra Parameters
 
-| Argument  | Description                                  | Required |
-|-----------|----------------------------------------------|----------|
-| `-file`   | Path to the Trivy HTML report file           | yes      |
+| Argument | Description                        | Required |
+| -------- | ---------------------------------- | -------- |
+| `-file`  | Path to the Trivy HTML report file | yes      |
 
 ### Examples
 
 **Generate a Trivy report and upload it:**
+
 ```bash
 trivy image --format html -o report.html my-image:latest
 
@@ -106,6 +110,7 @@ trivy image --format html -o report.html my-image:latest
 ```
 
 **With environment variables:**
+
 ```bash
 export QD_SERVER=http://localhost:8080
 export QD_TOKEN=s3cr3t
@@ -121,10 +126,10 @@ trivy image --format html -o report.html my-image:latest
 The metrics extracted by each script correspond to these quality-dashboard
 system processors:
 
-| Script         | Processor      | Source                                 |
-|----------------|----------------|----------------------------------------|
-| `npm-audit.sh` | `json`         | `processors_system/json.js`            |
-| `trivy-scan.sh`| `trivy-html`   | `processors_system/trivy-html.js`      |
+| Script          | Processor    | Source                            |
+| --------------- | ------------ | --------------------------------- |
+| `npm-audit.sh`  | `json`       | `processors_system/json.js`       |
+| `trivy-scan.sh` | `trivy-html` | `processors_system/trivy-html.js` |
 
 For custom processors or additional upload scenarios, refer to the
 [quality-dashboard documentation](/README.md).

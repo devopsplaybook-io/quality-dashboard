@@ -1,16 +1,5 @@
 <template>
   <div class="page dashboards-page">
-    <div class="page-header">
-      <h2>Dashboards</h2>
-      <button
-        v-if="authenticationStore.isAuthenticated"
-        class="btn-primary"
-        @click="openCreate"
-      >
-        <i class="bi bi-plus"></i> New dashboard
-      </button>
-    </div>
-
     <div v-if="dashboardsStore.lastError && !selectedId" class="error">
       {{ dashboardsStore.lastError }}
     </div>
@@ -50,6 +39,13 @@
           title="Scroll right"
         >
           <i class="bi bi-chevron-right"></i>
+        </button>
+        <button
+          v-if="authenticationStore.isAuthenticated"
+          class="btn-primary"
+          @click="openCreate"
+        >
+          <i class="bi bi-plus"></i> New
         </button>
       </div>
 
@@ -132,14 +128,14 @@
         <label>Levels</label>
         <p class="hint">
           Build a tree of criteria. Each level is a tag (group by every value)
-          or a tag=value (filter). Add sub-levels to break a branch down further.
-          Reports are placed at their deepest matching level.
+          or a tag=value (filter). Add sub-levels to break a branch down
+          further. Reports are placed at their deepest matching level.
         </p>
 
         <DashboardLevelEditor
           v-model="editRoot"
-          :tag-names="availableTagNames"
-          :get-values-for-tag="getValuesForTag"
+          :tag-names="tagsStore.tagNames"
+          :get-values-for-tag="tagsStore.valuesForTag"
         />
 
         <p v-if="treeValidationError" class="modal-error">
@@ -155,11 +151,7 @@
           >
             <i class="bi bi-trash"></i> Delete
           </button>
-          <button
-            class="btn-primary"
-            :disabled="!canSave"
-            @click="saveEdit"
-          >
+          <button class="btn-primary" :disabled="!canSave" @click="saveEdit">
             {{ editingDashboard ? "Save" : "Create" }}
           </button>
         </div>
@@ -202,13 +194,6 @@ const loadingData = ref(false);
 
 const expandBus = reactive<ExpandBus>({ token: 0, expanded: false });
 
-const availableTagNames = computed(() => tagsStore.allTags.map((t) => t.tag));
-
-function getValuesForTag(tagName: string): string[] {
-  const tagAgg = tagsStore.allTags.find((t) => t.tag === tagName);
-  return tagAgg ? tagAgg.values : [];
-}
-
 const aggregatedTree = computed<AggregatedNode[]>(() => {
   if (!selectedData.value) return [];
   return buildDashboardTree(
@@ -221,9 +206,7 @@ const rootSummary = computed(() => {
   if (!selectedData.value) return "";
   const root = selectedData.value.dashboard.root;
   if (!root || root.length === 0) return "";
-  return root
-    .map((n) => (n.value ? `${n.tag}=${n.value}` : n.tag))
-    .join(" | ");
+  return root.map((n) => (n.value ? `${n.tag}=${n.value}` : n.tag)).join(" | ");
 });
 
 /** Walk the editor tree to find structural problems. */
@@ -395,16 +378,11 @@ async function onDeleteFromModal(): Promise<void> {
 .dashboards-page {
   padding: 0.5em 0.5em 2em;
 }
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.8em;
-}
 .dashboards-tabs-wrap {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
-  gap: 0.2em;
+  gap: 0.3em;
   margin-bottom: 0.8em;
 }
 .dashboards-tabs {

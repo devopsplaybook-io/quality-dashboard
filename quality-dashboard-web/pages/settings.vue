@@ -1,9 +1,5 @@
 <template>
   <div class="page settings-page">
-    <div class="page-header">
-      <h2>Settings</h2>
-    </div>
-
     <div class="settings-card">
       <div class="settings-section">
         <h3 class="section-title">
@@ -106,12 +102,6 @@ export default defineComponent({
 <style scoped>
 .settings-page {
   padding: 0.5em 0.5em 2em;
-}
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1em;
 }
 .settings-card {
   border: 1px solid #cfd8dc;

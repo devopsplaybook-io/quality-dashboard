@@ -1,35 +1,30 @@
 <template>
   <div class="page reports-page">
-    <div class="reports-header">
-      <h2>Reports</h2>
-      <div class="reports-actions">
-        <span v-if="reportsStore.isFetching" class="reports-loading">
-          <i class="bi bi-arrow-repeat spin"></i> Loading...
-        </span>
-        <button
-          class="reports-refresh"
-          :disabled="reportsStore.isFetching"
-          title="Refresh"
-          @click="refresh"
-        >
-          <i class="bi bi-arrow-clockwise"></i>
-        </button>
-      </div>
-    </div>
-
-    <div v-if="reportsStore.lastError" class="reports-error">
-      <i class="bi bi-exclamation-triangle-fill"></i>
-      {{ reportsStore.lastError }}
-    </div>
-
-    <div>
+    <div class="reports-toolbar">
       <input
         v-model="searchQuery"
         type="search"
         name="search"
         aria-label="Search"
         placeholder="Filter by name, key, or tag…"
+        class="reports-search"
       />
+      <span v-if="reportsStore.isFetching" class="reports-loading">
+        <i class="bi bi-arrow-repeat spin"></i> Loading...
+      </span>
+      <button
+        class="reports-refresh"
+        :disabled="reportsStore.isFetching"
+        title="Refresh"
+        @click="refresh"
+      >
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
+
+    <div v-if="reportsStore.lastError" class="reports-error">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      {{ reportsStore.lastError }}
     </div>
 
     <div
@@ -59,50 +54,13 @@
         v-for="report in filteredReports"
         :key="report.key"
         class="report-item"
-        @click="$router.push(`/reports/${encodeURIComponent(report.key)}`)"
       >
-        <span class="report-key">
-          {{ report.displayName || report.key }}
-        </span>
-        <span class="report-meta">
-          <span v-for="tag in report.tags" :key="tag.tag" class="tag-chip">
-            {{ tag.tag }}={{ tag.value }}
-          </span>
-          <span class="report-date">{{ formatDate(report.dateCreated) }}</span>
-        </span>
-        <div v-if="report.latestVersion" class="report-latest">
-          <span class="latest-metrics">
-            <MetricChip
-              v-for="metric in report.latestVersion.metrics"
-              :key="metric.name"
-              :metric="metric"
-            />
-          </span>
-          <span
-            class="latest-date"
-            :title="
-              'Latest scan: ' + formatDate(report.latestVersion.dateCreated)
-            "
-          >
-            <i class="bi bi-clock"></i>
-            {{ relativeDate(report.latestVersion.dateCreated) }}
-          </span>
-        </div>
-        <div v-else class="report-latest report-latest-empty">
-          <span class="latest-empty">No versions yet</span>
-        </div>
-        <div v-if="authenticationStore.isAuthenticated" class="report-actions">
-          <button class="icon-btn" @click.stop="openEdit(report)" title="Edit">
-            <i class="bi bi-pencil"></i>
-          </button>
-          <button
-            class="icon-btn danger"
-            @click.stop="onDelete(report)"
-            title="Delete"
-          >
-            <i class="bi bi-trash"></i>
-          </button>
-        </div>
+        <ReportCard
+          :report="report"
+          :show-actions="authenticationStore.isAuthenticated"
+          @edit="openEdit"
+          @delete="onDelete"
+        />
       </li>
     </ul>
 
@@ -117,8 +75,8 @@
           <TagEditField
             v-model:tag="t.tag"
             v-model:value="t.value"
-            :tag-suggestions="availableTagNames"
-            :value-suggestions="getValuesForTag(t.tag)"
+            :tag-suggestions="tagsStore.tagNames"
+            :value-suggestions="tagsStore.valuesForTag(t.tag)"
             tag-placeholder="tag"
             value-placeholder="value"
             removable
@@ -139,22 +97,17 @@
 
 <script setup lang="ts">
 import { AuthService } from "~~/services/AuthService";
-import type { Metric, Report } from "~~/stores/ReportsStore";
+import type { Report } from "~~/stores/ReportsStore";
 
 const reportsStore = ReportsStore();
 const tagsStore = TagsStore();
 const authenticationStore = AuthenticationStore();
 const applicationSettingsStore = ApplicationSetttingsStore();
 
-const now = ref(Date.now());
-let nowTimer: ReturnType<typeof setInterval> | null = null;
-
 const showEdit = ref(false);
 const editingReport = ref<Report | null>(null);
 const editDisplayName = ref("");
 const editTags = ref<{ tag: string; value: string }[]>([]);
-
-const availableTagNames = computed(() => tagsStore.allTags.map((t) => t.tag));
 
 const searchQuery = ref("");
 
@@ -170,39 +123,6 @@ const filteredReports = computed(() => {
   });
 });
 
-function getValuesForTag(tagName: string): string[] {
-  const tagAgg = tagsStore.allTags.find((t) => t.tag === tagName);
-  return tagAgg ? tagAgg.values : [];
-}
-
-const relativeFetched = computed(() => {
-  if (!reportsStore.lastFetched) return "";
-  const elapsed = now.value - reportsStore.lastFetched;
-  const sec = Math.floor(elapsed / 1000);
-  if (sec < 5) return "just now";
-  if (sec < 60) return `${sec}s ago`;
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min} min ago`;
-  return `${Math.floor(min / 60)} h ago`;
-});
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString() + " " + d.toLocaleTimeString();
-}
-
-function relativeDate(iso: string): string {
-  const elapsed = now.value - new Date(iso).getTime();
-  const sec = Math.floor(elapsed / 1000);
-  if (sec < 60) return "just now";
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min}m ago`;
-  const hrs = Math.floor(min / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
-}
-
 onMounted(async () => {
   await applicationSettingsStore.refresh();
   const isAuth = await AuthService.isAuthenticated();
@@ -217,17 +137,9 @@ onMounted(async () => {
     }
   }
   await Promise.all([tagsStore.fetchAll(), reportsStore.fetchReports()]);
-  nowTimer = setInterval(() => {
-    now.value = Date.now();
-  }, 30000);
 });
 
-onBeforeUnmount(() => {
-  if (nowTimer !== null) {
-    clearInterval(nowTimer);
-    nowTimer = null;
-  }
-});
+onBeforeUnmount(() => {});
 
 async function refresh(): Promise<void> {
   await Promise.all([tagsStore.fetchAll(), reportsStore.fetchReports()]);
@@ -287,23 +199,12 @@ async function onDelete(report: Report): Promise<void> {
 .reports-page {
   padding: 0.5em 0.5em 2em;
 }
-.reports-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.8em;
-  flex-wrap: wrap;
+.reports-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
   gap: 0.5em;
-}
-.reports-header h2 {
-  margin: 0;
-}
-.reports-actions {
-  display: flex;
   align-items: center;
-  gap: 0.6em;
-  font-size: 0.85em;
-  color: #607d8b;
+  margin-bottom: 0.8em;
 }
 .reports-refresh {
   background: transparent;
@@ -368,79 +269,6 @@ async function onDelete(report: Report): Promise<void> {
 }
 .report-item:hover {
   border-color: #90a4ae;
-}
-.report-key {
-  font-weight: 600;
-  color: #0d47a1;
-  text-decoration: none;
-}
-.report-key:hover {
-  text-decoration: underline;
-}
-.report-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
-  flex-wrap: wrap;
-  flex: 1;
-  min-width: 0;
-}
-.tag-chip {
-  background: #e3f2fd;
-  color: #1565c0;
-  padding: 0.15em 0.5em;
-  border-radius: 3px;
-  font-size: 0.8em;
-  font-family: ui-monospace, monospace;
-}
-.report-date {
-  font-size: 0.8em;
-  color: #78909c;
-}
-.report-latest {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 0.6em;
-  padding-top: 0.3em;
-  border-top: 1px solid #eceff1;
-  margin-top: 0.1em;
-}
-.report-latest-empty {
-  border-top-color: transparent;
-}
-.latest-metrics {
-  display: flex;
-  align-items: center;
-  gap: 0.3em;
-  flex-wrap: wrap;
-}
-.latest-date {
-  font-size: 0.75em;
-  color: #90a4ae;
-  white-space: nowrap;
-}
-.latest-empty {
-  font-size: 0.75em;
-  color: #b0bec5;
-  font-style: italic;
-}
-.report-actions {
-  display: flex;
-  gap: 0.3em;
-  flex-shrink: 0;
-}
-.icon-btn {
-  background: transparent;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  padding: 0.2em 0.5em;
-  cursor: pointer;
-  color: #455a64;
-}
-.icon-btn.danger:hover {
-  color: #c62828;
-  border-color: #c62828;
 }
 .modal {
   position: fixed;
@@ -530,44 +358,6 @@ async function onDelete(report: Report): Promise<void> {
   }
   .report-item:hover {
     border-color: #607d8b;
-  }
-  .report-latest {
-    border-top-color: #37474f;
-  }
-  .metric-chip {
-    background: #37474f;
-    color: #cfd8dc;
-  }
-  .metric-good {
-    background: #1b5e20;
-    color: #a5d6a7;
-  }
-  .metric-warn {
-    background: #e65100;
-    color: #ffe0b2;
-  }
-  .metric-bad {
-    background: #b71c1c;
-    color: #ef9a9a;
-  }
-  .latest-empty {
-    color: #546e7a;
-  }
-  .report-key {
-    color: #82b1ff;
-  }
-  .tag-chip {
-    background: #1a3a5c;
-    color: #82b1ff;
-  }
-  .icon-btn {
-    background: transparent;
-    border-color: #455a64;
-    color: #cfd8dc;
-  }
-  .icon-btn.danger:hover {
-    color: #ff6659;
-    border-color: #ff6659;
   }
   .modal-card {
     background: #1e2a32;

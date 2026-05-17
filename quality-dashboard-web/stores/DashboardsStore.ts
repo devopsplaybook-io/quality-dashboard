@@ -90,10 +90,7 @@ export const DashboardsStore = defineStore("DashboardsStore", {
       }
     },
 
-    async create(
-      name: string,
-      root: DashboardLevelNode[],
-    ): Promise<Dashboard> {
+    async create(name: string, root: DashboardLevelNode[]): Promise<Dashboard> {
       const res = await axios.post(
         `${(await Config.get()).SERVER_URL}/dashboards`,
         { name, root },
