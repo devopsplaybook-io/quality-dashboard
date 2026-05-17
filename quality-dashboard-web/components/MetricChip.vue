@@ -76,6 +76,8 @@ function formatDuration(ms: number): string {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 12ch;
+  direction: rtl;
+  text-align: left;
 }
 .metric-chip-value {
   font-variant-numeric: tabular-nums;

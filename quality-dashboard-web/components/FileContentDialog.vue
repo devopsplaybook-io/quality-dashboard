@@ -57,12 +57,13 @@ watch(
     error.value = null;
     content.value = "";
     try {
-      const res = await axios.get(props.fileUrl, await AuthService.getAuthHeader());
+      const res = await axios.get(
+        props.fileUrl,
+        await AuthService.getAuthHeader(),
+      );
       const data = res.data;
       content.value =
-        typeof data === "string"
-          ? data
-          : JSON.stringify(data, null, 2);
+        typeof data === "string" ? data : JSON.stringify(data, null, 2);
     } catch (err) {
       error.value = (err as Error).message || "Failed to load file content";
     } finally {
@@ -115,7 +116,8 @@ watch(
 .file-content-pre {
   margin: 0;
   padding: 1em;
-  font-family: ui-monospace, "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
+  font-family:
+    ui-monospace, "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
   font-size: 0.78em;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -147,8 +149,12 @@ watch(
   display: inline-block;
 }
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 .btn-primary,
 .btn-secondary {

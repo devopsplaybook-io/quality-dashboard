@@ -1,11 +1,19 @@
 export class FileUtils {
   //
   public static readonly TEXT_EXTENSIONS = [
-    "yaml", "yml",
-    "html", "htm",
-    "css", "js", "json",
-    "txt", "xml", "csv",
-    "md", "log", "svg",
+    "yaml",
+    "yml",
+    "html",
+    "htm",
+    "css",
+    "js",
+    "json",
+    "txt",
+    "xml",
+    "csv",
+    "md",
+    "log",
+    "svg",
   ];
 
   public static isTextExtension(filename: string): boolean {
@@ -14,7 +22,15 @@ export class FileUtils {
   }
 
   public static getType(file: any) {
-    const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp", "heic", "dng"];
+    const imageExtensions = [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "webp",
+      "heic",
+      "dng",
+    ];
     const videoExtensions = ["mp4", "mov", "wmv", "avi", "mkv"];
     const extension = file.filename.split(".").pop().toLowerCase();
     if (imageExtensions.includes(extension)) {
