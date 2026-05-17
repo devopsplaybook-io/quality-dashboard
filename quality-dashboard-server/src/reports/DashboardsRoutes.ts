@@ -1,26 +1,20 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { v4 as uuidv4 } from "uuid";
 import { Auth } from "../users/Auth";
 import { OTelLogger, OTelRequestSpan } from "../OTelContext";
 import { DashboardsRepository } from "./DashboardsRepository";
 import { ReportsRepository } from "./ReportsRepository";
 import { TagsRepository } from "./TagsRepository";
 import { SettingsDB } from "../settings/SettingsDB";
-import { Dashboard, DashboardLevel } from "./models/Dashboard";
-import { ReportVersion } from "./models/ReportVersion";
-import { Metric } from "./models/Metric";
-import { MetricType } from "./models/MetricType";
-import { Span } from "@opentelemetry/sdk-trace-base";
+import {
+  DASHBOARD_SCHEMA_VERSION,
+  Dashboard,
+  DashboardLevelNode,
+} from "./models/Dashboard";
 
 const logger = OTelLogger().createModuleLogger("DashboardsRoutes");
 
-interface AggregatedNode {
-  /** "tag=value" or just "tag" if level has no fixed value (becomes the group key per value) */
-  label: string;
-  level: number;
-  reportKeys: string[];
-  metrics: Metric[];
-  children: AggregatedNode[];
-}
+const MAX_TREE_DEPTH = 8;
 
 export class DashboardsRoutes {
   //
@@ -51,9 +45,13 @@ export class DashboardsRoutes {
       return res.status(200).send({ dashboard: toApiDashboard(d) });
     });
 
-    /** Compute the aggregated view of a dashboard (latest version per report). */
+    /**
+     * Return the dashboard definition together with the raw building blocks
+     * required to render it: latest version per report, its tags and metrics.
+     * The actual tree-building / aggregation happens client-side.
+     */
     fastify.get<{ Params: { id: string } }>(
-      "/:id/aggregate",
+      "/:id/data",
       async (req, res) => {
         logger.info(`[${req.method}] ${req.url}`);
         if (!(await ensureCanRead(req, res))) {
@@ -64,16 +62,36 @@ export class DashboardsRoutes {
         if (!d) {
           return res.status(404).send({ error: "Dashboard not found" });
         }
-        const tree = await aggregateDashboard(span, d);
+        const latest = await ReportsRepository.listLatestVersionsPerReport(
+          span,
+        );
+        const allKeys = latest.map((v) => v.reportKey);
+        const tagsByKey = await TagsRepository.listTagsForReports(
+          span,
+          allKeys,
+        );
+        const reports = latest.map((v) => ({
+          key: v.reportKey,
+          tags: (tagsByKey.get(v.reportKey) || []).map((t) => ({
+            tag: t.tag,
+            value: t.value,
+          })),
+          metrics: v.metrics.map((m) => ({
+            name: m.name,
+            type: m.type,
+            value: m.value,
+          })),
+          dateCreated: v.dateCreated.toISOString(),
+        }));
         return res.status(200).send({
           dashboard: toApiDashboard(d),
-          tree,
+          reports,
         });
       },
     );
 
     fastify.post<{
-      Body: { name?: string; levels?: DashboardLevel[] };
+      Body: { name?: string; root?: DashboardLevelNode[] };
     }>("/", async (req, res) => {
       logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureAuthenticated(req, res))) {
@@ -83,17 +101,20 @@ export class DashboardsRoutes {
       if (!name) {
         return res.status(400).send({ error: "Field required: name" });
       }
-      const levels = sanitizeLevels(req.body?.levels);
+      const sanitized = sanitizeRoot(req.body?.root, 1, []);
+      if ("error" in sanitized) {
+        return res.status(400).send({ error: sanitized.error });
+      }
       const dashboard = new Dashboard();
       dashboard.name = name;
-      dashboard.levels = levels;
+      dashboard.root = sanitized.nodes;
       await DashboardsRepository.add(OTelRequestSpan(req), dashboard);
       return res.status(201).send({ dashboard: toApiDashboard(dashboard) });
     });
 
     fastify.put<{
       Params: { id: string };
-      Body: { name?: string; levels?: DashboardLevel[] };
+      Body: { name?: string; root?: DashboardLevelNode[] };
     }>("/:id", async (req, res) => {
       logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureAuthenticated(req, res))) {
@@ -103,12 +124,15 @@ export class DashboardsRoutes {
       if (!name) {
         return res.status(400).send({ error: "Field required: name" });
       }
-      const levels = sanitizeLevels(req.body?.levels);
+      const sanitized = sanitizeRoot(req.body?.root, 1, []);
+      if ("error" in sanitized) {
+        return res.status(400).send({ error: sanitized.error });
+      }
       const ok = await DashboardsRepository.update(
         OTelRequestSpan(req),
         req.params.id,
         name,
-        levels,
+        sanitized.nodes,
       );
       if (!ok) {
         return res.status(404).send({ error: "Dashboard not found" });
@@ -133,136 +157,74 @@ export class DashboardsRoutes {
   }
 }
 
-function sanitizeLevels(input: DashboardLevel[] | undefined): DashboardLevel[] {
-  if (!Array.isArray(input)) {
-    return [];
+/**
+ * Recursively normalize the level tree:
+ *  - drop nodes with empty tag,
+ *  - trim tag/value, treat empty value as undefined,
+ *  - assign a fresh id when missing,
+ *  - enforce max depth and forbid duplicate tag along the same ancestor path.
+ */
+function sanitizeRoot(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  input: any,
+  depth: number,
+  ancestorTags: string[],
+): { nodes: DashboardLevelNode[] } | { error: string } {
+  if (input === undefined || input === null) {
+    return { nodes: [] };
   }
-  const out: DashboardLevel[] = [];
-  for (const lvl of input) {
-    if (!lvl || typeof lvl.tag !== "string" || !lvl.tag.trim()) {
+  if (!Array.isArray(input)) {
+    return { error: "Invalid root: expected array" };
+  }
+  if (depth > MAX_TREE_DEPTH) {
+    return { error: `Dashboard tree exceeds max depth (${MAX_TREE_DEPTH})` };
+  }
+  const out: DashboardLevelNode[] = [];
+  for (const raw of input) {
+    if (!raw || typeof raw.tag !== "string" || !raw.tag.trim()) {
       continue;
     }
+    const tag = raw.tag.trim();
+    if (ancestorTags.indexOf(tag) !== -1) {
+      return {
+        error: `Duplicate tag "${tag}" on the same branch is not allowed`,
+      };
+    }
     const value =
-      typeof lvl.value === "string" && lvl.value.trim()
-        ? lvl.value.trim()
+      typeof raw.value === "string" && raw.value.trim()
+        ? raw.value.trim()
         : undefined;
-    out.push({ tag: lvl.tag.trim(), value });
+    const id =
+      typeof raw.id === "string" && raw.id.trim() ? raw.id.trim() : uuidv4();
+    const childResult = sanitizeRoot(raw.children, depth + 1, [
+      ...ancestorTags,
+      tag,
+    ]);
+    if ("error" in childResult) {
+      return childResult;
+    }
+    const node: DashboardLevelNode = {
+      id,
+      tag,
+      children: childResult.nodes,
+    };
+    if (value !== undefined) {
+      node.value = value;
+    }
+    out.push(node);
   }
-  return out;
+  return { nodes: out };
 }
 
 function toApiDashboard(d: Dashboard): Record<string, unknown> {
   return {
     id: d.id,
     name: d.name,
-    levels: d.levels,
+    schemaVersion: d.schemaVersion || DASHBOARD_SCHEMA_VERSION,
+    root: d.root || [],
     dateCreated: d.dateCreated.toISOString(),
     dateModified: d.dateModified.toISOString(),
   };
-}
-
-/**
- * Build the aggregated tree for a dashboard.
- * - Uses the latest ReportVersion per Report.
- * - Walks levels: at each level, restrict to reports having tag (and value if specified),
- *   group by value when no value is specified.
- * - Aggregates metrics bottom-up (counts/durations summed, percentages/booleans averaged).
- */
-async function aggregateDashboard(
-  span: Span,
-  d: Dashboard,
-): Promise<AggregatedNode[]> {
-  const latest = await ReportsRepository.listLatestVersionsPerReport(span);
-  const allKeys = latest.map((v) => v.reportKey);
-  const tagsByKey = await TagsRepository.listTagsForReports(span, allKeys);
-  const versionByKey = new Map(latest.map((v) => [v.reportKey, v]));
-
-  function buildLevel(
-    levelIdx: number,
-    candidateKeys: string[],
-  ): AggregatedNode[] {
-    if (levelIdx >= d.levels.length) {
-      return [];
-    }
-    const lvl = d.levels[levelIdx];
-    // Filter candidates that have this tag
-    const havingTag = candidateKeys.filter((k) =>
-      (tagsByKey.get(k) || []).some(
-        (t) => t.tag === lvl.tag && (lvl.value ? t.value === lvl.value : true),
-      ),
-    );
-    if (havingTag.length === 0) {
-      return [];
-    }
-
-    // Group: by tag value if none fixed; otherwise single group
-    const groups = new Map<string, string[]>();
-    if (lvl.value) {
-      groups.set(`${lvl.tag}=${lvl.value}`, havingTag);
-    } else {
-      for (const k of havingTag) {
-        const t = (tagsByKey.get(k) || []).find((tt) => tt.tag === lvl.tag);
-        if (!t) continue;
-        const label = `${lvl.tag}=${t.value}`;
-        if (!groups.has(label)) {
-          groups.set(label, []);
-        }
-        groups.get(label)!.push(k);
-      }
-    }
-
-    const nodes: AggregatedNode[] = [];
-    for (const [label, keys] of groups.entries()) {
-      const node: AggregatedNode = {
-        label,
-        level: levelIdx,
-        reportKeys: keys,
-        metrics: [],
-        children: buildLevel(levelIdx + 1, keys),
-      };
-      // Aggregate metrics from this group's reports (latest versions)
-      const versions = keys
-        .map((k) => versionByKey.get(k))
-        .filter((v): v is ReportVersion => !!v);
-      node.metrics = aggregateMetrics(versions);
-      nodes.push(node);
-    }
-    nodes.sort((a, b) => a.label.localeCompare(b.label));
-    return nodes;
-  }
-
-  return buildLevel(0, allKeys);
-}
-
-function aggregateMetrics(versions: ReportVersion[]): Metric[] {
-  // For each metric name across versions, sum (count/duration) or average (percentage/boolean).
-  const accum = new Map<
-    string,
-    { type: MetricType; values: number[]; samples: number }
-  >();
-  for (const v of versions) {
-    for (const m of v.metrics) {
-      let entry = accum.get(m.name);
-      if (!entry) {
-        entry = { type: m.type, values: [], samples: 0 };
-        accum.set(m.name, entry);
-      }
-      entry.values.push(Number(m.value));
-      entry.samples++;
-    }
-  }
-  const out: Metric[] = [];
-  for (const [name, e] of accum.entries()) {
-    let value = 0;
-    if (e.type === MetricType.percentage || e.type === MetricType.boolean) {
-      value =
-        e.values.reduce((a, b) => a + b, 0) / Math.max(1, e.values.length);
-    } else {
-      value = e.values.reduce((a, b) => a + b, 0);
-    }
-    out.push({ name, type: e.type, value });
-  }
-  return out;
 }
 
 async function ensureCanRead(

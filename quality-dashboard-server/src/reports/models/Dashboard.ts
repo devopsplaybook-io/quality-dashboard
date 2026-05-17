@@ -1,28 +1,46 @@
 import { v4 as uuidv4 } from "uuid";
 
 /**
- * One level of a Dashboard.
- *  - tag: required. The tag this level filters/groups by.
+ * One node in a Dashboard's level tree.
+ *  - id: stable identifier (uuid) used for editor keys; persisted as part of the definition.
+ *  - tag: required. The tag this node filters/groups by.
  *  - value: optional.
- *      - If set: only reports with this exact tag=value belong to this level.
- *      - If absent: group by every value seen for this tag.
+ *      - If set: only reports with this exact tag=value belong to this branch.
+ *      - If absent: group by every distinct value seen for this tag among matching reports.
+ *  - children: ordered list of sub-level nodes. Empty array for leaf nodes.
  */
-export interface DashboardLevel {
+export interface DashboardLevelNode {
+  id: string;
   tag: string;
   value?: string;
+  children: DashboardLevelNode[];
 }
+
+/**
+ * Wrapper persisted as JSON in `dashboards.definition`.
+ * Storing a wrapper (vs a bare array) keeps the door open for future top-level fields
+ * (e.g. default expanded depth, default sort) without another schema migration.
+ */
+export interface DashboardDefinition {
+  schemaVersion: number;
+  root: DashboardLevelNode[];
+}
+
+export const DASHBOARD_SCHEMA_VERSION = 2;
 
 export class Dashboard {
   public id: string;
   public name: string;
-  public levels: DashboardLevel[];
+  public schemaVersion: number;
+  public root: DashboardLevelNode[];
   public dateCreated: Date;
   public dateModified: Date;
 
   constructor() {
     this.id = uuidv4();
     this.name = "";
-    this.levels = [];
+    this.schemaVersion = DASHBOARD_SCHEMA_VERSION;
+    this.root = [];
     this.dateCreated = new Date();
     this.dateModified = this.dateCreated;
   }

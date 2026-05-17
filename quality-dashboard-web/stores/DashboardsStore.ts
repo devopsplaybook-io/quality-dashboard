@@ -4,30 +4,34 @@ import { handleError } from "~~/services/EventBus";
 import axios from "axios";
 import type { Metric } from "./ReportsStore";
 
-export interface DashboardLevel {
+/** One node of a dashboard's level tree (server-aligned shape). */
+export interface DashboardLevelNode {
+  id: string;
   tag: string;
   value?: string;
+  children: DashboardLevelNode[];
 }
 
 export interface Dashboard {
   id: string;
   name: string;
-  levels: DashboardLevel[];
+  schemaVersion: number;
+  root: DashboardLevelNode[];
   dateCreated: string;
   dateModified: string;
 }
 
-export interface AggregatedNode {
-  label: string;
-  level: number;
-  reportKeys: string[];
+/** A report row as returned by /dashboards/:id/data. */
+export interface DashboardReport {
+  key: string;
+  tags: { tag: string; value: string }[];
   metrics: Metric[];
-  children: AggregatedNode[];
+  dateCreated: string;
 }
 
-export interface DashboardAggregate {
+export interface DashboardData {
   dashboard: Dashboard;
-  tree: AggregatedNode[];
+  reports: DashboardReport[];
 }
 
 export const DashboardsStore = defineStore("DashboardsStore", {
@@ -68,16 +72,16 @@ export const DashboardsStore = defineStore("DashboardsStore", {
       }
     },
 
-    async fetchAggregate(id: string): Promise<DashboardAggregate | null> {
+    async fetchDashboardData(id: string): Promise<DashboardData | null> {
       try {
         const res = await axios.get(
-          `${(await Config.get()).SERVER_URL}/dashboards/${id}/aggregate`,
+          `${(await Config.get()).SERVER_URL}/dashboards/${id}/data`,
           await AuthService.getAuthHeader(),
         );
         this.lastError = null;
         return {
-          dashboard: res.data.dashboard,
-          tree: res.data.tree,
+          dashboard: res.data.dashboard as Dashboard,
+          reports: (res.data.reports || []) as DashboardReport[],
         };
       } catch (err) {
         this.lastError = (err as Error).message;
@@ -86,10 +90,13 @@ export const DashboardsStore = defineStore("DashboardsStore", {
       }
     },
 
-    async create(name: string, levels: DashboardLevel[]): Promise<Dashboard> {
+    async create(
+      name: string,
+      root: DashboardLevelNode[],
+    ): Promise<Dashboard> {
       const res = await axios.post(
         `${(await Config.get()).SERVER_URL}/dashboards`,
-        { name, levels },
+        { name, root },
         await AuthService.getAuthHeader(),
       );
       const created = res.data.dashboard as Dashboard;
@@ -100,17 +107,18 @@ export const DashboardsStore = defineStore("DashboardsStore", {
     async update(
       id: string,
       name: string,
-      levels: DashboardLevel[],
+      root: DashboardLevelNode[],
     ): Promise<void> {
-      await axios.put(
+      const res = await axios.put(
         `${(await Config.get()).SERVER_URL}/dashboards/${id}`,
-        { name, levels },
+        { name, root },
         await AuthService.getAuthHeader(),
       );
+      void res;
       const d = this.dashboards.find((x) => x.id === id);
       if (d) {
         d.name = name;
-        d.levels = levels;
+        d.root = root;
       }
     },
 

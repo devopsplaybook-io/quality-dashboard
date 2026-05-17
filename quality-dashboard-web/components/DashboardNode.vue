@@ -1,27 +1,28 @@
 <template>
-  <div class="dashboard-node" :style="{ marginLeft: `${node.level * 1.2}em` }">
-    <div class="node-header" @click="expanded = !expanded">
+  <div class="dashboard-node" :class="`level-${node.level}`">
+    <div class="node-header" @click="toggle">
       <i
-        class="bi"
+        class="bi caret"
         :class="expanded ? 'bi-caret-down-fill' : 'bi-caret-right-fill'"
       ></i>
-      <strong>{{ node.label }}</strong>
-      <span class="node-count"
-        >({{ node.reportKeys.length }} report<span
-          v-if="node.reportKeys.length !== 1"
-          >s</span
-        >)</span
-      >
-    </div>
-    <div v-if="expanded" class="node-body">
-      <div v-if="node.metrics.length > 0" class="node-metrics">
+      <strong class="node-label">{{ node.label }}</strong>
+      <span class="node-count" :title="countTitle">
+        {{ node.totalReportKeys }}
+        <span class="node-count-suffix">
+          report<span v-if="node.totalReportKeys !== 1">s</span>
+        </span>
+      </span>
+      <div v-if="node.metrics.length > 0" class="node-metrics summary">
         <MetricChip
           v-for="m in node.metrics"
-          :key="`${node.label}-${m.name}`"
+          :key="`${node.path}-${m.name}`"
           :metric="m"
           :aggregated="true"
         />
       </div>
+    </div>
+
+    <div v-show="expanded" v-if="hasOpenedOnce" class="node-body">
       <div v-if="node.reportKeys.length > 0" class="node-reports">
         <div v-for="k in node.reportKeys" :key="k" class="node-report-line">
           <NuxtLink
@@ -48,20 +49,38 @@
         </div>
       </div>
       <DashboardNode
-        v-for="(child, i) in node.children"
-        :key="`${i}-${child.label}`"
+        v-for="child in node.children"
+        :key="child.path"
         :node="child"
+        :default-expanded="defaultExpanded"
+        :expand-bus="expandBus"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { AggregatedNode } from "~~/stores/DashboardsStore";
+import type { AggregatedNode } from "~~/services/DashboardAggregator";
 import type { Metric } from "~~/stores/ReportsStore";
 
-const props = defineProps<{ node: AggregatedNode }>();
-const expanded = ref(true);
+/** Bus for "expand all" / "collapse all" broadcasts from the page. */
+export interface ExpandBus {
+  /** Monotonically increasing token; node reacts when it changes. */
+  token: number;
+  /** Desired expansion state when token changes. */
+  expanded: boolean;
+}
+
+const props = defineProps<{
+  node: AggregatedNode;
+  defaultExpanded?: boolean;
+  expandBus?: ExpandBus;
+}>();
+
+const expanded = ref(!!props.defaultExpanded);
+// Lazy-mount: child subtree DOM is only created on first expand. After that,
+// we use v-show so toggling stays instant and preserves any nested state.
+const hasOpenedOnce = ref(expanded.value);
 
 const reportsStore = ReportsStore();
 
@@ -81,9 +100,41 @@ onBeforeUnmount(() => {
   }
 });
 
-function getReportLatest(key: string) {
+watch(
+  () => props.expandBus?.token,
+  () => {
+    if (!props.expandBus) return;
+    expanded.value = props.expandBus.expanded;
+    if (expanded.value) {
+      hasOpenedOnce.value = true;
+    }
+  },
+);
+
+function toggle(): void {
+  expanded.value = !expanded.value;
+  if (expanded.value) {
+    hasOpenedOnce.value = true;
+  }
+}
+
+const countTitle = computed(() => {
+  const direct = props.node.reportKeys.length;
+  const total = props.node.totalReportKeys;
+  if (direct === total) return `${total} reports here`;
+  return `${total} reports total (${direct} placed at this level)`;
+});
+
+function getReportLatest(key: string): {
+  metrics: Metric[];
+  dateCreated: string;
+} | null {
   const report = reportsStore.reportsByKey.get(key);
-  return report?.latestVersion ?? null;
+  if (!report || !report.latestVersion) return null;
+  return {
+    metrics: report.latestVersion.metrics,
+    dateCreated: report.latestVersion.dateCreated,
+  };
 }
 
 function nmLabel(m: Metric): string {
@@ -132,27 +183,51 @@ function nmRelative(iso: string): string {
 .dashboard-node {
   border-left: 2px solid #cfd8dc;
   padding-left: 0.5em;
-  margin-bottom: 0.4em;
+  margin-bottom: 0.3em;
+}
+.dashboard-node.level-0 {
+  border-left-color: #1976d2;
 }
 .node-header {
   display: flex;
   align-items: center;
-  gap: 0.3em;
-  padding: 0.3em 0;
+  gap: 0.4em;
+  padding: 0.3em 0.4em;
   cursor: pointer;
   user-select: none;
+  border-radius: 4px;
+  flex-wrap: wrap;
+}
+.node-header:hover {
+  background: #eceff1;
+}
+.caret {
+  color: #78909c;
+  flex-shrink: 0;
+}
+.node-label {
+  font-family: ui-monospace, monospace;
+  font-size: 0.95em;
 }
 .node-count {
+  color: #455a64;
+  font-size: 0.8em;
+  background: #eceff1;
+  padding: 0.05em 0.4em;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.node-count-suffix {
   color: #78909c;
-  font-size: 0.85em;
 }
-.node-body {
-  padding: 0.2em 0 0.3em;
-}
-.node-metrics {
+.node-metrics.summary {
   display: flex;
   flex-wrap: wrap;
-  margin-bottom: 0.3em;
+  gap: 0.2em;
+  margin-left: auto;
+}
+.node-body {
+  padding: 0.2em 0 0.4em 0.6em;
 }
 .node-reports {
   display: flex;
@@ -214,6 +289,19 @@ function nmRelative(iso: string): string {
 @media (prefers-color-scheme: dark) {
   .dashboard-node {
     border-left-color: #455a64;
+  }
+  .dashboard-node.level-0 {
+    border-left-color: #1976d2;
+  }
+  .node-header:hover {
+    background: #263238;
+  }
+  .node-count {
+    background: #37474f;
+    color: #cfd8dc;
+  }
+  .node-count-suffix {
+    color: #90a4ae;
   }
   .node-report-link {
     background: #263238;

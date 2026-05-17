@@ -4,12 +4,15 @@ import {
   SqlDbUtilsExecSQL,
   SqlDbUtilsQuerySQL,
 } from "../utils-std-ts/SqlDbUtils";
-import { Dashboard, DashboardLevel } from "./models/Dashboard";
+import {
+  DASHBOARD_SCHEMA_VERSION,
+  Dashboard,
+  DashboardLevelNode,
+} from "./models/Dashboard";
 
 /**
  * Persistence for user-defined Dashboards.
- * A Dashboard is an ordered list of levels.
- * Each level is { tag, value? } — see models/Dashboard.ts.
+ * The whole tree of levels is stored as JSON in the `definition` column.
  */
 export class DashboardsRepository {
   //
@@ -18,12 +21,15 @@ export class DashboardsRepository {
     try {
       SqlDbUtilsExecSQL(
         span,
-        `INSERT INTO dashboards (id, name, levels, date_created, date_modified)
+        `INSERT INTO dashboards (id, name, definition, date_created, date_modified)
          VALUES (?, ?, ?, ?, ?)`,
         [
           dashboard.id,
           dashboard.name,
-          JSON.stringify(dashboard.levels || []),
+          JSON.stringify({
+            schemaVersion: DASHBOARD_SCHEMA_VERSION,
+            root: dashboard.root || [],
+          }),
           dashboard.dateCreated.toISOString(),
           dashboard.dateModified.toISOString(),
         ] as never[],
@@ -70,17 +76,20 @@ export class DashboardsRepository {
     context: Span,
     id: string,
     name: string,
-    levels: DashboardLevel[],
+    root: DashboardLevelNode[],
   ): Promise<boolean> {
     const span = OTelTracer().startSpan("DashboardsRepository_update", context);
     try {
       const changed = SqlDbUtilsExecSQL(
         span,
-        `UPDATE dashboards SET name = ?, levels = ?, date_modified = ?
+        `UPDATE dashboards SET name = ?, definition = ?, date_modified = ?
          WHERE id = ?`,
         [
           name,
-          JSON.stringify(levels || []),
+          JSON.stringify({
+            schemaVersion: DASHBOARD_SCHEMA_VERSION,
+            root: root || [],
+          }),
           new Date().toISOString(),
           id,
         ] as never[],
@@ -110,14 +119,17 @@ export class DashboardsRepository {
     const d = new Dashboard();
     d.id = raw.id;
     d.name = raw.name;
+    let parsed: { schemaVersion?: number; root?: DashboardLevelNode[] } = {};
     try {
-      d.levels = JSON.parse(raw.levels || "[]");
-      if (!Array.isArray(d.levels)) {
-        d.levels = [];
-      }
+      parsed = JSON.parse(raw.definition || "{}");
     } catch {
-      d.levels = [];
+      parsed = {};
     }
+    d.schemaVersion =
+      typeof parsed.schemaVersion === "number"
+        ? parsed.schemaVersion
+        : DASHBOARD_SCHEMA_VERSION;
+    d.root = Array.isArray(parsed.root) ? parsed.root : [];
     d.dateCreated = new Date(raw.date_created);
     d.dateModified = new Date(raw.date_modified);
     return d;
