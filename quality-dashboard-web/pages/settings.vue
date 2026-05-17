@@ -133,6 +133,19 @@ export default defineComponent({
   padding: 0.8em 0;
   border-bottom: 1px solid #eceff1;
 }
+
+@media (max-width: 480px) {
+  .setting-row {
+    flex-direction: column;
+    gap: 0.5em;
+  }
+  .setting-row--toggle {
+    flex-direction: row;
+  }
+  .setting-input {
+    max-width: 100%;
+  }
+}
 .setting-row:last-of-type {
   border-bottom: none;
 }
@@ -166,7 +179,8 @@ export default defineComponent({
   font-size: 0.85em;
   background: #fff;
   color: #455a64;
-  width: 220px;
+  width: 100%;
+  max-width: 280px;
   box-sizing: border-box;
 }
 .setting-input::placeholder {

@@ -247,6 +247,9 @@ async function onDeleteReport(): Promise<void> {
   display: flex;
   align-items: center;
   gap: 0.5em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .report-key {
   font-size: 0.85em;
@@ -269,6 +272,7 @@ async function onDeleteReport(): Promise<void> {
   display: flex;
   gap: 0.4em;
   align-items: center;
+  flex-wrap: wrap;
 }
 .edit-name-row input {
   padding: 0.3em 0.5em;

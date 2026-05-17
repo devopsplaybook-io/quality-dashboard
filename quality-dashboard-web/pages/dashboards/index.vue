@@ -385,6 +385,22 @@ async function onDeleteFromModal(): Promise<void> {
   gap: 0.3em;
   margin-bottom: 0.8em;
 }
+
+@media (max-width: 480px) {
+  .dashboards-tabs-wrap {
+    grid-template-columns: 1fr auto;
+  }
+  .dashboards-tabs-wrap .scroll-arrow {
+    display: none;
+  }
+  .dashboards-tabs {
+    grid-column: 1;
+  }
+  .dashboards-tabs-wrap .btn-primary {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
 .dashboards-tabs {
   display: flex;
   gap: 0.3em;
@@ -452,6 +468,10 @@ async function onDeleteFromModal(): Promise<void> {
 }
 .dashboard-header h3 {
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 .header-actions {
   display: flex;
@@ -461,9 +481,14 @@ async function onDeleteFromModal(): Promise<void> {
   font-size: 0.85em;
   color: #607d8b;
   margin: 0.2em 0 1em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .levels-summary code {
   font-family: ui-monospace, monospace;
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 .empty-inline {
   font-style: italic;

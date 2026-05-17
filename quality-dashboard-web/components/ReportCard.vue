@@ -4,14 +4,14 @@
       <span class="report-card-title">
         {{ report.displayName || report.key }}
       </span>
-      <span class="report-card-meta">
-        <span v-for="tag in report.tags" :key="tag.tag" class="tag-chip">
-          {{ tag.tag }}={{ tag.value }}
-        </span>
-        <span class="report-card-date">{{
-          formatDate(report.dateCreated)
-        }}</span>
+    </div>
+    <div class="report-card-tags">
+      <span v-for="tag in report.tags" :key="tag.tag" class="tag-chip">
+        {{ tag.tag }}={{ tag.value }}
       </span>
+      <span class="report-card-date">{{
+        formatDate(report.dateCreated)
+      }}</span>
     </div>
     <div v-if="report.latestVersion" class="report-card-body">
       <span class="report-card-metrics">
@@ -137,21 +137,26 @@ function relativeDate(iso: string): string {
 .report-card-header {
   display: flex;
   align-items: center;
-  gap: 0.5em;
-  flex-wrap: wrap;
 }
 .report-card-title {
   font-weight: 600;
   color: #0d47a1;
   font-size: 0.9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
-.report-card-meta {
+.report-card-tags {
   display: flex;
   align-items: center;
-  gap: 0.4em;
+  gap: 0.35em;
   flex-wrap: wrap;
-  flex: 1;
-  min-width: 0;
+  margin-top: 0.1em;
+}
+.report-card-tags .tag-chip {
+  font-size: 0.68em;
+  padding: 0.06em 0.35em;
 }
 .tag-chip {
   background: #e3f2fd;
@@ -160,10 +165,16 @@ function relativeDate(iso: string): string {
   border-radius: 3px;
   font-size: 0.72em;
   font-family: ui-monospace, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 18ch;
+  flex-shrink: 0;
 }
 .report-card-date {
   font-size: 0.72em;
   color: #78909c;
+  white-space: nowrap;
 }
 .report-card-body {
   display: flex;
@@ -182,6 +193,7 @@ function relativeDate(iso: string): string {
   align-items: center;
   gap: 0.2em;
   flex-wrap: wrap;
+  min-width: 0;
 }
 .metric-with-trend {
   display: inline-flex;
@@ -204,6 +216,7 @@ function relativeDate(iso: string): string {
   flex-shrink: 0;
   align-self: flex-end;
   margin-top: 0.1em;
+  margin-left: auto;
 }
 .icon-btn {
   background: transparent;

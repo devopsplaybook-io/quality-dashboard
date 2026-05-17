@@ -64,6 +64,10 @@ function formatDuration(ms: number): string {
 .metric-chip-name {
   font-weight: 500;
   opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 12ch;
 }
 .metric-chip-value {
   font-variant-numeric: tabular-nums;

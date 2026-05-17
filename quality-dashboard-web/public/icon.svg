@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 192 192"
+   width="192"
+   height="192"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="icon.svg"
+   inkscape:version="1.4.3 (fcd0343856, 2026-01-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview4"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showguides="true"
+     inkscape:zoom="3.109375"
+     inkscape:cx="0"
+     inkscape:cy="39.879397"
+     inkscape:window-width="2501"
+     inkscape:window-height="1403"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4">
+    <sodipodi:guide
+       position="64.482412,166.59296"
+       orientation="0,-1"
+       id="guide4"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2">
+    <linearGradient
+       id="shieldGrad"
+       x1="21.403605"
+       y1="33.772484"
+       x2="163.51579"
+       y2="131.7825"
+       gradientTransform="matrix(0.92939411,0,0,1.1026879,0.03466906,-2.4157159)"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         stop-color="#6a4cb8"
+         id="stop1"
+         style="stop-color:#9b2318;stop-opacity:1;" />
+      <stop
+         offset="1"
+         stop-color="#4a2c80"
+         id="stop2"
+         style="stop-color:#271805;stop-opacity:1;" />
+    </linearGradient>
+    <linearGradient
+       id="shieldGrad-8"
+       x1="19.202211"
+       y1="5.0178713"
+       x2="19.202211"
+       y2="173.22297"
+       gradientTransform="matrix(0.75095007,0,0,0.89482622,18.609775,17.16734)"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         stop-color="#6a4cb8"
+         id="stop1-8"
+         style="stop-color:#861d13;stop-opacity:1;" />
+      <stop
+         offset="1"
+         stop-color="#4a2c80"
+         id="stop2-5"
+         style="stop-color:#72170f;stop-opacity:1;" />
+    </linearGradient>
+    <linearGradient
+       id="shieldGrad-1"
+       x1="24.289145"
+       y1="36.543617"
+       x2="160.42805"
+       y2="125.56802"
+       gradientTransform="matrix(0.54535581,0,0,0.66491368,39.851685,37.689502)"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0"
+         stop-color="#6a4cb8"
+         id="stop1-0"
+         style="stop-color:#9b2318;stop-opacity:1;" />
+      <stop
+         offset="1"
+         stop-color="#4a2c80"
+         id="stop2-4"
+         style="stop-color:#271805;stop-opacity:1;" />
+    </linearGradient>
+  </defs>
+  <!-- Shield shape -->
+  <path
+     d="M 96.000016,5.7858979 C 76.891339,23.920119 60.334503,34.409118 20.02745,34.491546 c -0.04059,21.066076 -1.043277,45.808303 2.955278,66.312334 3.998557,20.50403 25.034615,56.71187 73.017288,85.41752 47.982674,-28.70565 67.882094,-61.18321 71.880644,-81.68724 3.99856,-20.504033 4.8145,-46.878257 4.09192,-70.042614 -39.34257,0.08242 -52.31447,-10.436062 -75.972564,-28.7056481 z"
+     fill="url(#shieldGrad)"
+     stroke="#3a1e6a"
+     stroke-width="4.04936"
+     id="path2"
+     sodipodi:nodetypes="ccscscc"
+     style="fill:url(#shieldGrad);stroke:#271805;stroke-opacity:1" />
+  <path
+     d="M 96.149738,23.822913 C 80.709935,38.538752 67.332017,47.050526 34.763935,47.117417 c -0.03279,17.095024 -0.842968,37.17323 2.387865,53.812163 3.230831,16.63893 20.227957,46.02143 58.997938,69.31594 38.769992,-23.29451 54.848702,-49.64991 58.079532,-66.28884 3.23084,-16.638931 3.89012,-38.041493 3.30627,-56.839263 -31.78878,0.06688 -42.27008,-8.468817 -61.385802,-23.294504 z"
+     fill="url(#shieldGrad)"
+     stroke="#3a1e6a"
+     stroke-width="3.27895"
+     id="path2-3"
+     sodipodi:nodetypes="ccscscc"
+     style="fill:url(#shieldGrad-8);stroke:#271805;stroke-opacity:1" />
+  <path
+     d="m 96.162841,42.635022 c -11.212708,10.93482 -20.928034,17.259618 -44.579663,17.30932 -0.02383,12.702709 -0.612182,27.622112 1.734117,39.985916 2.346298,12.363802 14.689971,34.196902 42.845546,51.506222 28.155579,-17.30932 39.832279,-36.89308 42.178589,-49.25688 2.34629,-12.363812 2.82508,-28.267299 2.40108,-42.235258 -23.08568,0.0497 -30.69742,-6.292877 -44.579669,-17.30932 z"
+     fill="url(#shieldGrad)"
+     stroke="#3a1e6a"
+     stroke-width="2.4087"
+     id="path2-2"
+     sodipodi:nodetypes="ccscscc"
+     style="fill:url(#shieldGrad-1);stroke:#271805;stroke-opacity:1" />
+  <!-- Inner shield highlight -->
+  <!-- Q letter -->
+  <!-- D letter -->
+</svg>

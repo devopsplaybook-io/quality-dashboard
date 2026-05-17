@@ -206,6 +206,12 @@ async function onDelete(report: Report): Promise<void> {
   align-items: center;
   margin-bottom: 0.8em;
 }
+
+@media (max-width: 480px) {
+  .reports-loading {
+    display: none;
+  }
+}
 .reports-refresh {
   background: transparent;
   border: 1px solid #cfd8dc;

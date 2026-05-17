@@ -132,7 +132,11 @@ function formatRelative(date: Date): string {
   font-weight: 600;
   color: #0d47a1;
   text-decoration: none;
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  display: block;
 }
 .version-card-processor {
   font-size: 0.75em;

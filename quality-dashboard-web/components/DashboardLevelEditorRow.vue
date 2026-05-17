@@ -197,6 +197,13 @@ const ancestorTagsForChildren = computed(() => {
   gap: 0.15em;
   flex-shrink: 0;
 }
+
+@media (max-width: 600px) {
+  .row-actions .icon-btn {
+    padding: 0.1em 0.25em;
+    font-size: 0.75em;
+  }
+}
 .icon-btn {
   background: transparent;
   border: 1px solid #cfd8dc;

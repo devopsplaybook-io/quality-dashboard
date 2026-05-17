@@ -127,6 +127,11 @@ const countTitle = computed(() => {
 .node-label {
   font-family: ui-monospace, monospace;
   font-size: 0.95em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
 }
 .node-count {
   color: #455a64;
@@ -144,6 +149,8 @@ const countTitle = computed(() => {
   flex-wrap: wrap;
   gap: 0.2em;
   margin-left: auto;
+  min-width: 0;
+  max-width: 100%;
 }
 .node-body {
   padding: 0.2em 0 0.4em 0.6em;
