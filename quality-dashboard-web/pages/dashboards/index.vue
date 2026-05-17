@@ -4,59 +4,26 @@
       {{ dashboardsStore.lastError }}
     </div>
 
-    <div
-      v-if="
-        !dashboardsStore.isFetching && dashboardsStore.dashboards.length === 0
-      "
-      class="empty"
-    >
-      <div>No dashboards yet.</div>
+    <div class="dashboard-tabs">
+      <button
+        v-for="d in dashboardsStore.dashboards"
+        :key="d.id"
+        class="dashboard-tab"
+        :class="{ active: selectedId === d.id }"
+        @click="selectDashboard(d.id)"
+      >
+        {{ d.name }}
+      </button>
       <button
         v-if="authenticationStore.canConfigureDashboards"
-        class="btn-primary"
+        class="dashboard-tab"
         @click="openCreate"
-        style="margin-top: 0.6em"
       >
-        <i class="bi bi-plus"></i> Create Dashboard
+        <i class="bi bi-plus"></i> New
       </button>
     </div>
 
-    <template v-else>
-      <div class="dashboards-tabs-wrap">
-        <button
-          class="scroll-arrow scroll-left"
-          @click="scrollTabs($event, -1)"
-          title="Scroll left"
-        >
-          <i class="bi bi-chevron-left"></i>
-        </button>
-        <div class="dashboards-tabs" ref="tabsRef">
-          <button
-            v-for="d in dashboardsStore.dashboards"
-            :key="d.id"
-            class="tab-item"
-            :class="{ active: selectedId === d.id }"
-            @click="selectDashboard(d.id)"
-          >
-            {{ d.name }}
-          </button>
-        </div>
-        <button
-          class="scroll-arrow scroll-right"
-          @click="scrollTabs($event, 1)"
-          title="Scroll right"
-        >
-          <i class="bi bi-chevron-right"></i>
-        </button>
-        <button
-          v-if="authenticationStore.canConfigureDashboards"
-          class="btn-primary"
-          @click="openCreate"
-        >
-          <i class="bi bi-plus"></i> New
-        </button>
-      </div>
-
+    <template v-if="dashboardsStore.dashboards.length > 0">
       <div class="dashboard-content">
         <div v-if="loadingData" class="loading">Loading...</div>
 
@@ -127,6 +94,15 @@
       </div>
     </template>
 
+    <div
+      v-if="
+        !dashboardsStore.isFetching && dashboardsStore.dashboards.length === 0
+      "
+      class="empty"
+    >
+      <div>No dashboards yet.</div>
+    </div>
+
     <div v-if="showCreate || showEdit" class="modal">
       <div class="modal-card">
         <h3>{{ editingDashboard ? "Edit dashboard" : "New dashboard" }}</h3>
@@ -187,8 +163,6 @@ const reportsStore = ReportsStore();
 const authenticationStore = AuthenticationStore();
 const applicationSettingsStore = ApplicationSetttingsStore();
 const router = useRouter();
-
-const tabsRef = ref<HTMLElement | null>(null);
 
 const showCreate = ref(false);
 const showEdit = ref(false);
@@ -275,16 +249,6 @@ async function selectDashboard(id: string): Promise<void> {
   } finally {
     loadingData.value = false;
   }
-}
-
-function scrollTabs(ev: MouseEvent, dir: number): void {
-  const btn = ev.currentTarget as HTMLElement;
-  if (!btn) return;
-  const wrap = btn.closest(".dashboards-tabs-wrap") as HTMLElement | null;
-  if (!wrap) return;
-  const tabs = wrap.querySelector(".dashboards-tabs") as HTMLElement | null;
-  if (!tabs) return;
-  tabs.scrollBy({ left: dir * 200, behavior: "smooth" });
 }
 
 function broadcastExpand(expanded: boolean): void {
@@ -386,79 +350,47 @@ async function onDeleteFromModal(): Promise<void> {
 .dashboards-page {
   padding: 0.5em 0.5em 2em;
 }
-.dashboards-tabs-wrap {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  align-items: center;
-  gap: 0.3em;
-  margin-bottom: 0.8em;
-}
 
-@media (max-width: 480px) {
-  .dashboards-tabs-wrap {
-    grid-template-columns: 1fr auto;
-  }
-  .dashboards-tabs-wrap .scroll-arrow {
-    display: none;
-  }
-  .dashboards-tabs {
-    grid-column: 1;
-  }
-  .dashboards-tabs-wrap .btn-primary {
-    grid-column: 2;
-    grid-row: 1;
-  }
-}
-.dashboards-tabs {
+/* Tab bar — same style as settings */
+.dashboard-tabs {
   display: flex;
-  gap: 0.3em;
+  gap: 0.25em;
+  margin-bottom: 1em;
+  border-bottom: 1px solid #cfd8dc;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  padding: 0.2em 0;
-  flex: 1;
+  padding-bottom: 0;
 }
-.dashboards-tabs::-webkit-scrollbar {
+.dashboard-tabs::-webkit-scrollbar {
   display: none;
 }
-.tab-item {
-  white-space: nowrap;
-  padding: 0.35em 0.8em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  background: #fff;
+.dashboard-tab {
+  padding: 0.5em 1em;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background: transparent;
   cursor: pointer;
   font-size: 0.85em;
-  color: #455a64;
+  color: #546e7a;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  transition: all 0.15s;
+  margin-bottom: -1px;
+  white-space: nowrap;
   flex-shrink: 0;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
 }
-.tab-item:hover {
+.dashboard-tab:hover {
   background: #eceff1;
+  color: #263238;
 }
-.tab-item.active {
-  background: #1976d2;
-  color: #fff;
-  border-color: #1976d2;
-}
-.scroll-arrow {
-  background: transparent;
-  border: none;
-  color: #90a4ae;
-  cursor: pointer;
-  padding: 0 0.1em;
-  font-size: 0.8em;
-  flex-shrink: 0;
-  opacity: 0.4;
-  transition: opacity 0.15s;
-}
-.dashboards-tabs-wrap:hover .scroll-arrow {
-  opacity: 1;
-}
-.scroll-arrow:hover {
-  color: #455a64;
+.dashboard-tab.active {
+  background: #fff;
+  border-color: #cfd8dc;
+  color: #1976d2;
+  font-weight: 600;
 }
 .dashboard-content {
   border: 1px solid #cfd8dc;
@@ -517,109 +449,28 @@ async function onDeleteFromModal(): Promise<void> {
   border-radius: 4px;
   margin-bottom: 0.8em;
 }
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.modal-card {
-  background: #fff;
-  border-radius: 6px;
-  padding: 1em 1.2em;
-  width: min(640px, 94vw);
-  max-height: 90vh;
-  overflow-y: auto;
-}
-.modal-card label {
-  display: block;
-  margin-top: 0.5em;
-  font-weight: 600;
-  font-size: 0.9em;
-}
-.modal-card input {
-  width: 100%;
-  padding: 0.3em 0.5em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  margin-top: 0.2em;
-  box-sizing: border-box;
-}
-.hint {
-  font-size: 0.8em;
-  color: #78909c;
-  margin: 0.2em 0;
-}
+
 .modal-error {
   font-size: 0.8em;
   color: #c62828;
   margin: 0.4em 0 0;
 }
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5em;
-  margin-top: 1em;
-}
-.btn-primary,
-.btn-secondary,
-.btn-danger {
-  padding: 0.3em 0.8em;
-  border-radius: 4px;
-  border: 1px solid #cfd8dc;
-  cursor: pointer;
-  background: #fff;
-}
-.btn-primary {
-  background: #1976d2;
-  color: #fff;
-  border-color: #1976d2;
-}
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.btn-danger {
-  background: #c62828;
-  color: #fff;
-  border-color: #c62828;
-}
-.icon-btn {
-  background: transparent;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  padding: 0.2em 0.5em;
-  cursor: pointer;
-}
-.icon-btn.danger:hover {
-  color: #c62828;
-  border-color: #c62828;
-}
+
 @media (prefers-color-scheme: dark) {
-  .icon-btn {
-    background: transparent;
-    border-color: #455a64;
-    color: #cfd8dc;
+  .dashboard-tabs {
+    border-bottom-color: #455a64;
   }
-  .icon-btn.danger:hover {
-    color: #ff6659;
-    border-color: #ff6659;
+  .dashboard-tab {
+    color: #b0bec5;
   }
-  .dashboards-tabs-wrap .tab-item {
-    background: #1e2a32;
-    color: #cfd8dc;
-    border-color: #455a64;
-  }
-  .tab-item:hover {
+  .dashboard-tab:hover {
     background: #263238;
+    color: #cfd8dc;
   }
-  .tab-item.active {
-    background: #1976d2;
-    color: #fff;
-    border-color: #1976d2;
+  .dashboard-tab.active {
+    background: #1e2a32;
+    border-color: #455a64;
+    color: #64b5f6;
   }
   .dashboard-content {
     background: #1e2a32;
@@ -630,18 +481,6 @@ async function onDeleteFromModal(): Promise<void> {
     background: #3e2723;
     color: #ffab91;
     border-color: #5d4037;
-  }
-  .modal-card,
-  .modal-card input,
-  .btn-secondary,
-  .icon-btn {
-    background: #1e2a32;
-    color: #cfd8dc;
-    border-color: #455a64;
-  }
-  .btn-danger {
-    background: #b71c1c;
-    border-color: #b71c1c;
   }
 }
 </style>

@@ -259,18 +259,6 @@ async function onDeleteReport(): Promise<void> {
   color: #607d8b;
   margin: 0.2em 0 0;
 }
-.icon-btn {
-  background: transparent;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  padding: 0.2em 0.5em;
-  cursor: pointer;
-  color: #455a64;
-}
-.icon-btn.danger:hover {
-  color: #c62828;
-  border-color: #c62828;
-}
 .edit-name-row {
   display: flex;
   gap: 0.4em;
@@ -282,26 +270,7 @@ async function onDeleteReport(): Promise<void> {
   border: 1px solid #cfd8dc;
   border-radius: 4px;
 }
-.btn-primary,
-.btn-secondary,
-.btn-danger {
-  padding: 0.3em 0.7em;
-  border-radius: 4px;
-  border: 1px solid #cfd8dc;
-  cursor: pointer;
-  background: #fff;
-  color: #263238;
-}
-.btn-primary {
-  background: #1976d2;
-  color: #fff;
-  border-color: #1976d2;
-}
-.btn-danger {
-  background: #c62828;
-  color: #fff;
-  border-color: #c62828;
-}
+
 .tags-section,
 .versions-section,
 .danger-zone {
@@ -346,18 +315,10 @@ async function onDeleteReport(): Promise<void> {
   font-style: italic;
 }
 @media (prefers-color-scheme: dark) {
-  .icon-btn,
-  .btn-primary,
-  .btn-secondary,
   .edit-name-row input {
     background: #1e2a32;
     color: #cfd8dc;
     border-color: #455a64;
-  }
-  .btn-primary {
-    background: #1565c0;
-    border-color: #1565c0;
-    color: #fff;
   }
 }
 </style>

@@ -10,7 +10,7 @@
       <div class="version-card-actions">
         <button
           v-if="version.hasFile && version.fileEntrypoint"
-          class="version-card-link"
+          class="icon-btn"
           title="Download report file"
           @click="downloadFile"
         >
@@ -18,7 +18,7 @@
         </button>
         <button
           v-if="version.hasFile && version.fileEntrypoint && isTextFile"
-          class="version-card-link"
+          class="icon-btn"
           title="View file content"
           @click="showFileDialog = true"
         >
@@ -26,7 +26,7 @@
         </button>
         <button
           v-if="canDelete"
-          class="version-card-delete"
+          class="icon-btn danger"
           title="Delete this version"
           @click="onDelete"
         >
@@ -164,19 +164,19 @@ function formatRelative(date: Date): string {
 
 <style scoped>
 .version-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.4em;
   border: 1px solid #cfd8dc;
   border-radius: 6px;
   padding: 0.6em 0.8em;
   background-color: #fff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-  display: flex;
-  flex-direction: column;
-  gap: 0.4em;
   margin-bottom: 0.6em;
 }
 .version-card-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 0.5em;
 }
@@ -200,24 +200,12 @@ function formatRelative(date: Date): string {
   color: #607d8b;
 }
 .version-card-actions {
-  display: flex;
-  gap: 0.4em;
-  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(28px, auto));
+  gap: 0.3em;
+  justify-content: end;
 }
-.version-card-link,
-.version-card-delete {
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  font-size: 1em;
-  color: #455a64;
-}
-.version-card-link:hover {
-  color: #1976d2;
-}
-.version-card-delete:hover {
-  color: #c62828;
-}
+
 .version-card-tags {
   display: flex;
   flex-wrap: wrap;

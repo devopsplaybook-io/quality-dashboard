@@ -59,9 +59,7 @@ Promise.resolve()
 
     // APIs
 
-    const fastify = Fastify({
-      logger: config.LOG_LEVEL === process.env.FASTIFY_LOG_LEVEL,
-    });
+    const fastify = Fastify({});
 
     if (config.CORS_POLICY_ORIGIN) {
       fastify.register(fastifyCors, {

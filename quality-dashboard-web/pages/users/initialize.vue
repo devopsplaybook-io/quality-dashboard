@@ -132,60 +132,10 @@ async function createAdmin() {
   font-size: 0.85em;
   color: #78909c;
 }
-.field-row {
-  margin-bottom: 0.8em;
-}
-.field-label {
-  display: block;
-  font-weight: 600;
-  font-size: 0.85em;
-  color: #37474f;
-  margin-bottom: 0.3em;
-}
-.field-input {
-  display: block;
-  width: 100%;
-  padding: 0.5em 0.6em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  font-size: 0.9em;
-  background: #fff;
-  color: #455a64;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
-}
-.field-input:focus {
-  outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
-}
-.field-input::placeholder {
-  color: #b0bec5;
-}
 .users-actions {
   padding: 0.8em 1.2em 1.2em;
   display: flex;
   justify-content: flex-end;
-}
-.btn-primary {
-  padding: 0.4em 1em;
-  border-radius: 4px;
-  border: 1px solid #1976d2;
-  background: #1976d2;
-  color: #fff;
-  cursor: pointer;
-  font-size: 0.9em;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4em;
-  transition: background 0.15s;
-}
-.btn-primary:hover {
-  background: #1565c0;
-}
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 @media (prefers-color-scheme: dark) {
   .users-card {
@@ -197,21 +147,6 @@ async function createAdmin() {
   }
   .section-desc {
     color: #90a4ae;
-  }
-  .field-label {
-    color: #cfd8dc;
-  }
-  .field-input {
-    background: #263238;
-    color: #cfd8dc;
-    border-color: #455a64;
-  }
-  .field-input:focus {
-    border-color: #64b5f6;
-    box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
-  }
-  .field-input::placeholder {
-    color: #546e7a;
   }
 }
 </style>

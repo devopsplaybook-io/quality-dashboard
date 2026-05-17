@@ -164,11 +164,7 @@
     </div>
 
     <!-- ======================== CREATE/EDIT USER MODAL ======================== -->
-    <div
-      v-if="showUserModal"
-      class="modal-overlay"
-      @click.self="closeUserModal"
-    >
+    <div v-if="showUserModal" class="modal" @click.self="closeUserModal">
       <div class="modal-card">
         <div class="modal-header">
           <h3>
@@ -263,7 +259,7 @@
     <!-- ======================== DELETE CONFIRM MODAL ======================== -->
     <div
       v-if="showDeleteConfirm"
-      class="modal-overlay"
+      class="modal"
       @click.self="showDeleteConfirm = false"
     >
       <div class="modal-card modal-card--sm">
@@ -774,94 +770,7 @@ export default defineComponent({
 .perm-list .bi {
   font-size: 0.9em;
 }
-.text-green {
-  color: #43a047;
-}
-.text-muted {
-  color: #90a4ae;
-}
-.text-warning {
-  color: #f9a825;
-}
-.empty-state {
-  text-align: center;
-  padding: 2em;
-  color: #90a4ae;
-}
-.empty-state .bi {
-  font-size: 2em;
-  display: block;
-  margin-bottom: 0.5em;
-}
-.empty-state p {
-  margin: 0;
-  font-size: 0.85em;
-}
 
-/* Buttons */
-.btn-primary {
-  padding: 0.4em 1em;
-  border-radius: 4px;
-  border: 1px solid #1976d2;
-  background: #1976d2;
-  color: #fff;
-  cursor: pointer;
-  font-size: 0.9em;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4em;
-  transition: background 0.15s;
-}
-.btn-primary:hover {
-  background: #1565c0;
-}
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.btn-sm {
-  font-size: 0.8em;
-  padding: 0.3em 0.7em;
-}
-.btn-secondary {
-  padding: 0.4em 1em;
-  border-radius: 4px;
-  border: 1px solid #cfd8dc;
-  background: transparent;
-  color: #455a64;
-  cursor: pointer;
-  font-size: 0.9em;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4em;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
-}
-.btn-secondary:hover {
-  background: #f5f7f8;
-  border-color: #90a4ae;
-}
-.btn-danger {
-  padding: 0.4em 1em;
-  border-radius: 4px;
-  border: 1px solid #c62828;
-  background: #c62828;
-  color: #fff;
-  cursor: pointer;
-  font-size: 0.9em;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4em;
-  transition: background 0.15s;
-}
-.btn-danger:hover {
-  background: #b71c1c;
-}
-.btn-danger:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
 .icon-btn {
   background: none;
   border: none;
@@ -899,6 +808,7 @@ export default defineComponent({
   border-radius: 8px;
   max-width: 480px;
   width: 90vw;
+  padding: 1em 1.2em;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
 }
 .modal-card--sm {
@@ -908,7 +818,7 @@ export default defineComponent({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1em 1.2em 0.5em;
+  padding: 0 0 0.5em;
 }
 .modal-header h3 {
   margin: 0;
@@ -919,7 +829,7 @@ export default defineComponent({
   color: #263238;
 }
 .modal-body {
-  padding: 0.5em 1.2em 1em;
+  padding: 0.5em 0 1em;
 }
 .modal-body p {
   margin: 0.5em 0;
@@ -927,7 +837,7 @@ export default defineComponent({
   color: #455a64;
 }
 .modal-footer {
-  padding: 0.8em 1.2em 1.2em;
+  padding: 0.8em 0 0;
   display: flex;
   justify-content: flex-end;
   gap: 0.5em;
@@ -1046,38 +956,9 @@ export default defineComponent({
     background: #1a3a5c;
     color: #64b5f6;
   }
-  .modal-card {
-    background: #1e2a32;
-  }
-  .modal-header h3 {
-    color: #cfd8dc;
-  }
-  .modal-body p {
-    color: #b0bec5;
-  }
-  .field-label {
-    color: #b0bec5;
-  }
-  .field-input {
-    background: #263238;
-    color: #cfd8dc;
-    border-color: #455a64;
-  }
-  .field-input:disabled {
-    background: #263238;
-    color: #546e7a;
-  }
   .radio-label,
   .checkbox-label {
     color: #b0bec5;
-  }
-  .btn-secondary {
-    color: #b0bec5;
-    border-color: #455a64;
-  }
-  .btn-secondary:hover {
-    background: #263238;
-    border-color: #607d8b;
   }
   .icon-btn:hover {
     background: #263238;

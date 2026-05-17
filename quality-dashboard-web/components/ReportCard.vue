@@ -38,18 +38,28 @@
       <span class="report-card-empty-text">No versions yet</span>
     </div>
     <div v-if="showActions" class="report-card-actions">
-      <a
+      <button
         v-if="
           report.latestVersion?.hasFile && report.latestVersion?.fileEntrypoint
         "
         class="icon-btn"
-        :href="fileDownloadUrl"
         title="Download latest report file"
-        download
-        @click.stop
+        @click.stop="downloadFile"
       >
         <i class="bi bi-download"></i>
-      </a>
+      </button>
+      <button
+        v-if="
+          report.latestVersion?.hasFile &&
+          report.latestVersion?.fileEntrypoint &&
+          isTextFile
+        "
+        class="icon-btn"
+        title="View report file"
+        @click.stop="showFileDialog = true"
+      >
+        <i class="bi bi-eye"></i>
+      </button>
       <button class="icon-btn" type="button" title="Edit" @click.stop="onEdit">
         <i class="bi bi-pencil"></i>
       </button>
@@ -63,11 +73,21 @@
       </button>
     </div>
   </div>
+
+  <FileContentDialog
+    :visible="showFileDialog"
+    :file-url="fileUrl"
+    :download-url="fileDownloadUrl"
+    :file-name="report.latestVersion?.fileEntrypoint || ''"
+    @close="showFileDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
+import { AuthService } from "~~/services/AuthService";
 import type { Report } from "~~/stores/ReportsStore";
 import Config from "~~/services/Config";
+import { FileUtils } from "~~/services/FileUtils";
 
 const props = defineProps<{
   report: Report;
@@ -86,11 +106,51 @@ onMounted(async () => {
   serverUrl.value = (await Config.get()).SERVER_URL;
 });
 
-const fileDownloadUrl = computed(() => {
+const fileUrl = computed(() => {
   const lv = props.report.latestVersion;
   if (!lv || !lv.hasFile || !lv.fileEntrypoint) return "#";
-  return `${serverUrl.value}/reports/${encodeURIComponent(props.report.key)}/versions/${lv.id}/file/${lv.fileEntrypoint}?download=1`;
+  return `${serverUrl.value}/reports/${encodeURIComponent(props.report.key)}/versions/${lv.id}/file/${lv.fileEntrypoint}`;
 });
+
+const fileDownloadUrl = computed(() => {
+  if (fileUrl.value === "#") return "#";
+  return `${fileUrl.value}?download=1`;
+});
+
+const isTextFile = computed(() => {
+  const ep = props.report.latestVersion?.fileEntrypoint;
+  return !!ep && FileUtils.isTextExtension(ep);
+});
+
+const showFileDialog = ref(false);
+
+async function downloadFile(): Promise<void> {
+  if (fileUrl.value === "#") return;
+  try {
+    const token = await AuthService.getToken();
+    if (!token) {
+      window.open(fileDownloadUrl.value, "_blank");
+      return;
+    }
+    const response = await fetch(fileUrl.value + "?download=1", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      throw new Error(`Download failed (${response.status})`);
+    }
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = props.report.latestVersion?.fileEntrypoint || "report";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error("Download failed", err);
+  }
+}
 
 function navigate(): void {
   router.push(`/reports/${encodeURIComponent(props.report.key)}`);
@@ -140,9 +200,9 @@ function relativeDate(iso: string): string {
 
 <style scoped>
 .report-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15em;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.3em;
   padding: 0.45em 0.6em;
   border: 1px solid #cfd8dc;
   border-radius: 4px;
@@ -160,9 +220,9 @@ function relativeDate(iso: string): string {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 .report-card-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr;
   align-items: center;
-  min-width: 0;
 }
 .report-card-title {
   font-weight: 600;
@@ -178,11 +238,6 @@ function relativeDate(iso: string): string {
   align-items: center;
   gap: 0.35em;
   flex-wrap: wrap;
-  margin-top: 0.1em;
-}
-.report-card-tags .tag-chip {
-  font-size: 0.68em;
-  padding: 0.06em 0.35em;
 }
 .tag-chip {
   background: #e3f2fd;
@@ -209,7 +264,6 @@ function relativeDate(iso: string): string {
   flex-wrap: wrap;
   padding-top: 0.15em;
   border-top: 1px solid #eceff1;
-  margin-top: 0.1em;
 }
 .report-card-body-empty {
   border-top-color: transparent;
@@ -237,27 +291,12 @@ function relativeDate(iso: string): string {
   font-style: italic;
 }
 .report-card-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(28px, auto));
   gap: 0.3em;
-  flex-shrink: 0;
-  align-self: flex-end;
-  margin-top: 0.1em;
-  margin-left: auto;
+  justify-content: end;
 }
-.icon-btn {
-  background: transparent;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  padding: 0.15em 0.4em;
-  cursor: pointer;
-  color: #455a64;
-  font-size: 0.8em;
-  line-height: 1;
-}
-.icon-btn.danger:hover {
-  color: #c62828;
-  border-color: #c62828;
-}
+
 @media (prefers-color-scheme: dark) {
   .report-card {
     background: #1e2a32;
@@ -287,15 +326,6 @@ function relativeDate(iso: string): string {
   }
   .report-card-empty-text {
     color: #546e7a;
-  }
-  .icon-btn {
-    background: transparent;
-    border-color: #455a64;
-    color: #cfd8dc;
-  }
-  .icon-btn.danger:hover {
-    color: #ff6659;
-    border-color: #ff6659;
   }
 }
 </style>

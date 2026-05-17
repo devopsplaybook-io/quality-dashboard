@@ -173,6 +173,7 @@ const ancestorTagsForChildren = computed(() => {
   gap: 0.3em;
   padding: 0.25em 0;
   border-radius: 4px;
+  margin-bottom: 0.4rem;
 }
 .row-line.invalid {
   background: #fff8e1;
@@ -183,6 +184,7 @@ const ancestorTagsForChildren = computed(() => {
   color: #b0bec5;
   cursor: default;
   padding: 0 0.1em;
+  margin-bottom: 0;
 }
 .row-fields {
   display: flex;
@@ -198,33 +200,17 @@ const ancestorTagsForChildren = computed(() => {
   flex-shrink: 0;
 }
 
+.row-actions .icon-btn {
+  margin-bottom: 0;
+}
+
 @media (max-width: 600px) {
   .row-actions .icon-btn {
     padding: 0.1em 0.25em;
     font-size: 0.75em;
   }
 }
-.icon-btn {
-  background: transparent;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  padding: 0.15em 0.35em;
-  cursor: pointer;
-  color: #455a64;
-  font-size: 0.85em;
-  line-height: 1;
-}
-.icon-btn:hover:not(:disabled) {
-  background: #eceff1;
-}
-.icon-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-.icon-btn.danger:hover:not(:disabled) {
-  color: #c62828;
-  border-color: #c62828;
-}
+
 .row-error {
   font-size: 0.75em;
   color: #c62828;
@@ -239,18 +225,6 @@ const ancestorTagsForChildren = computed(() => {
 @media (prefers-color-scheme: dark) {
   .row-line.invalid {
     background: #3e2723;
-  }
-  .icon-btn {
-    background: transparent;
-    border-color: #455a64;
-    color: #cfd8dc;
-  }
-  .icon-btn:hover:not(:disabled) {
-    background: #263238;
-  }
-  .icon-btn.danger:hover:not(:disabled) {
-    color: #ff6659;
-    border-color: #ff6659;
   }
   .level-list.children {
     border-left-color: #37474f;

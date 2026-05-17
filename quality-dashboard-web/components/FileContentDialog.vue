@@ -170,49 +170,7 @@ watch(
 .file-content-error {
   color: #bf360c;
 }
-.spin {
-  animation: spin 1s linear infinite;
-  display: inline-block;
-}
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-.btn-primary,
-.btn-secondary {
-  padding: 0.3em 0.7em;
-  border-radius: 4px;
-  border: 1px solid #cfd8dc;
-  cursor: pointer;
-  background: #fff;
-  color: #263238;
-  font-size: 0.85em;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3em;
-}
-.btn-primary {
-  background: #1976d2;
-  color: #fff;
-  border-color: #1976d2;
-}
-.btn-primary:hover {
-  background: #1565c0;
-}
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
+
 @media (prefers-color-scheme: dark) {
   .file-content-card {
     background: #1e2a32;
@@ -225,11 +183,6 @@ watch(
   .file-content-pre {
     background: #0d1b1e;
     color: #cfd8dc;
-  }
-  .btn-secondary {
-    background: #1e2a32;
-    color: #cfd8dc;
-    border-color: #455a64;
   }
   .file-content-error {
     color: #ffab91;
