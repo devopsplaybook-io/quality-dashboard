@@ -11,10 +11,20 @@
         <a
           v-if="version.hasFile && version.fileEntrypoint"
           class="version-card-link"
+          :href="downloadUrl"
+          rel="noopener"
+          title="Download report file"
+          download
+        >
+          <i class="bi bi-download"></i>
+        </a>
+        <a
+          v-if="version.hasFile && version.fileEntrypoint"
+          class="version-card-link"
           :href="fileUrl"
           target="_blank"
           rel="noopener"
-          title="Open report file"
+          title="Open report file in new tab"
         >
           <i class="bi bi-box-arrow-up-right"></i>
         </a>
@@ -74,6 +84,11 @@ onMounted(async () => {
 const fileUrl = computed(() => {
   if (!props.version.fileEntrypoint) return "#";
   return `${serverUrl.value}/reports/${encodeURIComponent(props.version.reportKey)}/versions/${props.version.id}/file/${props.version.fileEntrypoint}`;
+});
+
+const downloadUrl = computed(() => {
+  if (!props.version.fileEntrypoint) return "#";
+  return `${fileUrl.value}?download=1`;
 });
 
 const relativeDate = computed(() =>

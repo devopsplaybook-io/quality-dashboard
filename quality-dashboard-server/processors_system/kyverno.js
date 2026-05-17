@@ -58,22 +58,47 @@ module.exports = {
       );
 
       // kubectl get -o yaml produces multi-document YAML (--- separators)
+      // or a single PolicyReportList/ClusterPolicyReportList with an items array.
       const docs = yaml.safeLoadAll(content);
       for (const doc of docs) {
-        if (!doc || !doc.kind || !doc.kind.endsWith("PolicyReport")) {
+        if (!doc || !doc.kind) {
           continue;
         }
-        reports.push({
-          name: (doc.metadata || {}).name,
-          namespace: (doc.metadata || {}).namespace,
-          summary: doc.summary || {},
-          results: (doc.results || []).map((r) => ({
-            policy: r.policy,
-            rule: r.rule,
-            result: r.result,
-            severity: r.severity,
-          })),
-        });
+
+        // Case 1: List wrapper (PolicyReportList / ClusterPolicyReportList)
+        if (doc.kind.endsWith("List") && Array.isArray(doc.items)) {
+          for (const item of doc.items) {
+            if (item && item.kind && item.kind.endsWith("PolicyReport")) {
+              reports.push({
+                name: (item.metadata || {}).name,
+                namespace: (item.metadata || {}).namespace,
+                summary: item.summary || {},
+                results: (item.results || []).map((r) => ({
+                  policy: r.policy,
+                  rule: r.rule,
+                  result: r.result,
+                  severity: r.severity,
+                })),
+              });
+            }
+          }
+          continue;
+        }
+
+        // Case 2: Single PolicyReport document (multi-document YAML)
+        if (doc.kind.endsWith("PolicyReport")) {
+          reports.push({
+            name: (doc.metadata || {}).name,
+            namespace: (doc.metadata || {}).namespace,
+            summary: doc.summary || {},
+            results: (doc.results || []).map((r) => ({
+              policy: r.policy,
+              rule: r.rule,
+              result: r.result,
+              severity: r.severity,
+            })),
+          });
+        }
       }
     }
 
@@ -113,6 +138,11 @@ module.exports = {
     return {
       fileEntrypoint,
       metrics: [
+        {
+          name: "kyverno.audit.total",
+          type: "count",
+          value: totals.pass + totals.fail + totals.warn + totals.error,
+        },
         {
           name: "kyverno.audit.pass",
           type: "count",

@@ -38,6 +38,18 @@
       <span class="report-card-empty-text">No versions yet</span>
     </div>
     <div v-if="showActions" class="report-card-actions">
+      <a
+        v-if="
+          report.latestVersion?.hasFile && report.latestVersion?.fileEntrypoint
+        "
+        class="icon-btn"
+        :href="fileDownloadUrl"
+        title="Download latest report file"
+        download
+        @click.stop
+      >
+        <i class="bi bi-download"></i>
+      </a>
       <button class="icon-btn" type="button" title="Edit" @click.stop="onEdit">
         <i class="bi bi-pencil"></i>
       </button>
@@ -55,6 +67,7 @@
 
 <script setup lang="ts">
 import type { Report } from "~~/stores/ReportsStore";
+import Config from "~~/services/Config";
 
 const props = defineProps<{
   report: Report;
@@ -67,6 +80,17 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
+const serverUrl = ref("");
+
+onMounted(async () => {
+  serverUrl.value = (await Config.get()).SERVER_URL;
+});
+
+const fileDownloadUrl = computed(() => {
+  const lv = props.report.latestVersion;
+  if (!lv || !lv.hasFile || !lv.fileEntrypoint) return "#";
+  return `${serverUrl.value}/reports/${encodeURIComponent(props.report.key)}/versions/${lv.id}/file/${lv.fileEntrypoint}?download=1`;
+});
 
 function navigate(): void {
   router.push(`/reports/${encodeURIComponent(props.report.key)}`);

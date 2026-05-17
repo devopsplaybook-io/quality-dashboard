@@ -24,6 +24,8 @@ export interface Report {
     id: string;
     processor: string;
     metrics: Metric[];
+    hasFile: boolean;
+    fileEntrypoint?: string;
     dateCreated: string;
   };
 }

@@ -239,39 +239,48 @@ export class ReportsRoutes {
     );
 
     // ---- Serve files belonging to a version ------------------------------
-    fastify.get<{ Params: { key: string; versionId: string; "*": string } }>(
-      "/:key/versions/:versionId/file/*",
-      async (req, res) => {
-        logger.info(`[${req.method}] ${req.url}`);
-        if (!(await ensureCanRead(req, res))) {
-          return;
-        }
-        const span = OTelRequestSpan(req);
-        const version = await ReportsRepository.getVersion(
-          span,
-          req.params.versionId,
+    fastify.get<{
+      Params: { key: string; versionId: string; "*": string };
+      Querystring: { download?: string };
+    }>("/:key/versions/:versionId/file/*", async (req, res) => {
+      logger.info(`[${req.method}] ${req.url}`);
+      if (!(await ensureCanRead(req, res))) {
+        return;
+      }
+      const span = OTelRequestSpan(req);
+      const version = await ReportsRepository.getVersion(
+        span,
+        req.params.versionId,
+      );
+      if (!version || version.reportKey !== req.params.key) {
+        return res.status(404).send({ error: "Version not found" });
+      }
+      if (!version.hasFile) {
+        return res.status(404).send({ error: "Version has no file" });
+      }
+      const relative =
+        (req.params as Record<string, string>)["*"] ||
+        version.fileEntrypoint ||
+        "";
+      const safe = await resolveSafeReportFile(version.id, relative);
+      if (!safe) {
+        return res.status(404).send({ error: "File not found" });
+      }
+      const ext = path.extname(safe).toLowerCase();
+      const mime = TEXT_EXT_TO_MIME[ext] || "application/octet-stream";
+      const q = req.query as { download?: string };
+      if (q.download === "1") {
+        res.header(
+          "Content-Disposition",
+          `attachment; filename="${path.basename(relative)}"`,
         );
-        if (!version || version.reportKey !== req.params.key) {
-          return res.status(404).send({ error: "Version not found" });
-        }
-        if (!version.hasFile) {
-          return res.status(404).send({ error: "Version has no file" });
-        }
-        const relative =
-          (req.params as Record<string, string>)["*"] ||
-          version.fileEntrypoint ||
-          "";
-        const safe = await resolveSafeReportFile(version.id, relative);
-        if (!safe) {
-          return res.status(404).send({ error: "File not found" });
-        }
-        const ext = path.extname(safe).toLowerCase();
-        const mime = TEXT_EXT_TO_MIME[ext] || "application/octet-stream";
-        res.header("Content-Type", mime);
+        res.header("Content-Type", "application/octet-stream");
+      } else {
         res.header("Content-Disposition", "inline");
-        return res.send(fse.createReadStream(safe));
-      },
-    );
+        res.header("Content-Type", mime);
+      }
+      return res.send(fse.createReadStream(safe));
+    });
 
     // ---- Upload a new version --------------------------------------------
     fastify.post("/", async (req, res) => {
@@ -345,6 +354,8 @@ function toApiReport(
       id: latestVersion.id,
       processor: latestVersion.processor,
       metrics: latestVersion.metrics,
+      hasFile: latestVersion.hasFile,
+      fileEntrypoint: latestVersion.fileEntrypoint,
       dateCreated: latestVersion.dateCreated.toISOString(),
     };
   }
