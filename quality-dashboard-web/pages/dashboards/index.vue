@@ -10,7 +10,15 @@
       "
       class="empty"
     >
-      No dashboards yet.
+      <div>No dashboards yet.</div>
+      <button
+        v-if="authenticationStore.canConfigureDashboards"
+        class="btn-primary"
+        @click="openCreate"
+        style="margin-top: 0.6em"
+      >
+        <i class="bi bi-plus"></i> Create Dashboard
+      </button>
     </div>
 
     <template v-else>
