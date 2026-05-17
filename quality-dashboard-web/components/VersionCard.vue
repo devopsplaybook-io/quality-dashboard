@@ -18,16 +18,14 @@
         >
           <i class="bi bi-download"></i>
         </a>
-        <a
-          v-if="version.hasFile && version.fileEntrypoint"
+        <button
+          v-if="version.hasFile && version.fileEntrypoint && isTextFile"
           class="version-card-link"
-          :href="fileUrl"
-          target="_blank"
-          rel="noopener"
-          title="Open report file in new tab"
+          title="View file content"
+          @click="showFileDialog = true"
         >
-          <i class="bi bi-box-arrow-up-right"></i>
-        </a>
+          <i class="bi bi-eye"></i>
+        </button>
         <button
           v-if="canDelete"
           class="version-card-delete"
@@ -65,11 +63,20 @@
       <span>{{ relativeDate }}</span>
     </div>
   </div>
+
+  <FileContentDialog
+    :visible="showFileDialog"
+    :file-url="fileUrl"
+    :download-url="downloadUrl"
+    :file-name="version.fileEntrypoint || ''"
+    @close="showFileDialog = false"
+  />
 </template>
 
 <script setup lang="ts">
 import type { ReportVersion } from "~~/stores/ReportsStore";
 import Config from "~~/services/Config";
+import { FileUtils } from "~~/services/FileUtils";
 
 const props = defineProps<{ version: ReportVersion; canDelete?: boolean }>();
 const emit = defineEmits<{
@@ -94,6 +101,15 @@ const downloadUrl = computed(() => {
 const relativeDate = computed(() =>
   formatRelative(new Date(props.version.dateCreated)),
 );
+
+const isTextFile = computed(() => {
+  return !!(
+    props.version.fileEntrypoint &&
+    FileUtils.isTextExtension(props.version.fileEntrypoint)
+  );
+});
+
+const showFileDialog = ref(false);
 
 function onDelete(): void {
   if (
@@ -169,6 +185,9 @@ function formatRelative(date: Date): string {
   cursor: pointer;
   font-size: 1em;
   color: #455a64;
+}
+.version-card-link:hover {
+  color: #1976d2;
 }
 .version-card-delete:hover {
   color: #c62828;
