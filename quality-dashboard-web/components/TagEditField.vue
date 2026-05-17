@@ -79,7 +79,7 @@ defineEmits<{
   border: 1px solid #cfd8dc;
   border-radius: 6px;
   background: #fff;
-  overflow: hidden;
+  position: relative;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
