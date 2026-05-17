@@ -71,29 +71,20 @@
           Tags apply to all versions of this report (past and future).
         </p>
         <div class="tag-list">
-          <span v-for="(t, i) in editableTags" :key="i" class="tag-row">
-            <AutocompleteInput
-              v-model="t.tag"
-              :suggestions="availableTagNames"
-              placeholder="tag"
-              :disabled="!authenticationStore.isAuthenticated"
-            />
-            <span>=</span>
-            <AutocompleteInput
-              v-model="t.value"
-              :suggestions="getValuesForTag(t.tag)"
-              placeholder="value"
-              :disabled="!authenticationStore.isAuthenticated"
-            />
-            <button
-              v-if="authenticationStore.isAuthenticated"
-              class="icon-btn danger"
-              title="Remove"
-              @click="removeTagRow(i)"
-            >
-              <i class="bi bi-x-circle"></i>
-            </button>
-          </span>
+          <TagEditField
+            v-for="(t, i) in editableTags"
+            :key="i"
+            class="tag-row"
+            v-model:tag="t.tag"
+            v-model:value="t.value"
+            :tag-suggestions="availableTagNames"
+            :value-suggestions="getValuesForTag(t.tag)"
+            tag-placeholder="tag"
+            value-placeholder="value"
+            :disabled="!authenticationStore.isAuthenticated"
+            :removable="authenticationStore.isAuthenticated"
+            @remove="removeTagRow(i)"
+          />
         </div>
         <div v-if="authenticationStore.isAuthenticated" class="tag-actions">
           <button class="btn-secondary" @click="addTagRow">
@@ -346,12 +337,6 @@ async function onDeleteReport(): Promise<void> {
   align-items: center;
   gap: 0.3em;
 }
-.tag-row input {
-  padding: 0.25em 0.5em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  min-width: 8em;
-}
 .tag-actions {
   display: flex;
   gap: 0.4em;
@@ -364,7 +349,6 @@ async function onDeleteReport(): Promise<void> {
   .icon-btn,
   .btn-primary,
   .btn-secondary,
-  .tag-row input,
   .edit-name-row input {
     background: #1e2a32;
     color: #cfd8dc;

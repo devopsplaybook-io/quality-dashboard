@@ -10,18 +10,15 @@
         <i class="bi bi-list-nested"></i>
       </button>
       <div class="row-fields">
-        <AutocompleteInput
-          :model-value="node.tag"
-          :suggestions="tagNames"
-          placeholder="tag"
-          @update:model-value="(v: string) => emitUpdate({ tag: v })"
-        />
-        <span class="eq">=</span>
-        <AutocompleteInput
-          :model-value="node.value || ''"
-          :suggestions="getValuesForTag(node.tag)"
-          placeholder="(any value)"
-          @update:model-value="(v: string) => emitUpdate({ value: v })"
+        <TagEditField
+          :tag="node.tag"
+          :value="node.value || ''"
+          :tag-suggestions="tagNames"
+          :value-suggestions="getValuesForTag(node.tag)"
+          tag-placeholder="tag"
+          value-placeholder="(any value)"
+          @update:tag="(v: string) => emitUpdate({ tag: v })"
+          @update:value="(v: string) => emitUpdate({ value: v })"
         />
       </div>
       <div class="row-actions">
@@ -150,14 +147,10 @@ function emitUpdate(
   emit("update", { path: props.path, patch });
 }
 
-const lastSegment = computed(
-  () => props.path[props.path.length - 1] as number,
-);
+const lastSegment = computed(() => props.path[props.path.length - 1] as number);
 
 const canMoveUp = computed(() => lastSegment.value > 0);
-const canMoveDown = computed(
-  () => lastSegment.value < props.siblingsCount - 1,
-);
+const canMoveDown = computed(() => lastSegment.value < props.siblingsCount - 1);
 const canIndent = computed(() => lastSegment.value > 0);
 const canOutdent = computed(() => props.path.length > 1);
 
@@ -197,14 +190,6 @@ const ancestorTagsForChildren = computed(() => {
   gap: 0.25em;
   flex: 1;
   min-width: 0;
-}
-.row-fields > :deep(.autocomplete-wrapper) {
-  flex: 1;
-  min-width: 6em;
-}
-.eq {
-  color: #78909c;
-  font-weight: 600;
 }
 .row-actions {
   display: flex;

@@ -114,20 +114,16 @@
         <label>Tags</label>
         <p class="hint">Tags apply to all versions of this report.</p>
         <div v-for="(t, i) in editTags" :key="i" class="tag-row">
-          <AutocompleteInput
-            v-model="t.tag"
-            :suggestions="availableTagNames"
-            placeholder="tag"
+          <TagEditField
+            v-model:tag="t.tag"
+            v-model:value="t.value"
+            :tag-suggestions="availableTagNames"
+            :value-suggestions="getValuesForTag(t.tag)"
+            tag-placeholder="tag"
+            value-placeholder="value"
+            removable
+            @remove="removeEditTag(i)"
           />
-          <span>=</span>
-          <AutocompleteInput
-            v-model="t.value"
-            :suggestions="getValuesForTag(t.tag)"
-            placeholder="value"
-          />
-          <button class="icon-btn danger" @click="removeEditTag(i)">
-            <i class="bi bi-x-circle"></i>
-          </button>
         </div>
         <button class="btn-secondary" @click="addEditTag">
           <i class="bi bi-plus"></i> Add tag
