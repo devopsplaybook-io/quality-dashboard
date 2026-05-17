@@ -1,16 +1,13 @@
 import { FastifyInstance, RequestGenericInterface } from "fastify";
 import { Auth } from "../users/Auth";
 import { SettingsDB } from "./SettingsDB";
-import { OTelLogger, OTelRequestSpan } from "../OTelContext";
+import { OTelRequestSpan } from "../OTelContext";
 import { UsersData } from "../users/UsersData";
-
-const logger = OTelLogger().createModuleLogger("SettingsRoutes");
 
 export class SettingsRoutes {
   //
   public async getRoutes(fastify: FastifyInstance): Promise<void> {
     fastify.get("/", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       const context = OTelRequestSpan(req);
       const settings = await SettingsDB.get(context);
       const isInitialized = (await UsersData.list(context)).length > 0;
@@ -32,7 +29,6 @@ export class SettingsRoutes {
       };
     }
     fastify.put<UpdateSettingsRequest>("/", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       const context = OTelRequestSpan(req);
       try {
         await Auth.mustBeAdmin(req, res);

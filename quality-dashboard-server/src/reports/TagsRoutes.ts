@@ -1,11 +1,9 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { Auth } from "../users/Auth";
-import { OTelLogger, OTelRequestSpan } from "../OTelContext";
+import { OTelRequestSpan } from "../OTelContext";
 import { ReportsRepository } from "./ReportsRepository";
 import { TagsRepository } from "./TagsRepository";
 import { SettingsDB } from "../settings/SettingsDB";
-
-const logger = OTelLogger().createModuleLogger("TagsRoutes");
 
 export class TagsRoutes {
   //
@@ -13,7 +11,6 @@ export class TagsRoutes {
     //
     // ---- Discover all tags / values --------------------------------------
     fastify.get("/", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureCanRead(req, res))) {
         return;
       }
@@ -41,7 +38,6 @@ export class TagsRoutes {
     fastify.get<{ Params: { key: string } }>(
       "/reports/:key",
       async (req, res) => {
-        logger.info(`[${req.method}] ${req.url}`);
         if (!(await ensureCanRead(req, res))) {
           return;
         }
@@ -62,7 +58,6 @@ export class TagsRoutes {
       Params: { key: string };
       Body: { tags?: { tag: string; value: string }[] };
     }>("/reports/:key", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureAuthenticated(req, res))) {
         return;
       }
@@ -94,7 +89,6 @@ export class TagsRoutes {
       Params: { key: string; tag: string };
       Body: { value?: string };
     }>("/reports/:key/:tag", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureAuthenticated(req, res))) {
         return;
       }
@@ -115,7 +109,6 @@ export class TagsRoutes {
     fastify.delete<{ Params: { key: string; tag: string } }>(
       "/reports/:key/:tag",
       async (req, res) => {
-        logger.info(`[${req.method}] ${req.url}`);
         if (!(await ensureAuthenticated(req, res))) {
           return;
         }

@@ -12,9 +12,9 @@
           report<span v-if="node.totalReportKeys !== 1">s</span>
         </span>
       </span>
-      <div v-if="node.metrics.length > 0" class="node-metrics summary">
+      <div v-if="filteredMetrics.length > 0" class="node-metrics summary">
         <MetricChip
-          v-for="m in node.metrics"
+          v-for="m in filteredMetrics"
           :key="`${node.path}-${m.name}`"
           :metric="m"
           :aggregated="true"
@@ -36,6 +36,7 @@
         :node="child"
         :default-expanded="defaultExpanded"
         :expand-bus="expandBus"
+        :shown-metrics="shownMetrics"
       />
     </div>
   </div>
@@ -44,6 +45,7 @@
 <script setup lang="ts">
 import type { AggregatedNode } from "~~/services/DashboardAggregator";
 import type { Report } from "~~/stores/ReportsStore";
+import { filterMetrics } from "~~/services/MetricFilter";
 
 /** Bus for "expand all" / "collapse all" broadcasts from the page. */
 export interface ExpandBus {
@@ -57,6 +59,7 @@ const props = defineProps<{
   node: AggregatedNode;
   defaultExpanded?: boolean;
   expandBus?: ExpandBus;
+  shownMetrics?: string[];
 }>();
 
 const expanded = ref(!!props.defaultExpanded);
@@ -65,6 +68,10 @@ const expanded = ref(!!props.defaultExpanded);
 const hasOpenedOnce = ref(expanded.value);
 
 const reportsStore = ReportsStore();
+
+const filteredMetrics = computed(() =>
+  filterMetrics(props.node.metrics, props.shownMetrics),
+);
 
 const nodeReports = computed(() => {
   return props.node.reportKeys

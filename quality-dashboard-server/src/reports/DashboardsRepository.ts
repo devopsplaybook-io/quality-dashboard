@@ -29,6 +29,7 @@ export class DashboardsRepository {
           JSON.stringify({
             schemaVersion: DASHBOARD_SCHEMA_VERSION,
             root: dashboard.root || [],
+            shownMetrics: dashboard.shownMetrics,
           }),
           dashboard.dateCreated.toISOString(),
           dashboard.dateModified.toISOString(),
@@ -77,6 +78,7 @@ export class DashboardsRepository {
     id: string,
     name: string,
     root: DashboardLevelNode[],
+    shownMetrics?: string[],
   ): Promise<boolean> {
     const span = OTelTracer().startSpan("DashboardsRepository_update", context);
     try {
@@ -89,6 +91,7 @@ export class DashboardsRepository {
           JSON.stringify({
             schemaVersion: DASHBOARD_SCHEMA_VERSION,
             root: root || [],
+            shownMetrics,
           }),
           new Date().toISOString(),
           id,
@@ -119,7 +122,7 @@ export class DashboardsRepository {
     const d = new Dashboard();
     d.id = raw.id;
     d.name = raw.name;
-    let parsed: { schemaVersion?: number; root?: DashboardLevelNode[] } = {};
+    let parsed: { schemaVersion?: number; root?: DashboardLevelNode[]; shownMetrics?: string[] } = {};
     try {
       parsed = JSON.parse(raw.definition || "{}");
     } catch {
@@ -130,6 +133,7 @@ export class DashboardsRepository {
         ? parsed.schemaVersion
         : DASHBOARD_SCHEMA_VERSION;
     d.root = Array.isArray(parsed.root) ? parsed.root : [];
+    d.shownMetrics = Array.isArray(parsed.shownMetrics) ? parsed.shownMetrics : undefined;
     d.dateCreated = new Date(raw.date_created);
     d.dateModified = new Date(raw.date_modified);
     return d;

@@ -45,13 +45,11 @@ export class ReportsRoutes {
   public async getRoutes(fastify: FastifyInstance): Promise<void> {
     //
     fastify.get("/processors", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       return res.status(200).send({ processors: listProcessors() });
     });
 
     // ---- Recent versions (chronological feed) -----------------------------
     fastify.get("/recent", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureCanRead(req, res))) {
         return;
       }
@@ -84,7 +82,6 @@ export class ReportsRoutes {
 
     // ---- Reports list -----------------------------------------------------
     fastify.get("/", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureCanRead(req, res))) {
         return;
       }
@@ -110,7 +107,6 @@ export class ReportsRoutes {
 
     // ---- Single report ----------------------------------------------------
     fastify.get<{ Params: { key: string } }>("/:key", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureCanRead(req, res))) {
         return;
       }
@@ -128,7 +124,6 @@ export class ReportsRoutes {
       Params: { key: string };
       Body: { displayName?: string | null };
     }>("/:key", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureAuthenticated(req, res))) {
         return;
       }
@@ -146,7 +141,6 @@ export class ReportsRoutes {
 
     // ---- Delete a report (and all its versions) ---------------------------
     fastify.delete<{ Params: { key: string } }>("/:key", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureAuthenticated(req, res))) {
         return;
       }
@@ -164,7 +158,6 @@ export class ReportsRoutes {
     fastify.get<{ Params: { key: string } }>(
       "/:key/versions",
       async (req, res) => {
-        logger.info(`[${req.method}] ${req.url}`);
         if (!(await ensureCanRead(req, res))) {
           return;
         }
@@ -175,8 +168,6 @@ export class ReportsRoutes {
         }
         const versions = await ReportsRepository.listVersions(span, report.key);
         const tags = await TagsRepository.listTagsForReport(span, report.key);
-        const tagsMap = new Map<string, ReturnType<typeof toApiTag>[]>();
-        tagsMap.set(report.key, tags.map(toApiTag));
         return res.status(200).send({
           versions: versions.map((v) =>
             toApiVersion(v, report, new Map([[report.key, tags]])),
@@ -189,7 +180,6 @@ export class ReportsRoutes {
     fastify.get<{ Params: { key: string; versionId: string } }>(
       "/:key/versions/:versionId",
       async (req, res) => {
-        logger.info(`[${req.method}] ${req.url}`);
         if (!(await ensureCanRead(req, res))) {
           return;
         }
@@ -223,7 +213,6 @@ export class ReportsRoutes {
     fastify.delete<{ Params: { key: string; versionId: string } }>(
       "/:key/versions/:versionId",
       async (req, res) => {
-        logger.info(`[${req.method}] ${req.url}`);
         if (!(await ensureAuthenticated(req, res))) {
           return;
         }
@@ -245,7 +234,6 @@ export class ReportsRoutes {
       Params: { key: string; versionId: string; "*": string };
       Querystring: { download?: string };
     }>("/:key/versions/:versionId/file/*", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureCanRead(req, res))) {
         return;
       }
@@ -286,7 +274,6 @@ export class ReportsRoutes {
 
     // ---- Upload a new version --------------------------------------------
     fastify.post("/", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       try {
         if (!(await ensureCanWrite(req, res))) {
           return;
@@ -330,7 +317,6 @@ export class ReportsRoutes {
 
     // ---- Delete all reports ----------------------------------------------
     fastify.delete("/", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureAuthenticated(req, res))) {
         return;
       }

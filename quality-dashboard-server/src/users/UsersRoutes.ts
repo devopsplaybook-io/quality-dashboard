@@ -3,9 +3,7 @@ import { Auth } from "./Auth";
 import { User } from "./model/User";
 import { UsersData } from "./UsersData";
 import { UserPassword } from "./UserPassword";
-import { OTelLogger, OTelRequestSpan } from "../OTelContext";
-
-const logger = OTelLogger().createModuleLogger("UsersRoutes");
+import { OTelRequestSpan } from "../OTelContext";
 
 export class UsersRoutes {
   //
@@ -72,7 +70,6 @@ export class UsersRoutes {
     // ==================== LIST USERS (Admin only) ====================
 
     fastify.get("/", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       const context = OTelRequestSpan(req);
       try {
         await Auth.mustBeAdmin(req, res);
@@ -187,7 +184,6 @@ export class UsersRoutes {
       };
     }
     fastify.put<PutUser>("/:id", async (req, res) => {
-      logger.info(`[${req.method}] /api/users/:id`);
       const context = OTelRequestSpan(req);
       try {
         await Auth.mustBeAdmin(req, res);
@@ -231,7 +227,6 @@ export class UsersRoutes {
       };
     }
     fastify.delete<DeleteUser>("/:id", async (req, res) => {
-      logger.info(`[${req.method}] /api/users/:id`);
       const context = OTelRequestSpan(req);
       try {
         await Auth.mustBeAdmin(req, res);

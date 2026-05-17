@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import { Auth } from "../users/Auth";
-import { OTelLogger, OTelRequestSpan } from "../OTelContext";
+import { OTelRequestSpan } from "../OTelContext";
 import { DashboardsRepository } from "./DashboardsRepository";
 import { ReportsRepository } from "./ReportsRepository";
 import { TagsRepository } from "./TagsRepository";
@@ -12,8 +12,6 @@ import {
   DashboardLevelNode,
 } from "./models/Dashboard";
 
-const logger = OTelLogger().createModuleLogger("DashboardsRoutes");
-
 const MAX_TREE_DEPTH = 8;
 
 export class DashboardsRoutes {
@@ -21,7 +19,6 @@ export class DashboardsRoutes {
   public async getRoutes(fastify: FastifyInstance): Promise<void> {
     //
     fastify.get("/", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureCanRead(req, res))) {
         return;
       }
@@ -33,7 +30,6 @@ export class DashboardsRoutes {
     });
 
     fastify.get<{ Params: { id: string } }>("/:id", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureCanRead(req, res))) {
         return;
       }
@@ -51,7 +47,6 @@ export class DashboardsRoutes {
      * The actual tree-building / aggregation happens client-side.
      */
     fastify.get<{ Params: { id: string } }>("/:id/data", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureCanRead(req, res))) {
         return;
       }
@@ -83,9 +78,12 @@ export class DashboardsRoutes {
     });
 
     fastify.post<{
-      Body: { name?: string; root?: DashboardLevelNode[] };
+      Body: {
+        name?: string;
+        root?: DashboardLevelNode[];
+        shownMetrics?: string[];
+      };
     }>("/", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureAuthenticated(req, res))) {
         return;
       }
@@ -97,18 +95,26 @@ export class DashboardsRoutes {
       if ("error" in sanitized) {
         return res.status(400).send({ error: sanitized.error });
       }
+      const shownMetricsResult = sanitizeShownMetrics(req.body?.shownMetrics);
+      if (shownMetricsResult.kind === "error") {
+        return res.status(400).send({ error: shownMetricsResult.error });
+      }
       const dashboard = new Dashboard();
       dashboard.name = name;
       dashboard.root = sanitized.nodes;
+      dashboard.shownMetrics = shownMetricsResult.value;
       await DashboardsRepository.add(OTelRequestSpan(req), dashboard);
       return res.status(201).send({ dashboard: toApiDashboard(dashboard) });
     });
 
     fastify.put<{
       Params: { id: string };
-      Body: { name?: string; root?: DashboardLevelNode[] };
+      Body: {
+        name?: string;
+        root?: DashboardLevelNode[];
+        shownMetrics?: string[];
+      };
     }>("/:id", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureAuthenticated(req, res))) {
         return;
       }
@@ -120,11 +126,16 @@ export class DashboardsRoutes {
       if ("error" in sanitized) {
         return res.status(400).send({ error: sanitized.error });
       }
+      const shownMetricsResult = sanitizeShownMetrics(req.body?.shownMetrics);
+      if (shownMetricsResult.kind === "error") {
+        return res.status(400).send({ error: shownMetricsResult.error });
+      }
       const ok = await DashboardsRepository.update(
         OTelRequestSpan(req),
         req.params.id,
         name,
         sanitized.nodes,
+        shownMetricsResult.value,
       );
       if (!ok) {
         return res.status(404).send({ error: "Dashboard not found" });
@@ -133,7 +144,6 @@ export class DashboardsRoutes {
     });
 
     fastify.delete<{ Params: { id: string } }>("/:id", async (req, res) => {
-      logger.info(`[${req.method}] ${req.url}`);
       if (!(await ensureAuthenticated(req, res))) {
         return;
       }
@@ -209,7 +219,7 @@ function sanitizeRoot(
 }
 
 function toApiDashboard(d: Dashboard): Record<string, unknown> {
-  return {
+  const out: Record<string, unknown> = {
     id: d.id,
     name: d.name,
     schemaVersion: d.schemaVersion || DASHBOARD_SCHEMA_VERSION,
@@ -217,6 +227,51 @@ function toApiDashboard(d: Dashboard): Record<string, unknown> {
     dateCreated: d.dateCreated.toISOString(),
     dateModified: d.dateModified.toISOString(),
   };
+  if (d.shownMetrics !== undefined) {
+    out.shownMetrics = d.shownMetrics;
+  }
+  return out;
+}
+
+/**
+ * Validate and sanitize the shownMetrics array.
+ * Each entry must be a non-empty string composed of word chars, dots,
+ * hyphens, wildcards (*, ?), and commas. Returns the sanitized array
+ * or an error object. If the input is undefined/null, returns undefined.
+ */
+type ShownMetricsResult =
+  | { kind: "ok"; value: string[] | undefined }
+  | { kind: "error"; error: string };
+
+function sanitizeShownMetrics(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  input: any,
+): ShownMetricsResult {
+  if (input === undefined || input === null) {
+    return { kind: "ok", value: undefined };
+  }
+  if (!Array.isArray(input)) {
+    return { kind: "error", error: "shownMetrics must be an array" };
+  }
+  const out: string[] = [];
+  const validPattern = /^[\w.*?,-]+$/;
+  for (const item of input) {
+    if (typeof item !== "string" || !item.trim()) {
+      return {
+        kind: "error",
+        error: "Each shownMetrics entry must be a non-empty string",
+      };
+    }
+    const trimmed = item.trim();
+    if (!validPattern.test(trimmed)) {
+      return {
+        kind: "error",
+        error: `Invalid metric pattern: "${trimmed}". Allowed: letters, numbers, dots, hyphens, underscores, wildcards (*, ?)`,
+      };
+    }
+    out.push(trimmed);
+  }
+  return { kind: "ok", value: out.length > 0 ? out : undefined };
 }
 
 async function ensureCanRead(

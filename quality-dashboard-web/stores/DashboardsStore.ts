@@ -17,6 +17,7 @@ export interface Dashboard {
   name: string;
   schemaVersion: number;
   root: DashboardLevelNode[];
+  shownMetrics?: string[];
   dateCreated: string;
   dateModified: string;
 }
@@ -90,10 +91,14 @@ export const DashboardsStore = defineStore("DashboardsStore", {
       }
     },
 
-    async create(name: string, root: DashboardLevelNode[]): Promise<Dashboard> {
+    async create(
+      name: string,
+      root: DashboardLevelNode[],
+      shownMetrics?: string[],
+    ): Promise<Dashboard> {
       const res = await axios.post(
         `${(await Config.get()).SERVER_URL}/dashboards`,
-        { name, root },
+        { name, root, shownMetrics },
         await AuthService.getAuthHeader(),
       );
       const created = res.data.dashboard as Dashboard;
@@ -105,10 +110,11 @@ export const DashboardsStore = defineStore("DashboardsStore", {
       id: string,
       name: string,
       root: DashboardLevelNode[],
+      shownMetrics?: string[],
     ): Promise<void> {
       const res = await axios.put(
         `${(await Config.get()).SERVER_URL}/dashboards/${id}`,
-        { name, root },
+        { name, root, shownMetrics },
         await AuthService.getAuthHeader(),
       );
       void res;
@@ -116,6 +122,7 @@ export const DashboardsStore = defineStore("DashboardsStore", {
       if (d) {
         d.name = name;
         d.root = root;
+        d.shownMetrics = shownMetrics;
       }
     },
 

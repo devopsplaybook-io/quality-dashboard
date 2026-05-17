@@ -89,6 +89,7 @@
             :node="node"
             :default-expanded="false"
             :expand-bus="expandBus"
+            :shown-metrics="selectedData.dashboard.shownMetrics"
           />
         </div>
       </div>
@@ -121,6 +122,22 @@
           :tag-names="tagsStore.tagNames"
           :get-values-for-tag="tagsStore.valuesForTag"
         />
+
+        <label>Node-level metrics to display</label>
+        <p class="hint">
+          One glob pattern per line. Only matching metric names are shown at
+          each collapsed node. All metrics still appear in expanded report
+          cards. Leave empty to show all. Wildcards: <code>*</code> (any
+          sequence), <code>?</code> (single char).
+        </p>
+        <textarea
+          v-model="editShownMetricsText"
+          class="metrics-patterns-input"
+          placeholder="kyverno.audit.*
+trivy.*
+coverage.*"
+          rows="4"
+        ></textarea>
 
         <p v-if="treeValidationError" class="modal-error">
           {{ treeValidationError }}
@@ -169,6 +186,18 @@ const showEdit = ref(false);
 const editingDashboard = ref<Dashboard | null>(null);
 const editName = ref("");
 const editRoot = ref<DashboardLevelNode[]>([]);
+const editShownMetrics = ref<string[]>([]);
+
+/** Textarea binding: join/split on newline. */
+const editShownMetricsText = computed({
+  get: () => editShownMetrics.value.join("\n"),
+  set: (val: string) => {
+    editShownMetrics.value = val
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  },
+});
 
 const selectedId = ref<string | null>(null);
 const selectedData = ref<DashboardData | null>(null);
@@ -269,6 +298,7 @@ function openCreate(): void {
   editingDashboard.value = null;
   editName.value = "";
   editRoot.value = [];
+  editShownMetrics.value = [];
   showCreate.value = true;
 }
 
@@ -276,6 +306,7 @@ function openEdit(d: Dashboard): void {
   editingDashboard.value = d;
   editName.value = d.name;
   editRoot.value = cloneRoot(d.root || []);
+  editShownMetrics.value = d.shownMetrics ? [...d.shownMetrics] : [];
   showEdit.value = true;
 }
 
@@ -285,17 +316,25 @@ function cancelEdit(): void {
   editingDashboard.value = null;
   editName.value = "";
   editRoot.value = [];
+  editShownMetrics.value = [];
 }
 
 async function saveEdit(): Promise<void> {
   if (!canSave.value) return;
   const name = editName.value.trim();
   const root = editRoot.value;
+  const shownMetrics =
+    editShownMetrics.value.length > 0 ? editShownMetrics.value : undefined;
   if (editingDashboard.value) {
-    await dashboardsStore.update(editingDashboard.value.id, name, root);
+    await dashboardsStore.update(
+      editingDashboard.value.id,
+      name,
+      root,
+      shownMetrics,
+    );
     await selectDashboard(editingDashboard.value.id);
   } else {
-    const created = await dashboardsStore.create(name, root);
+    const created = await dashboardsStore.create(name, root, shownMetrics);
     selectedId.value = created.id;
     selectedData.value = {
       dashboard: created,
@@ -456,7 +495,26 @@ async function onDeleteFromModal(): Promise<void> {
   margin: 0.4em 0 0;
 }
 
+.metrics-patterns-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  padding: 0.4em 0.5em;
+  border: 1px solid #cfd8dc;
+  border-radius: 4px;
+  background: #fafafa;
+  color: #263238;
+  resize: vertical;
+  margin-bottom: 0.5em;
+}
+
 @media (prefers-color-scheme: dark) {
+  .metrics-patterns-input {
+    background: #263238;
+    border-color: #455a64;
+    color: #cfd8dc;
+  }
   .dashboard-tabs {
     border-bottom-color: #455a64;
   }

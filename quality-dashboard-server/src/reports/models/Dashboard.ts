@@ -24,15 +24,23 @@ export interface DashboardLevelNode {
 export interface DashboardDefinition {
   schemaVersion: number;
   root: DashboardLevelNode[];
+  /**
+   * Optional list of glob patterns to filter which metrics appear at each
+   * aggregated node level. If undefined or empty, all metrics are shown.
+   * Applied on the UI layer only; report-level metrics are unaffected.
+   * Wildcards: * matches any sequence, ? matches a single character.
+   */
+  shownMetrics?: string[];
 }
 
-export const DASHBOARD_SCHEMA_VERSION = 2;
+export const DASHBOARD_SCHEMA_VERSION = 3;
 
 export class Dashboard {
   public id: string;
   public name: string;
   public schemaVersion: number;
   public root: DashboardLevelNode[];
+  public shownMetrics?: string[];
   public dateCreated: Date;
   public dateModified: Date;
 
@@ -41,6 +49,7 @@ export class Dashboard {
     this.name = "";
     this.schemaVersion = DASHBOARD_SCHEMA_VERSION;
     this.root = [];
+    this.shownMetrics = undefined;
     this.dateCreated = new Date();
     this.dateModified = this.dateCreated;
   }

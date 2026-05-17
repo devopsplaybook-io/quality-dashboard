@@ -101,6 +101,7 @@ Promise.resolve()
     fastify.get("/api/status", async () => {
       return { started: true };
     });
+
     fastify.register(fastifyStatic, {
       root: path.join(__dirname, "../web"),
       prefix: "/",

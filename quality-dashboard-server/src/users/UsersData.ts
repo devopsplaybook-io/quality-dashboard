@@ -1,6 +1,6 @@
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { User } from "./model/User";
-import { OTelLogger, OTelTracer } from "../OTelContext";
+import { OTelTracer } from "../OTelContext";
 import {
   SqlDbUtilsExecSQL,
   SqlDbUtilsQuerySQL,
