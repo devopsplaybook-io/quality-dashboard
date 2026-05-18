@@ -26,6 +26,7 @@ export interface Report {
     metrics: Metric[];
     hasFile: boolean;
     fileEntrypoint?: string;
+    hasPreview?: boolean;
     dateCreated: string;
   };
 }
@@ -41,6 +42,7 @@ export interface ReportVersion {
   info?: any;
   hasFile: boolean;
   fileEntrypoint?: string;
+  hasPreview?: boolean;
   dateCreated: string;
   tags: ReportTag[];
 }

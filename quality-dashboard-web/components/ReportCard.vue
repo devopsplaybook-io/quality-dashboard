@@ -51,13 +51,18 @@
       </button>
       <button
         v-if="
-          report.latestVersion?.hasFile &&
-          report.latestVersion?.fileEntrypoint &&
-          isTextFile
+          report.latestVersion?.hasPreview ||
+          (report.latestVersion?.hasFile &&
+            report.latestVersion?.fileEntrypoint &&
+            isTextFile)
         "
         class="icon-btn"
         type="button"
-        title="View report file"
+        :title="
+          report.latestVersion?.hasPreview
+            ? 'View formatted preview'
+            : 'View report file'
+        "
         @click.stop="showFileDialog = true"
       >
         <i class="bi bi-eye"></i>
@@ -79,6 +84,8 @@
   <FileContentDialog
     :visible="showFileDialog"
     :file-url="fileUrl"
+    :preview-url="previewUrl"
+    :is-preview="!!report.latestVersion?.hasPreview"
     :download-url="fileDownloadUrl"
     :file-name="report.latestVersion?.fileEntrypoint || ''"
     @close="showFileDialog = false"
@@ -114,14 +121,23 @@ const fileUrl = computed(() => {
   return `${serverUrl.value}/reports/${encodeURIComponent(props.report.key)}/versions/${lv.id}/file/${lv.fileEntrypoint}`;
 });
 
+const previewUrl = computed(() => {
+  const lv = props.report.latestVersion;
+  if (!lv) return "#";
+  return `${serverUrl.value}/reports/${encodeURIComponent(props.report.key)}/versions/${lv.id}/preview`;
+});
+
 const fileDownloadUrl = computed(() => {
   if (fileUrl.value === "#") return "#";
   return `${fileUrl.value}?download=1`;
 });
 
 const isTextFile = computed(() => {
-  const ep = props.report.latestVersion?.fileEntrypoint;
-  return !!ep && FileUtils.isTextExtension(ep);
+  const lv = props.report.latestVersion;
+  return !!(
+    lv?.fileEntrypoint &&
+    (FileUtils.isTextExtension(lv.fileEntrypoint) || lv?.hasPreview)
+  );
 });
 
 const showFileDialog = ref(false);

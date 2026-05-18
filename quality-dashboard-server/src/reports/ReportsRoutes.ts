@@ -7,8 +7,12 @@ import { OTelLogger, OTelRequestSpan } from "../OTelContext";
 import { ReportsRepository } from "./ReportsRepository";
 import { TagsRepository } from "./TagsRepository";
 import { HttpError, ReportsService } from "./ReportsService";
-import { listProcessors } from "./ProcessorRegistry";
-import { resolveSafeReportFile } from "./FileStorage";
+import {
+  hasFormatReportPreview,
+  listProcessors,
+  runFormatReportPreview,
+} from "./ProcessorRegistry";
+import { getReportContentDir, resolveSafeReportFile } from "./FileStorage";
 import { SettingsDB } from "../settings/SettingsDB";
 import { Report } from "./models/Report";
 import { ReportVersion } from "./models/ReportVersion";
@@ -272,6 +276,48 @@ export class ReportsRoutes {
       return res.send(fse.createReadStream(safe));
     });
 
+    // ---- Get preview HTML for a version ----------------------------------
+    fastify.get<{
+      Params: { key: string; versionId: string };
+    }>("/:key/versions/:versionId/preview", async (req, res) => {
+      if (!(await ensureCanRead(req, res))) {
+        return;
+      }
+      const span = OTelRequestSpan(req);
+      const version = await ReportsRepository.getVersion(
+        span,
+        req.params.versionId,
+      );
+      if (!version || version.reportKey !== req.params.key) {
+        return res.status(404).send({ error: "Version not found" });
+      }
+      if (!hasFormatReportPreview(version.processor)) {
+        return res
+          .status(404)
+          .send({ error: "Processor does not support preview" });
+      }
+
+      const reportDir = getReportContentDir(version.id);
+
+      try {
+        const html = await runFormatReportPreview(
+          version.processor,
+          {
+            reportDir,
+            fileEntrypoint: version.fileEntrypoint,
+          },
+          config.PROCESSOR_TIMEOUT_MS,
+        );
+        res.header("Content-Type", "text/html; charset=utf-8");
+        return res.status(200).send(html);
+      } catch (err) {
+        logger.error(`Preview generation failed: ${(err as Error).message}`);
+        return res
+          .status(500)
+          .send({ error: `Preview failed: ${(err as Error).message}` });
+      }
+    });
+
     // ---- Upload a new version --------------------------------------------
     fastify.post("/", async (req, res) => {
       try {
@@ -344,6 +390,7 @@ function toApiReport(
       metrics: latestVersion.metrics,
       hasFile: latestVersion.hasFile,
       fileEntrypoint: latestVersion.fileEntrypoint,
+      hasPreview: hasFormatReportPreview(latestVersion.processor),
       dateCreated: latestVersion.dateCreated.toISOString(),
     };
   }
@@ -371,6 +418,7 @@ function toApiVersion(
     info: v.info,
     hasFile: v.hasFile,
     fileEntrypoint: v.fileEntrypoint,
+    hasPreview: hasFormatReportPreview(v.processor),
     dateCreated: v.dateCreated.toISOString(),
     tags: (tagsByKey.get(v.reportKey) || []).map(toApiTag),
   };

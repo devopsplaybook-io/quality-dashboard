@@ -98,7 +98,8 @@ export class ReportsService {
             path.join(reportContentDir, "data.json"),
             input.jsonPayload,
           );
-          version.hasFile = false;
+          version.hasFile = true;
+          version.fileEntrypoint = "data.json";
         }
 
         // 2) Run processor

@@ -4,6 +4,22 @@
       <div class="file-content-header">
         <h3 class="file-content-title">{{ fileName }}</h3>
         <div class="file-content-header-actions">
+          <div v-if="isPreview" class="view-tabs">
+            <button
+              :class="['tab-btn', { active: viewMode === 'preview' }]"
+              title="View formatted preview"
+              @click="switchView('preview')"
+            >
+              <i class="bi bi-eye"></i> Preview
+            </button>
+            <button
+              :class="['tab-btn', { active: viewMode === 'raw' }]"
+              title="View raw file content"
+              @click="switchView('raw')"
+            >
+              <i class="bi bi-file-text"></i> Raw
+            </button>
+          </div>
           <button
             class="btn-primary"
             title="Download file"
@@ -23,7 +39,21 @@
         <div v-else-if="error" class="file-content-error">
           <i class="bi bi-exclamation-triangle-fill"></i> {{ error }}
         </div>
-        <pre v-else class="file-content-pre"><code>{{ content }}</code></pre>
+        <div
+          v-else-if="isPreview && viewMode === 'preview'"
+          class="file-content-html"
+        >
+          <iframe
+            :srcdoc="content"
+            class="preview-iframe"
+            sandbox="allow-same-origin"
+            title="Report preview"
+          ></iframe>
+        </div>
+        <pre
+          v-else-if="viewMode === 'raw' || !isPreview"
+          class="file-content-pre"
+        ><code>{{ content }}</code></pre>
       </div>
     </div>
   </div>
@@ -65,6 +95,8 @@ const props = defineProps<{
   fileUrl: string;
   downloadUrl: string;
   fileName: string;
+  isPreview?: boolean;
+  previewUrl?: string;
 }>();
 
 const emit = defineEmits<{
@@ -74,34 +106,46 @@ const emit = defineEmits<{
 const content = ref("");
 const loading = ref(false);
 const error = ref<string | null>(null);
+const viewMode = ref<"preview" | "raw">("preview");
+
+async function fetchContent(): Promise<void> {
+  loading.value = true;
+  error.value = null;
+  content.value = "";
+  try {
+    const targetUrl =
+      props.isPreview && viewMode.value === "preview" && props.previewUrl
+        ? props.previewUrl
+        : props.fileUrl;
+    const res = await axios.get(targetUrl, await AuthService.getAuthHeader());
+    const data = res.data;
+    content.value =
+      typeof data === "string" ? data : JSON.stringify(data, null, 2);
+  } catch (err) {
+    error.value = (err as Error).message || "Failed to load file content";
+  } finally {
+    loading.value = false;
+  }
+}
+
+function switchView(mode: "preview" | "raw"): void {
+  viewMode.value = mode;
+  fetchContent();
+}
 
 watch(
   () => props.visible,
   async (isVisible) => {
     if (!isVisible) return;
-    loading.value = true;
-    error.value = null;
-    content.value = "";
-    try {
-      const res = await axios.get(
-        props.fileUrl,
-        await AuthService.getAuthHeader(),
-      );
-      const data = res.data;
-      content.value =
-        typeof data === "string" ? data : JSON.stringify(data, null, 2);
-    } catch (err) {
-      error.value = (err as Error).message || "Failed to load file content";
-    } finally {
-      loading.value = false;
-    }
+    viewMode.value = "preview";
+    await fetchContent();
   },
 );
 </script>
 
 <style scoped>
 .file-content-card {
-  width: min(92vw, 960px);
+  width: min(96vw, 1200px);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -132,12 +176,56 @@ watch(
   display: flex;
   gap: var(--space-sm);
   flex-shrink: 0;
+  align-items: center;
+}
+.view-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  border: 1px solid var(--color-border);
+}
+.tab-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.tab-btn.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+.tab-btn:not(.active):hover {
+  color: var(--color-text);
+  background: var(--color-bg-hover);
 }
 .file-content-body {
   flex: 1;
   overflow-y: auto;
   padding: 0;
   min-height: 200px;
+}
+.file-content-html {
+  min-height: 200px;
+  display: flex;
+}
+.file-content-html :deep(> div) {
+  padding: 0;
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 70vh;
+  border: none;
 }
 .file-content-pre {
   margin: 0;
@@ -179,6 +267,14 @@ watch(
     background: var(--color-bg-secondary);
     border-bottom-color: var(--color-border);
     color: var(--color-text);
+  }
+  .view-tabs {
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border);
+  }
+  .tab-btn:not(.active):hover {
+    color: var(--color-text);
+    background: var(--color-bg-hover);
   }
   .file-content-pre {
     background: #0d1b1e;

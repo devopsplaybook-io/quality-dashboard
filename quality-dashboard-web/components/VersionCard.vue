@@ -17,9 +17,14 @@
           <i class="bi bi-download"></i>
         </button>
         <button
-          v-if="version.hasFile && version.fileEntrypoint && isTextFile"
+          v-if="
+            version.hasPreview ||
+            (version.hasFile && version.fileEntrypoint && isTextFile)
+          "
           class="icon-btn"
-          title="View file content"
+          :title="
+            version.hasPreview ? 'View formatted preview' : 'View file content'
+          "
           @click="showFileDialog = true"
         >
           <i class="bi bi-eye"></i>
@@ -65,6 +70,8 @@
   <FileContentDialog
     :visible="showFileDialog"
     :file-url="fileUrl"
+    :preview-url="previewUrl"
+    :is-preview="!!version.hasPreview"
     :download-url="downloadUrl"
     :file-name="version.fileEntrypoint || ''"
     @close="showFileDialog = false"
@@ -92,6 +99,10 @@ const fileUrl = computed(() => {
   return `${serverUrl.value}/reports/${encodeURIComponent(props.version.reportKey)}/versions/${props.version.id}/file/${props.version.fileEntrypoint}`;
 });
 
+const previewUrl = computed(() => {
+  return `${serverUrl.value}/reports/${encodeURIComponent(props.version.reportKey)}/versions/${props.version.id}/preview`;
+});
+
 const downloadUrl = computed(() => {
   if (!props.version.fileEntrypoint) return "#";
   return `${fileUrl.value}?download=1`;
@@ -104,7 +115,8 @@ const relativeDate = computed(() =>
 const isTextFile = computed(() => {
   return !!(
     props.version.fileEntrypoint &&
-    FileUtils.isTextExtension(props.version.fileEntrypoint)
+    (FileUtils.isTextExtension(props.version.fileEntrypoint) ||
+      props.version.hasPreview)
   );
 });
 

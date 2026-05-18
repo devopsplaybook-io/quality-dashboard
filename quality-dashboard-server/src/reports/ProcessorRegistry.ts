@@ -32,6 +32,9 @@ interface ProcessorModule {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   describe?: () => any;
   analyse: (ctx: ProcessorContext) => Promise<ProcessorResult>;
+  formatReportPreview?: (
+    ctx: ProcessorContext & { fileEntrypoint?: string },
+  ) => Promise<string>;
 }
 
 interface CachedProcessor {
@@ -117,6 +120,26 @@ export function listProcessors(): ProcessorDescriptor[] {
 
 export function hasProcessor(name: string): boolean {
   return cache.has(name);
+}
+
+export function hasFormatReportPreview(name: string): boolean {
+  const entry = cache.get(name);
+  return !!entry && typeof entry.module.formatReportPreview === "function";
+}
+
+export async function runFormatReportPreview(
+  name: string,
+  ctx: ProcessorContext & { fileEntrypoint?: string },
+  timeoutMs: number,
+): Promise<string> {
+  const entry = cache.get(name);
+  if (!entry) {
+    throw new Error(`Processor not found: ${name}`);
+  }
+  if (typeof entry.module.formatReportPreview !== "function") {
+    throw new Error(`Processor '${name}' does not support formatReportPreview`);
+  }
+  return withTimeout(entry.module.formatReportPreview(ctx), timeoutMs, name);
 }
 
 export async function runProcessor(
