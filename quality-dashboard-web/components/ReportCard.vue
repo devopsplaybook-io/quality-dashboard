@@ -43,6 +43,7 @@
           report.latestVersion?.hasFile && report.latestVersion?.fileEntrypoint
         "
         class="icon-btn"
+        type="button"
         title="Download latest report file"
         @click.stop="downloadFile"
       >
@@ -55,6 +56,7 @@
           isTextFile
         "
         class="icon-btn"
+        type="button"
         title="View report file"
         @click.stop="showFileDialog = true"
       >
@@ -295,6 +297,11 @@ function relativeDate(iso: string): string {
   grid-template-columns: repeat(auto-fit, minmax(28px, auto));
   gap: 0.3em;
   justify-content: end;
+}
+
+.report-card-actions button {
+  margin-top: 0.8rem;
+  margin-bottom: 0.4rem;
 }
 
 @media (prefers-color-scheme: dark) {
