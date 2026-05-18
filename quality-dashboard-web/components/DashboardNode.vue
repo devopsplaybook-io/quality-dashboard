@@ -28,6 +28,7 @@
           v-for="report in nodeReports"
           :key="report.key"
           :report="report"
+          :show-actions="true"
         />
       </div>
       <DashboardNode
