@@ -107,33 +107,33 @@ const countTitle = computed(() => {
 
 <style scoped>
 .dashboard-node {
-  border-left: 2px solid #cfd8dc;
-  padding-left: 0.5em;
-  margin-bottom: 0.3em;
+  border-left: 2px solid var(--color-border);
+  padding-left: var(--space-md);
+  margin-bottom: var(--space-xs);
 }
 .dashboard-node.level-0 {
-  border-left-color: #1976d2;
+  border-left-color: var(--color-primary);
 }
 .node-header {
   display: flex;
   align-items: center;
-  gap: 0.4em;
-  padding: 0.3em 0.4em;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
   cursor: pointer;
   user-select: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   flex-wrap: wrap;
 }
 .node-header:hover {
-  background: #eceff1;
+  background: var(--color-bg-hover);
 }
 .caret {
-  color: #78909c;
+  color: var(--color-text-muted);
   flex-shrink: 0;
 }
 .node-label {
   font-family: ui-monospace, monospace;
-  font-size: 0.95em;
+  font-size: var(--font-body);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -141,15 +141,15 @@ const countTitle = computed(() => {
   max-width: 100%;
 }
 .node-count {
-  color: #455a64;
-  font-size: 0.8em;
-  background: #eceff1;
-  padding: 0.05em 0.4em;
+  color: var(--color-text-secondary);
+  font-size: var(--font-md);
+  background: var(--color-bg-hover);
+  padding: 0.05em var(--space-sm);
   border-radius: 10px;
   white-space: nowrap;
 }
 .node-count-suffix {
-  color: #78909c;
+  color: var(--color-text-muted);
 }
 .node-metrics.summary {
   display: flex;
@@ -160,30 +160,30 @@ const countTitle = computed(() => {
   max-width: 100%;
 }
 .node-body {
-  padding: 0.2em 0 0.4em 0.6em;
+  padding: 0.2em 0 var(--space-sm) var(--space-compact);
 }
 .node-reports {
   display: flex;
   flex-direction: column;
   gap: 0.2em;
-  margin-bottom: 0.4em;
+  margin-bottom: var(--space-sm);
 }
 @media (prefers-color-scheme: dark) {
   .dashboard-node {
-    border-left-color: #455a64;
+    border-left-color: var(--color-border);
   }
   .dashboard-node.level-0 {
-    border-left-color: #1976d2;
+    border-left-color: var(--color-primary);
   }
   .node-header:hover {
-    background: #263238;
+    background: var(--color-bg-hover);
   }
   .node-count {
-    background: #37474f;
-    color: #cfd8dc;
+    background: var(--color-border-light);
+    color: var(--color-text);
   }
   .node-count-suffix {
-    color: #90a4ae;
+    color: var(--color-text-muted);
   }
 }
 </style>

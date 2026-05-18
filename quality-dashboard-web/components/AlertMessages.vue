@@ -36,12 +36,12 @@ export default {
   color: #eee;
 }
 .message {
-  background-color: #546e7a;
+  background-color: var(--color-text-secondary);
 }
 .message-info {
-  background-color: #43a047;
+  background-color: var(--color-success);
 }
 .message-error {
-  background-color: #e53935;
+  background-color: var(--color-danger);
 }
 </style>

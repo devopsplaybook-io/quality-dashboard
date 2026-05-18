@@ -79,6 +79,18 @@
             <span v-else class="empty-inline">(none)</span>
           </p>
 
+          <div
+            v-if="dashboardMetrics.length > 0"
+            class="dashboard-metrics-summary"
+          >
+            <MetricChip
+              v-for="m in dashboardMetrics"
+              :key="`dashboard-${m.name}`"
+              :metric="m"
+              :aggregated="true"
+            />
+          </div>
+
           <div v-if="aggregatedTree.length === 0" class="empty">
             No reports match this dashboard yet.
           </div>
@@ -167,11 +179,13 @@ import {
   buildDashboardTree,
   type AggregatedNode,
 } from "~~/services/DashboardAggregator";
+import { filterMetrics } from "~~/services/MetricFilter";
 import type {
   Dashboard,
   DashboardData,
   DashboardLevelNode,
 } from "~~/stores/DashboardsStore";
+import type { Metric } from "~~/stores/ReportsStore";
 import type { ExpandBus } from "~~/components/DashboardNode.vue";
 
 const dashboardsStore = DashboardsStore();
@@ -211,6 +225,35 @@ const aggregatedTree = computed<AggregatedNode[]>(() => {
     selectedData.value.dashboard.root,
     selectedData.value.reports,
   );
+});
+
+/** Aggregate metrics across ALL reports in the selected dashboard. */
+const dashboardMetrics = computed<Metric[]>(() => {
+  if (!selectedData.value) return [];
+  const data = selectedData.value;
+  const accum = new Map<string, { type: Metric["type"]; values: number[] }>();
+  for (const report of data.reports) {
+    for (const m of report.metrics) {
+      let entry = accum.get(m.name);
+      if (!entry) {
+        entry = { type: m.type, values: [] };
+        accum.set(m.name, entry);
+      }
+      entry.values.push(Number(m.value));
+    }
+  }
+  const out: Metric[] = [];
+  for (const [name, e] of accum.entries()) {
+    let value = 0;
+    if (e.type === "percentage" || e.type === "boolean") {
+      value =
+        e.values.reduce((a, b) => a + b, 0) / Math.max(1, e.values.length);
+    } else {
+      value = e.values.reduce((a, b) => a + b, 0);
+    }
+    out.push({ name, type: e.type, value });
+  }
+  return filterMetrics(out, data.dashboard.shownMetrics);
 });
 
 const rootSummary = computed(() => {
@@ -387,15 +430,15 @@ async function onDeleteFromModal(): Promise<void> {
 
 <style scoped>
 .dashboards-page {
-  padding: 0.5em 0.5em 2em;
+  padding: var(--space-md) var(--space-md) var(--space-2xl);
 }
 
-/* Tab bar — same style as settings */
+/* Tab bar */
 .dashboard-tabs {
   display: flex;
-  gap: 0.25em;
-  margin-bottom: 1em;
-  border-bottom: 1px solid #cfd8dc;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-loose);
+  border-bottom: 1px solid var(--color-border);
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -405,44 +448,44 @@ async function onDeleteFromModal(): Promise<void> {
   display: none;
 }
 .dashboard-tab {
-  padding: 0.5em 1em;
+  padding: var(--space-md) var(--space-loose);
   border: 1px solid transparent;
   border-bottom: none;
-  border-radius: 4px 4px 0 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
   background: transparent;
   cursor: pointer;
-  font-size: 0.85em;
-  color: #546e7a;
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
   display: inline-flex;
   align-items: center;
-  gap: 0.35em;
+  gap: var(--space-sm);
   transition: all 0.15s;
   margin-bottom: -1px;
   white-space: nowrap;
   flex-shrink: 0;
 }
 .dashboard-tab:hover {
-  background: #eceff1;
-  color: #263238;
+  background: var(--color-bg-hover);
+  color: var(--color-text);
 }
 .dashboard-tab.active {
-  background: #fff;
-  border-color: #cfd8dc;
-  color: #1976d2;
+  background: var(--color-bg);
+  border-color: var(--color-border);
+  color: var(--color-primary);
   font-weight: 600;
 }
 .dashboard-content {
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  padding: 0.8em;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-base);
+  background: var(--color-bg);
 }
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5em;
+  gap: var(--space-md);
   margin-bottom: 0;
 }
 .dashboard-header h3 {
@@ -454,16 +497,29 @@ async function onDeleteFromModal(): Promise<void> {
 }
 .header-actions {
   display: flex;
-  gap: 0.4em;
+  gap: var(--space-sm);
 }
 .levels-summary {
-  font-size: 0.85em;
-  color: #607d8b;
-  margin: 0.2em 0 1em;
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
+  margin: 0.2em 0 var(--space-loose);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Dashboard-wide metric summary bar */
+.dashboard-metrics-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em;
+  padding: var(--space-compact) var(--space-base);
+  margin-bottom: var(--space-loose);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
 .levels-summary code {
   font-family: ui-monospace, monospace;
   word-break: break-all;
@@ -471,74 +527,74 @@ async function onDeleteFromModal(): Promise<void> {
 }
 .empty-inline {
   font-style: italic;
-  color: #90a4ae;
+  color: var(--color-text-muted);
 }
 .loading,
 .empty {
   text-align: center;
-  padding: 1.5em;
-  color: #78909c;
+  padding: var(--space-xl);
+  color: var(--color-text-muted);
 }
 .error {
   text-align: center;
-  padding: 1em;
-  color: #bf360c;
-  background: #fff3e0;
-  border: 1px solid #ffccbc;
-  border-radius: 4px;
-  margin-bottom: 0.8em;
+  padding: var(--space-loose);
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-base);
 }
 
 .modal-error {
-  font-size: 0.8em;
-  color: #c62828;
-  margin: 0.4em 0 0;
+  font-size: var(--font-md);
+  color: var(--color-danger);
+  margin: var(--space-sm) 0 0;
 }
 
 .metrics-patterns-input {
   width: 100%;
   box-sizing: border-box;
   font-family: ui-monospace, monospace;
-  font-size: 0.85em;
-  padding: 0.4em 0.5em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  background: #fafafa;
-  color: #263238;
+  font-size: var(--font-base);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
   resize: vertical;
-  margin-bottom: 0.5em;
+  margin-bottom: var(--space-md);
 }
 
 @media (prefers-color-scheme: dark) {
   .metrics-patterns-input {
-    background: #263238;
-    border-color: #455a64;
-    color: #cfd8dc;
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border);
+    color: var(--color-text);
   }
   .dashboard-tabs {
-    border-bottom-color: #455a64;
+    border-bottom-color: var(--color-border);
   }
   .dashboard-tab {
-    color: #b0bec5;
+    color: var(--color-text-secondary);
   }
   .dashboard-tab:hover {
-    background: #263238;
-    color: #cfd8dc;
+    background: var(--color-bg-hover);
+    color: var(--color-text);
   }
   .dashboard-tab.active {
-    background: #1e2a32;
-    border-color: #455a64;
-    color: #64b5f6;
+    background: var(--color-bg);
+    border-color: var(--color-border);
+    color: var(--color-primary);
   }
   .dashboard-content {
-    background: #1e2a32;
-    border-color: #455a64;
-    color: #cfd8dc;
+    background: var(--color-bg);
+    border-color: var(--color-border);
+    color: var(--color-text);
   }
   .error {
-    background: #3e2723;
-    color: #ffab91;
-    border-color: #5d4037;
+    background: var(--color-error-bg);
+    color: var(--color-error);
+    border-color: var(--color-error-border);
   }
 }
 </style>

@@ -105,22 +105,22 @@ watch(
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  background: #fff;
-  border-radius: 6px;
+  background: var(--color-bg);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 .file-content-header {
   display: flex;
   align-items: center;
-  gap: 0.5em;
-  padding: 0.7em 1em;
-  border-bottom: 1px solid #cfd8dc;
-  background: #f5f7f8;
+  gap: var(--space-md);
+  padding: 0.7em var(--space-loose);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
   flex-shrink: 0;
 }
 .file-content-title {
   margin: 0;
-  font-size: 1em;
+  font-size: var(--font-lg);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -130,7 +130,7 @@ watch(
 }
 .file-content-header-actions {
   display: flex;
-  gap: 0.4em;
+  gap: var(--space-sm);
   flex-shrink: 0;
 }
 .file-content-body {
@@ -141,10 +141,10 @@ watch(
 }
 .file-content-pre {
   margin: 0;
-  padding: 1em;
+  padding: var(--space-loose);
   font-family:
     ui-monospace, "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
-  font-size: 0.78em;
+  font-size: var(--font-sm);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
@@ -162,33 +162,33 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5em;
-  padding: 3em 1em;
-  color: #78909c;
-  font-size: 0.9em;
+  gap: var(--space-md);
+  padding: var(--space-3xl) var(--space-loose);
+  color: var(--color-text-muted);
+  font-size: var(--font-body);
 }
 .file-content-error {
-  color: #bf360c;
+  color: var(--color-error);
 }
 
 @media (prefers-color-scheme: dark) {
   .file-content-card {
-    background: #1e2a32;
+    background: var(--color-bg);
   }
   .file-content-header {
-    background: #263238;
-    border-bottom-color: #455a64;
-    color: #cfd8dc;
+    background: var(--color-bg-secondary);
+    border-bottom-color: var(--color-border);
+    color: var(--color-text);
   }
   .file-content-pre {
     background: #0d1b1e;
-    color: #cfd8dc;
+    color: var(--color-text);
   }
   .file-content-error {
-    color: #ffab91;
+    color: var(--color-error);
   }
   .file-content-status {
-    color: #90a4ae;
+    color: var(--color-text-muted);
   }
 }
 </style>

@@ -63,10 +63,10 @@ defineEmits<{
 .tag-edit-field {
   display: inline-flex;
   align-items: center;
-  gap: 0.35em;
+  gap: var(--space-sm);
   flex: 1;
   min-width: 0;
-  font-size: 0.9em;
+  font-size: var(--font-body);
   padding: 0;
   margin: 0;
 }
@@ -76,20 +76,20 @@ defineEmits<{
   flex: 1;
   min-width: 0;
   height: 2em;
-  border: 1px solid #cfd8dc;
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
   position: relative;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
 }
 .tag-edit-group:hover {
-  border-color: #90a4ae;
+  border-color: var(--color-border-hover);
 }
 .tag-edit-group:focus-within {
-  border-color: #1976d2;
-  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-focus-ring);
 }
 .tag-edit-group :deep(.autocomplete-wrapper) {
   flex: 1;
@@ -120,19 +120,19 @@ defineEmits<{
 }
 .tag-edit-group :deep(.autocomplete-dropdown li) {
   padding: 0.25em 0.6em;
-  font-size: 0.95em;
+  font-size: var(--font-body);
 }
 .tag-edit-sep {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 0.4em;
-  color: #90a4ae;
+  padding: 0 var(--space-sm);
+  color: var(--color-text-muted);
   font-weight: 500;
-  font-size: 0.85em;
-  background: #f5f7f8;
-  border-left: 1px solid #eceff1;
-  border-right: 1px solid #eceff1;
+  font-size: var(--font-base);
+  background: var(--color-bg-secondary);
+  border-left: 1px solid var(--color-border-light);
+  border-right: 1px solid var(--color-border-light);
   user-select: none;
 }
 .tag-edit-remove {
@@ -143,11 +143,11 @@ defineEmits<{
   width: 2em;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-lg);
   padding: 0;
   padding-top: 0.4rem;
   cursor: pointer;
-  color: #90a4ae;
+  color: var(--color-text-muted);
   font-size: 1em;
   line-height: 1;
   flex-shrink: 0;
@@ -159,55 +159,55 @@ defineEmits<{
     border-color 0.15s ease;
 }
 .tag-edit-remove:hover {
-  color: #c62828;
+  color: var(--color-danger);
   background: #ffebee;
 }
 .tag-edit-remove:focus-visible {
   outline: none;
-  border-color: #c62828;
-  color: #c62828;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 .tag-edit-remove .bi {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
-  font-size: 0.9em;
+  font-size: var(--font-body);
 }
 .tag-edit-field.is-disabled .tag-edit-group {
-  background: #f5f7f8;
+  background: var(--color-bg-secondary);
   opacity: 0.7;
 }
 @media (prefers-color-scheme: dark) {
   .tag-edit-group {
-    background: #1e2a32;
-    border-color: #455a64;
+    background: var(--color-bg);
+    border-color: var(--color-border);
   }
   .tag-edit-group:hover {
-    border-color: #607d8b;
+    border-color: var(--color-border-hover);
   }
   .tag-edit-group:focus-within {
-    border-color: #64b5f6;
-    box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-focus-ring);
   }
   .tag-edit-group :deep(.autocomplete-wrapper input) {
-    color: #cfd8dc;
+    color: var(--color-text);
   }
   .tag-edit-sep {
-    background: #263238;
-    color: #607d8b;
-    border-left-color: #37474f;
-    border-right-color: #37474f;
+    background: var(--color-bg-secondary);
+    color: var(--color-text-muted);
+    border-left-color: var(--color-border-light);
+    border-right-color: var(--color-border-light);
   }
   .tag-edit-remove {
-    color: #78909c;
+    color: var(--color-text-muted);
   }
   .tag-edit-remove:hover {
-    color: #ff8a80;
+    color: var(--color-danger-hover);
     background: #3e2723;
   }
   .tag-edit-field.is-disabled .tag-edit-group {
-    background: #263238;
+    background: var(--color-bg-secondary);
   }
 }
 </style>

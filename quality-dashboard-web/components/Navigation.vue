@@ -114,17 +114,17 @@ onMounted(async () => {
 .breadcrumb {
   display: inline-flex;
   align-items: center;
-  gap: 0.35em;
+  gap: var(--space-sm);
   margin-left: 0.15em;
-  font-size: 0.85em;
+  font-size: var(--font-base);
   font-weight: 400;
-  color: #78909c;
+  color: var(--color-text-muted);
 }
 .breadcrumb-sep {
-  color: #b0bec5;
+  color: var(--color-text-placeholder);
 }
 .breadcrumb-title {
-  color: #546e7a;
+  color: var(--color-text-secondary);
   max-width: 18ch;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -132,13 +132,13 @@ onMounted(async () => {
 }
 @media (prefers-color-scheme: dark) {
   .breadcrumb {
-    color: #90a4ae;
+    color: var(--color-text-muted);
   }
   .breadcrumb-sep {
-    color: #546e7a;
+    color: var(--color-text-placeholder);
   }
   .breadcrumb-title {
-    color: #b0bec5;
+    color: var(--color-text-secondary);
   }
 }
 </style>

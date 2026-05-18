@@ -502,105 +502,105 @@ export default defineComponent({
 
 <style scoped>
 .settings-page {
-  padding: 0.5em 0.5em 2em;
+  padding: var(--space-md) var(--space-md) var(--space-2xl);
 }
 
 /* Tabs */
 .settings-tabs {
   display: flex;
-  gap: 0.25em;
-  margin-bottom: 1em;
-  border-bottom: 1px solid #cfd8dc;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-loose);
+  border-bottom: 1px solid var(--color-border);
   padding-bottom: 0;
 }
 .settings-tab {
-  padding: 0.5em 1em;
+  padding: var(--space-md) var(--space-loose);
   border: 1px solid transparent;
   border-bottom: none;
-  border-radius: 4px 4px 0 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
   background: transparent;
   cursor: pointer;
-  font-size: 0.85em;
-  color: #546e7a;
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
   display: inline-flex;
   align-items: center;
-  gap: 0.35em;
+  gap: var(--space-sm);
   transition: all 0.15s;
   margin-bottom: -1px;
 }
 .settings-tab:hover {
-  background: #eceff1;
-  color: #263238;
+  background: var(--color-bg-hover);
+  color: var(--color-text);
 }
 .settings-tab.active {
-  background: #fff;
-  border-color: #cfd8dc;
-  color: #1976d2;
+  background: var(--color-bg);
+  border-color: var(--color-border);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 @media (prefers-color-scheme: dark) {
   .settings-tabs {
-    border-bottom-color: #455a64;
+    border-bottom-color: var(--color-border);
   }
   .settings-tab {
-    color: #b0bec5;
+    color: var(--color-text-secondary);
   }
   .settings-tab:hover {
-    background: #263238;
-    color: #cfd8dc;
+    background: var(--color-bg-hover);
+    color: var(--color-text);
   }
   .settings-tab.active {
-    background: #1e2a32;
-    border-color: #455a64;
-    color: #64b5f6;
+    background: var(--color-bg);
+    border-color: var(--color-border);
+    color: var(--color-primary);
   }
 }
 
 /* Card */
 .settings-card {
-  border: 1px solid #cfd8dc;
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
   max-width: 800px;
 }
 .settings-section {
-  padding: 1.2em 1.2em 0.6em;
+  padding: 1.2em 1.2em var(--space-compact);
 }
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5em;
+  gap: var(--space-md);
 }
 .section-title {
   margin: 0 0 0.15em;
-  font-size: 1em;
+  font-size: var(--font-lg);
   display: flex;
   align-items: center;
-  gap: 0.4em;
-  color: #263238;
+  gap: var(--space-sm);
+  color: var(--color-text);
 }
 .section-desc {
-  margin: 0 0 1em;
-  font-size: 0.85em;
-  color: #78909c;
+  margin: 0 0 var(--space-loose);
+  font-size: var(--font-base);
+  color: var(--color-text-muted);
 }
 
-/* Setting rows (re-used from existing) */
+/* Setting rows */
 .setting-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 1em;
-  padding: 0.8em 0;
-  border-bottom: 1px solid #eceff1;
+  gap: var(--space-loose);
+  padding: var(--space-base) 0;
+  border-bottom: 1px solid var(--color-border-light);
 }
 @media (max-width: 480px) {
   .setting-row {
     flex-direction: column;
-    gap: 0.5em;
+    gap: var(--space-md);
   }
   .setting-row--toggle {
     flex-direction: row;
@@ -621,12 +621,12 @@ export default defineComponent({
 }
 .setting-label {
   font-weight: 600;
-  font-size: 0.9em;
-  color: #37474f;
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
 }
 .setting-hint {
-  font-size: 0.8em;
-  color: #90a4ae;
+  font-size: var(--font-md);
+  color: var(--color-text-muted);
   line-height: 1.3;
 }
 .setting-row--toggle {
@@ -636,21 +636,21 @@ export default defineComponent({
   flex-shrink: 0;
 }
 .setting-input {
-  padding: 0.4em 0.6em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  font-size: 0.85em;
-  background: #fff;
-  color: #455a64;
+  padding: var(--space-sm) var(--space-compact);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
   width: 100%;
   max-width: 280px;
   box-sizing: border-box;
 }
 .setting-input::placeholder {
-  color: #b0bec5;
+  color: var(--color-text-placeholder);
 }
 .settings-actions {
-  padding: 0.8em 1.2em 1.2em;
+  padding: var(--space-base) 1.2em 1.2em;
   display: flex;
   justify-content: flex-end;
 }
@@ -675,7 +675,7 @@ export default defineComponent({
   left: 0;
   right: 0;
   bottom: 0;
-  background: #b0bec5;
+  background: var(--color-text-placeholder);
   border-radius: 24px;
   transition: background 0.2s;
 }
@@ -686,12 +686,12 @@ export default defineComponent({
   width: 18px;
   left: 3px;
   bottom: 3px;
-  background: #fff;
+  background: var(--color-text-inverse);
   border-radius: 50%;
   transition: transform 0.2s;
 }
 .toggle-switch input:checked + .toggle-slider {
-  background: #1976d2;
+  background: var(--color-primary);
 }
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(20px);
@@ -704,21 +704,21 @@ export default defineComponent({
 .users-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85em;
+  font-size: var(--font-base);
 }
 .users-table th,
 .users-table td {
   text-align: left;
-  padding: 0.6em 0.5em;
-  border-bottom: 1px solid #eceff1;
+  padding: var(--space-compact) var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
 }
 .users-table th {
   font-weight: 600;
-  color: #546e7a;
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 .users-table tbody tr:hover {
-  background: #f5f7f8;
+  background: var(--color-bg-secondary);
 }
 .col-actions {
   text-align: right;
@@ -726,63 +726,63 @@ export default defineComponent({
 }
 .user-name {
   font-weight: 500;
-  color: #263238;
+  color: var(--color-text);
 }
 .badge-self {
   display: inline-block;
-  font-size: 0.75em;
-  padding: 0.1em 0.4em;
-  border-radius: 3px;
-  background: #e3f2fd;
-  color: #1976d2;
-  margin-left: 0.4em;
+  font-size: var(--font-sm);
+  padding: 0.1em var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-light);
+  color: var(--color-primary-text);
+  margin-left: var(--space-sm);
   vertical-align: middle;
 }
 .role-badge {
   display: inline-block;
-  font-size: 0.8em;
-  padding: 0.15em 0.5em;
-  border-radius: 3px;
+  font-size: var(--font-md);
+  padding: 0.15em var(--space-md);
+  border-radius: var(--radius-sm);
   font-weight: 500;
 }
 .role-admin {
   background: #fce4ec;
-  color: #c62828;
+  color: var(--color-danger);
 }
 .role-user {
   background: #e8f5e9;
-  color: #2e7d32;
+  color: var(--color-success);
 }
 .perms-cell {
   font-size: 0.82em;
-  color: #546e7a;
+  color: var(--color-text-secondary);
 }
 .perm-text {
-  color: #78909c;
+  color: var(--color-text-muted);
   font-style: italic;
 }
 .perm-list {
   display: flex;
   align-items: center;
-  gap: 0.3em;
+  gap: var(--space-xs);
   white-space: nowrap;
 }
 .perm-list .bi {
-  font-size: 0.9em;
+  font-size: var(--font-body);
 }
 
 .icon-btn {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0.25em 0.4em;
-  color: #78909c;
-  border-radius: 3px;
+  padding: 0.25em var(--space-sm);
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
 .icon-btn:hover {
-  background: #eceff1;
-  color: #263238;
+  background: var(--color-bg-hover);
+  color: var(--color-text);
 }
 .icon-btn:disabled {
   opacity: 0.4;
@@ -790,26 +790,26 @@ export default defineComponent({
 }
 .icon-btn--danger:hover {
   background: #fce4ec;
-  color: #c62828;
+  color: var(--color-danger);
 }
 
 /* Modal */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 }
 .modal-card {
-  background: #fff;
-  border-radius: 8px;
+  background: var(--color-bg);
+  border-radius: var(--radius-xl);
   max-width: 480px;
   width: 90vw;
-  padding: 1em 1.2em;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  padding: var(--space-loose) 1.2em;
+  box-shadow: 0 4px 24px var(--color-shadow-lg);
 }
 .modal-card--sm {
   max-width: 380px;
@@ -818,155 +818,155 @@ export default defineComponent({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 0 0.5em;
+  padding: 0 0 var(--space-md);
 }
 .modal-header h3 {
   margin: 0;
-  font-size: 1em;
+  font-size: var(--font-lg);
   display: flex;
   align-items: center;
-  gap: 0.4em;
-  color: #263238;
+  gap: var(--space-sm);
+  color: var(--color-text);
 }
 .modal-body {
-  padding: 0.5em 0 1em;
+  padding: var(--space-md) 0 var(--space-loose);
 }
 .modal-body p {
-  margin: 0.5em 0;
-  font-size: 0.9em;
-  color: #455a64;
+  margin: var(--space-md) 0;
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
 }
 .modal-footer {
-  padding: 0.8em 0 0;
+  padding: var(--space-base) 0 0;
   display: flex;
   justify-content: flex-end;
-  gap: 0.5em;
+  gap: var(--space-md);
 }
 
 /* Form fields */
 .field-row {
-  margin-bottom: 0.8em;
+  margin-bottom: var(--space-base);
 }
 .field-label {
   display: block;
   font-weight: 600;
-  font-size: 0.85em;
-  color: #37474f;
-  margin-bottom: 0.3em;
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
 }
 .field-input {
   display: block;
   width: 100%;
-  padding: 0.5em 0.6em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  font-size: 0.9em;
-  background: #fff;
-  color: #455a64;
+  padding: var(--space-md) var(--space-compact);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
   box-sizing: border-box;
   transition: border-color 0.15s;
 }
 .field-input:focus {
   outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-focus-ring);
 }
 .field-input:disabled {
-  background: #f5f7f8;
-  color: #90a4ae;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-muted);
 }
 .radio-group {
   display: flex;
-  gap: 1em;
+  gap: var(--space-loose);
 }
 .radio-label {
   display: flex;
   align-items: center;
-  gap: 0.3em;
-  font-size: 0.9em;
-  color: #455a64;
+  gap: var(--space-xs);
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
   cursor: pointer;
 }
 .checkbox-group {
   display: flex;
   flex-direction: column;
-  gap: 0.4em;
+  gap: var(--space-sm);
 }
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 0.4em;
-  font-size: 0.9em;
-  color: #455a64;
+  gap: var(--space-sm);
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
   cursor: pointer;
 }
 .perms-section {
-  margin-top: 0.3em;
+  margin-top: var(--space-xs);
 }
 .perm-note {
   font-size: 0.82em;
-  color: #78909c;
+  color: var(--color-text-muted);
   display: flex;
   align-items: center;
-  gap: 0.3em;
+  gap: var(--space-xs);
 }
 
 @media (prefers-color-scheme: dark) {
   .settings-card {
-    background: #1e2a32;
-    border-color: #455a64;
+    background: var(--color-bg);
+    border-color: var(--color-border);
   }
   .section-title {
-    color: #cfd8dc;
+    color: var(--color-text);
   }
   .section-desc {
-    color: #90a4ae;
+    color: var(--color-text-muted);
   }
   .setting-row {
-    border-bottom-color: #37474f;
+    border-bottom-color: var(--color-border-light);
   }
   .setting-label {
-    color: #cfd8dc;
+    color: var(--color-text);
   }
   .setting-input {
-    background: #263238;
-    color: #cfd8dc;
-    border-color: #455a64;
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+    border-color: var(--color-border);
   }
   .setting-input::placeholder {
-    color: #546e7a;
+    color: var(--color-text-placeholder);
   }
   .toggle-slider {
-    background: #546e7a;
+    background: var(--color-text-placeholder);
   }
   .users-table th,
   .users-table td {
-    border-bottom-color: #37474f;
+    border-bottom-color: var(--color-border-light);
   }
   .users-table th {
-    color: #90a4ae;
+    color: var(--color-text-muted);
   }
   .users-table tbody tr:hover {
-    background: #263238;
+    background: var(--color-bg-hover);
   }
   .user-name {
-    color: #cfd8dc;
+    color: var(--color-text);
   }
   .badge-self {
-    background: #1a3a5c;
-    color: #64b5f6;
+    background: var(--color-primary-light);
+    color: var(--color-primary-text);
   }
   .radio-label,
   .checkbox-label {
-    color: #b0bec5;
+    color: var(--color-text-secondary);
   }
   .icon-btn:hover {
-    background: #263238;
-    color: #b0bec5;
+    background: var(--color-bg-hover);
+    color: var(--color-text-secondary);
   }
   .icon-btn--danger:hover {
     background: #2d1a1a;
-    color: #ef5350;
+    color: var(--color-danger);
   }
 }
 </style>

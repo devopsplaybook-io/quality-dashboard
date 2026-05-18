@@ -354,31 +354,31 @@ async function onDelete(report: Report): Promise<void> {
 
 <style scoped>
 .reports-page {
-  padding: 0.5em 0.5em 2em;
+  padding: var(--space-md) var(--space-md) var(--space-2xl);
 }
 .reports-toolbar {
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: 0.5em;
+  gap: var(--space-md);
   align-items: center;
-  margin-bottom: 0.8em;
+  margin-bottom: var(--space-base);
 }
 .reports-selection-bar {
   display: flex;
   align-items: center;
-  gap: 0.5em;
-  margin-bottom: 0.6em;
-  padding: 0.3em 0.5em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  background: #f5f7f8;
+  gap: var(--space-md);
+  margin-bottom: var(--space-compact);
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
 }
 .select-all {
   display: inline-flex;
   align-items: center;
-  gap: 0.4em;
-  font-size: 0.85em;
-  color: #455a64;
+  gap: var(--space-sm);
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
   cursor: pointer;
   user-select: none;
 }
@@ -388,11 +388,14 @@ async function onDelete(report: Report): Promise<void> {
 .report-select {
   display: inline-flex;
   align-items: center;
-  padding: 0 0.3em;
+  padding: 0;
   cursor: pointer;
   flex-shrink: 0;
 }
-
+.report-select input {
+  padding: 0;
+  margin: 0;
+}
 @media (max-width: 480px) {
   .reports-loading {
     display: none;
@@ -400,11 +403,11 @@ async function onDelete(report: Report): Promise<void> {
 }
 .reports-refresh {
   background: transparent;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  padding: 0.3em 0.6em;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-xs) var(--space-compact);
   cursor: pointer;
-  color: #455a64;
+  color: var(--color-text-secondary);
 }
 .reports-refresh:disabled {
   cursor: wait;
@@ -414,24 +417,24 @@ async function onDelete(report: Report): Promise<void> {
   display: inline-block;
 }
 .reports-error {
-  background-color: #fff3e0;
-  color: #bf360c;
-  border: 1px solid #ffccbc;
-  padding: 0.6em 0.8em;
-  border-radius: 4px;
-  margin-bottom: 0.8em;
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid var(--color-error-border);
+  padding: var(--space-compact) var(--space-base);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-base);
 }
 .reports-empty {
   text-align: center;
-  color: #78909c;
-  padding: 2em 1em;
-  border: 1px dashed #cfd8dc;
-  border-radius: 6px;
+  color: var(--color-text-muted);
+  padding: var(--space-2xl) var(--space-loose);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
 }
 .reports-empty-hint code {
-  background-color: #eceff1;
-  padding: 0.1em 0.4em;
-  border-radius: 3px;
+  background-color: var(--color-bg-hover);
+  padding: 0.1em var(--space-sm);
+  border-radius: var(--radius-sm);
 }
 .reports-list {
   list-style: none;
@@ -439,11 +442,11 @@ async function onDelete(report: Report): Promise<void> {
   margin: 0;
 }
 .report-item {
-  padding: 0.6em 0.8em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  margin-bottom: 0.4em;
-  background: #fff;
+  padding: var(--space-compact) var(--space-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
+  background: var(--color-bg);
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
@@ -456,13 +459,13 @@ async function onDelete(report: Report): Promise<void> {
   min-width: 0;
 }
 .report-item:hover {
-  border-color: #90a4ae;
+  border-color: var(--color-border-hover);
 }
 .tag-row {
   display: flex;
   align-items: center;
-  gap: 0.3em;
-  margin-bottom: 0.3em;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
 }
 .reports-loading,
 .reports-search {
@@ -471,35 +474,35 @@ async function onDelete(report: Report): Promise<void> {
 }
 @media (prefers-color-scheme: dark) {
   .reports-selection-bar {
-    background: #263238;
-    border-color: #455a64;
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border);
   }
   .select-all {
-    color: #cfd8dc;
+    color: var(--color-text);
   }
   .reports-refresh {
-    border-color: #455a64;
-    color: #cfd8dc;
+    border-color: var(--color-border);
+    color: var(--color-text);
   }
   .reports-error {
-    background-color: #3e2723;
-    color: #ffab91;
-    border-color: #5d4037;
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
+    border-color: var(--color-error-border);
   }
   .reports-empty {
-    border-color: #37474f;
-    color: #90a4ae;
+    border-color: var(--color-border-light);
+    color: var(--color-text-muted);
   }
   .reports-empty-hint code {
-    background-color: #263238;
-    color: #cfd8dc;
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text);
   }
   .report-item {
-    background: #1e2a32;
-    border-color: #455a64;
+    background: var(--color-bg);
+    border-color: var(--color-border);
   }
   .report-item:hover {
-    border-color: #607d8b;
+    border-color: var(--color-border-hover);
   }
 }
 </style>

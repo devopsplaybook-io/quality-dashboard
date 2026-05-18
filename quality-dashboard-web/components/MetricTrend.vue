@@ -54,17 +54,17 @@ onMounted(async () => {
   font-size: 1.1em;
 }
 .trend-up {
-  color: #2e7d32;
+  color: var(--color-success);
 }
 .trend-down {
-  color: #c62828;
+  color: var(--color-danger);
 }
 @media (prefers-color-scheme: dark) {
   .trend-up {
-    color: #66bb6a;
+    color: var(--color-success);
   }
   .trend-down {
-    color: #ef5350;
+    color: var(--color-danger);
   }
 }
 </style>

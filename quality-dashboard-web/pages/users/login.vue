@@ -88,12 +88,12 @@ async function login() {
 .users-page {
   display: flex;
   justify-content: center;
-  padding-top: 2em;
+  padding-top: var(--space-2xl);
 }
 .users-card {
-  border: 1px solid #cfd8dc;
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
   max-width: 400px;
   width: 100%;
 }
@@ -105,13 +105,13 @@ async function login() {
   font-size: 1em;
   display: flex;
   align-items: center;
-  gap: 0.4em;
-  color: #263238;
+  gap: var(--space-sm);
+  color: var(--color-text);
 }
 .section-desc {
   margin: 0 0 1em;
-  font-size: 0.85em;
-  color: #78909c;
+  font-size: var(--font-base);
+  color: var(--color-text-muted);
 }
 .users-actions {
   padding: 0.8em 1.2em 1.2em;
@@ -120,14 +120,14 @@ async function login() {
 }
 @media (prefers-color-scheme: dark) {
   .users-card {
-    background: #1e2a32;
-    border-color: #455a64;
+    background: var(--color-bg);
+    border-color: var(--color-border);
   }
   .section-title {
-    color: #cfd8dc;
+    color: var(--color-text);
   }
   .section-desc {
-    color: #90a4ae;
+    color: var(--color-text-muted);
   }
 }
 </style>

@@ -60,14 +60,14 @@ function formatDuration(ms: number): string {
 .metric-chip {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.35em;
+  gap: var(--space-sm);
   padding: 0.15em 0.55em;
   margin: 0.15em 0.25em 0.15em 0;
-  border-radius: 999px;
-  font-size: 0.85em;
-  border: 1px solid #cfd8dc;
-  background-color: #f5f7fa;
-  color: #263238;
+  border-radius: var(--radius-full);
+  font-size: var(--font-base);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text);
 }
 .metric-chip-name {
   font-weight: 500;
@@ -84,11 +84,11 @@ function formatDuration(ms: number): string {
   font-weight: 600;
 }
 .metric-chip-count {
-  border-color: #b0bec5;
+  border-color: var(--color-text-placeholder);
 }
 .metric-chip-percentage {
   border-color: #90caf9;
-  background-color: #e3f2fd;
+  background-color: var(--color-primary-light);
 }
 .metric-chip-duration {
   border-color: #ce93d8;
@@ -100,9 +100,9 @@ function formatDuration(ms: number): string {
 }
 @media (prefers-color-scheme: dark) {
   .metric-chip {
-    background-color: #2b3640;
-    border-color: #455a64;
-    color: #eceff1;
+    background-color: var(--color-bg-secondary);
+    border-color: var(--color-border);
+    color: var(--color-text);
   }
   .metric-chip-percentage {
     background-color: #1e3a5f;

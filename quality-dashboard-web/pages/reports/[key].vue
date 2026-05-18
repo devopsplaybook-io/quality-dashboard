@@ -225,12 +225,12 @@ async function onDeleteReport(): Promise<void> {
 
 <style scoped>
 .report-detail-page {
-  padding: 0.5em 0.5em 2em;
+  padding: var(--space-md) var(--space-md) var(--space-2xl);
 }
 .back-link {
   display: inline-block;
-  margin-bottom: 0.6em;
-  color: #607d8b;
+  margin-bottom: var(--space-compact);
+  color: var(--color-text-secondary);
   text-decoration: none;
 }
 .back-link:hover {
@@ -240,85 +240,85 @@ async function onDeleteReport(): Promise<void> {
 .not-found {
   text-align: center;
   padding: 1.5em;
-  color: #78909c;
+  color: var(--color-text-muted);
 }
 .report-header {
-  margin-bottom: 1em;
+  margin-bottom: var(--space-loose);
 }
 .report-header h2 {
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 0.5em;
+  gap: var(--space-md);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .report-key {
-  font-size: 0.85em;
-  color: #607d8b;
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
   margin: 0.2em 0 0;
 }
 .edit-name-row {
   display: flex;
-  gap: 0.4em;
+  gap: var(--space-sm);
   align-items: center;
   flex-wrap: wrap;
 }
 .edit-name-row input {
-  padding: 0.3em 0.5em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
 .tags-section,
 .versions-section,
 .danger-zone {
-  margin-top: 1.5em;
+  margin-top: var(--space-xl);
 }
 .versions-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5em;
-  margin-bottom: 0.6em;
+  gap: var(--space-md);
+  margin-bottom: var(--space-compact);
 }
 .versions-header h3 {
   margin: 0;
 }
 .btn-history-toggle {
-  font-size: 0.8em;
+  font-size: var(--font-md);
   white-space: nowrap;
 }
 .tags-hint {
-  font-size: 0.85em;
-  color: #78909c;
-  margin: 0 0 0.6em;
+  font-size: var(--font-base);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-compact);
 }
 .tag-list {
   display: flex;
   flex-direction: column;
-  gap: 0.3em;
-  margin-bottom: 0.5em;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
 }
 .tag-row {
   display: flex;
   align-items: center;
-  gap: 0.3em;
+  gap: var(--space-xs);
 }
 .tag-actions {
   display: flex;
-  gap: 0.4em;
+  gap: var(--space-sm);
 }
 .empty {
-  color: #90a4ae;
+  color: var(--color-text-muted);
   font-style: italic;
 }
 @media (prefers-color-scheme: dark) {
   .edit-name-row input {
-    background: #1e2a32;
-    color: #cfd8dc;
-    border-color: #455a64;
+    background: var(--color-bg);
+    color: var(--color-text);
+    border-color: var(--color-border);
   }
 }
 </style>

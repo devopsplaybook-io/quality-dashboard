@@ -204,11 +204,11 @@ function relativeDate(iso: string): string {
 .report-card {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.3em;
-  padding: 0.45em 0.6em;
-  border: 1px solid #cfd8dc;
-  border-radius: 4px;
-  background: #fff;
+  gap: var(--space-xs);
+  padding: var(--space-md) var(--space-compact);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
   cursor: pointer;
   width: 100%;
   min-width: 0;
@@ -218,8 +218,8 @@ function relativeDate(iso: string): string {
     box-shadow 0.15s;
 }
 .report-card:hover {
-  border-color: #90a4ae;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border-color: var(--color-border-hover);
+  box-shadow: 0 1px 4px var(--color-shadow-sm);
 }
 .report-card-header {
   display: grid;
@@ -228,8 +228,8 @@ function relativeDate(iso: string): string {
 }
 .report-card-title {
   font-weight: 600;
-  color: #0d47a1;
-  font-size: 0.9em;
+  color: var(--color-primary-dark);
+  font-size: var(--font-body);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -238,15 +238,15 @@ function relativeDate(iso: string): string {
 .report-card-tags {
   display: flex;
   align-items: center;
-  gap: 0.35em;
+  gap: var(--space-sm);
   flex-wrap: wrap;
 }
 .tag-chip {
-  background: #e3f2fd;
-  color: #1565c0;
-  padding: 0.08em 0.4em;
-  border-radius: 3px;
-  font-size: 0.72em;
+  background: var(--color-primary-light);
+  color: var(--color-primary-text);
+  padding: 0.08em var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
   font-family: ui-monospace, monospace;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -255,17 +255,17 @@ function relativeDate(iso: string): string {
   flex-shrink: 0;
 }
 .report-card-date {
-  font-size: 0.72em;
-  color: #78909c;
+  font-size: var(--font-xs);
+  color: var(--color-text-muted);
   white-space: nowrap;
 }
 .report-card-body {
   display: flex;
   align-items: center;
-  gap: 0.5em;
+  gap: var(--space-md);
   flex-wrap: wrap;
   padding-top: 0.15em;
-  border-top: 1px solid #eceff1;
+  border-top: 1px solid var(--color-border-light);
 }
 .report-card-body-empty {
   border-top-color: transparent;
@@ -283,56 +283,56 @@ function relativeDate(iso: string): string {
   white-space: nowrap;
 }
 .report-card-latest-date {
-  font-size: 0.7em;
-  color: #90a4ae;
+  font-size: var(--font-xs);
+  color: var(--color-text-muted);
   white-space: nowrap;
 }
 .report-card-empty-text {
-  font-size: 0.75em;
-  color: #b0bec5;
+  font-size: var(--font-sm);
+  color: var(--color-text-placeholder);
   font-style: italic;
 }
 .report-card-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(28px, auto));
-  gap: 0.3em;
+  gap: var(--space-xs);
   justify-content: end;
 }
 
 .report-card-actions button {
-  margin-top: 0.8rem;
-  margin-bottom: 0.4rem;
+  margin-top: var(--space-base);
+  margin-bottom: var(--space-sm);
 }
 
 @media (prefers-color-scheme: dark) {
   .report-card {
-    background: #1e2a32;
-    border-color: #455a64;
+    background: var(--color-bg);
+    border-color: var(--color-border);
   }
   .report-card:hover {
-    border-color: #607d8b;
+    border-color: var(--color-border-hover);
   }
   .report-card-title {
-    color: #82b1ff;
+    color: var(--color-primary-hover);
   }
   .tag-chip {
-    background: #1a3a5c;
-    color: #82b1ff;
+    background: var(--color-primary-light);
+    color: var(--color-primary-text);
   }
   .report-card-date {
-    color: #90a4ae;
+    color: var(--color-text-muted);
   }
   .report-card-body {
-    border-top-color: #37474f;
+    border-top-color: var(--color-border-light);
   }
   .report-card-body-empty {
     border-top-color: transparent;
   }
   .report-card-latest-date {
-    color: #546e7a;
+    color: var(--color-text-placeholder);
   }
   .report-card-empty-text {
-    color: #546e7a;
+    color: var(--color-text-placeholder);
   }
 }
 </style>

@@ -41,14 +41,14 @@ onUnmounted(() => {
 
 header,
 main {
-  padding: 0.5em;
+  padding: var(--space-md);
   overflow: hidden;
 }
 
 .page {
   height: 100%;
   overflow-y: auto;
-  padding: 0em 1em;
+  padding: 0 var(--space-loose);
 }
 
 #page-alert-messages {

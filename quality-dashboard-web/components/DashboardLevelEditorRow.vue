@@ -170,10 +170,10 @@ const ancestorTagsForChildren = computed(() => {
 .row-line {
   display: flex;
   align-items: center;
-  gap: 0.3em;
+  gap: var(--space-xs);
   padding: 0.25em 0;
-  border-radius: 4px;
-  margin-bottom: 0.4rem;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
 }
 .row-line.invalid {
   background: #fff8e1;
@@ -181,7 +181,7 @@ const ancestorTagsForChildren = computed(() => {
 .grip-btn {
   background: transparent;
   border: none;
-  color: #b0bec5;
+  color: var(--color-text-placeholder);
   cursor: default;
   padding: 0 0.1em;
   margin-bottom: 0;
@@ -207,30 +207,30 @@ const ancestorTagsForChildren = computed(() => {
 @media (max-width: 600px) {
   .row-actions .icon-btn {
     padding: 0.1em 0.25em;
-    font-size: 0.75em;
+    font-size: var(--font-sm);
   }
 }
 
 .row-error {
-  font-size: 0.75em;
-  color: #c62828;
+  font-size: var(--font-sm);
+  color: var(--color-danger);
   margin: 0 0 0.1em 2em;
 }
 .level-list.children {
   list-style: none;
   padding: 0 0 0 1.4em;
   margin: 0;
-  border-left: 2px solid #eceff1;
+  border-left: 2px solid var(--color-border-light);
 }
 @media (prefers-color-scheme: dark) {
   .row-line.invalid {
-    background: #3e2723;
+    background: var(--color-error-bg);
   }
   .level-list.children {
-    border-left-color: #37474f;
+    border-left-color: var(--color-border-light);
   }
   .row-error {
-    color: #ff8a80;
+    color: var(--color-danger-hover);
   }
 }
 </style>

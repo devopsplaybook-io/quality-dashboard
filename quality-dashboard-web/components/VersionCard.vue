@@ -166,19 +166,19 @@ function formatRelative(date: Date): string {
 .version-card {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.4em;
-  border: 1px solid #cfd8dc;
-  border-radius: 6px;
-  padding: 0.6em 0.8em;
-  background-color: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-  margin-bottom: 0.6em;
+  gap: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-compact) var(--space-base);
+  background-color: var(--color-bg);
+  box-shadow: 0 1px 2px var(--color-shadow-sm);
+  margin-bottom: var(--space-compact);
 }
 .version-card-header {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 0.5em;
+  gap: var(--space-md);
 }
 .version-card-title {
   display: flex;
@@ -187,7 +187,7 @@ function formatRelative(date: Date): string {
 }
 .version-card-title a {
   font-weight: 600;
-  color: #0d47a1;
+  color: var(--color-primary-dark);
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -196,53 +196,53 @@ function formatRelative(date: Date): string {
   display: block;
 }
 .version-card-processor {
-  font-size: 0.75em;
-  color: #607d8b;
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
 }
 .version-card-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(28px, auto));
-  gap: 0.3em;
+  gap: var(--space-xs);
   justify-content: end;
 }
 
 .version-card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3em;
+  gap: var(--space-xs);
 }
 .version-card-tag {
-  font-size: 0.75em;
-  background-color: #eceff1;
-  color: #455a64;
+  font-size: var(--font-sm);
+  background-color: var(--color-bg-hover);
+  color: var(--color-text-secondary);
   padding: 0.1em 0.45em;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 .version-card-metrics {
   display: flex;
   flex-wrap: wrap;
 }
 .version-card-empty {
-  font-size: 0.85em;
-  color: #90a4ae;
+  font-size: var(--font-base);
+  color: var(--color-text-muted);
   font-style: italic;
 }
 .version-card-footer {
-  font-size: 0.75em;
-  color: #78909c;
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
   text-align: right;
 }
 @media (prefers-color-scheme: dark) {
   .version-card {
-    background-color: #1e2a32;
-    border-color: #37474f;
+    background-color: var(--color-bg);
+    border-color: var(--color-border);
   }
   .version-card-title a {
-    color: #82b1ff;
+    color: var(--color-primary-hover);
   }
   .version-card-tag {
-    background-color: #263238;
-    color: #cfd8dc;
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text);
   }
 }
 </style>

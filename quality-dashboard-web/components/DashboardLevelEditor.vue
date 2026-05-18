@@ -224,7 +224,7 @@ const duplicateAncestorTagNodeIds = computed(() => {
   margin-top: 0.2em;
 }
 .hint {
-  font-size: 0.8em;
-  color: #78909c;
+  font-size: var(--font-md);
+  color: var(--color-text-muted);
 }
 </style>
