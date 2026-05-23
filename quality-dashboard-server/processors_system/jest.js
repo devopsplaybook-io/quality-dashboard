@@ -164,6 +164,35 @@ module.exports = {
         .join(" ");
     }
 
+    // -- Test summary cards --------------------------------------------------
+    let testCardsHtml = "";
+    if (testCounts && testCounts.total > 0) {
+      const passRate = ((testCounts.passed / testCounts.total) * 100).toFixed(
+        1,
+      );
+      const failRate = ((testCounts.failed / testCounts.total) * 100).toFixed(
+        1,
+      );
+
+      testCardsHtml = [
+        [`${h(String(testCounts.total))}`, "Total Tests", "#e0e0e0", null],
+        [`${h(String(testCounts.passed))}`, "Passed", "#2e7d32", passRate],
+        [`${h(String(testCounts.failed))}`, "Failed", "#c62828", failRate],
+        [`${h(String(testCounts.skipped))}`, "Skipped", "#546e7a", null],
+      ]
+        .map(
+          ([value, label, color, barPct]) =>
+            `<div class="jc-card">
+          <div style="font-size:24px;font-weight:700;color:${color}">${value}</div>
+          <div style="font-size:11px;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.5px">${label}</div>${
+            barPct !== null
+              ? `<div class="jc-bar-track"><div class="jc-bar-fill" style="width:${Math.min(Number(barPct), 100)}%;background:${color}"></div></div>`
+              : ""
+          }</div>`,
+        )
+        .join("");
+    }
+
     // -- Per-file coverage table --------------------------------------------
     let perFileHtml = "";
     let totalTestsInfo = "";
@@ -482,6 +511,8 @@ module.exports = {
 </div>
 
 ${testBadgesHtml ? `<div class="jc-badges">${testBadgesHtml}</div>` : ""}
+
+${testCardsHtml ? `<div class="jc-cards">${testCardsHtml}</div>` : ""}
 
 ${
   coverageSummaryHtml
