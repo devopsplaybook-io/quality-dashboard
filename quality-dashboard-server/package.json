@@ -4,8 +4,8 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "lint": "eslint src || true",
-    "test": "jest --coverage || true",
+    "lint": "eslint src",
+    "test": "jest --coverage",
     "test:dev": "jest --watch --coverage",
     "dev": "ts-node-dev ./src/App.ts"
   },

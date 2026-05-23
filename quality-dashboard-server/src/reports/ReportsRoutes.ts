@@ -489,7 +489,6 @@ async function parseMultipart(req: FastifyRequest): Promise<ParsedMultipart> {
     );
   }
   const result: ParsedMultipart = { meta: undefined };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for await (const part of reqAny.parts()) {
     if (part.type === "file") {
       const buf = await part.toBuffer();

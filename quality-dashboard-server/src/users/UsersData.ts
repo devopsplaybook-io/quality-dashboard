@@ -6,6 +6,7 @@ import {
   SqlDbUtilsQuerySQL,
 } from "../utils-std-ts/SqlDbUtils";
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UsersData {
   //
   public static async get(context: Span, id: string): Promise<User> {

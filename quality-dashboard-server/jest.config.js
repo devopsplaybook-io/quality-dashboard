@@ -1,23 +1,19 @@
 module.exports = {
   globals: {
     'ts-jest': {
-      tsConfig: 'tsconfig.json'
+      tsconfig: 'tsconfig.spec.json'
     }
   },
   moduleFileExtensions: ['ts', 'js'],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest'
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: 'tsconfig.spec.json'
+    }]
   },
   testMatch: ['**/src/**/*.spec.(ts|js)'],
   testEnvironment: 'node',
-  reporters: [
-    'default',
-    [
-      './node_modules/jest-html-reporter',
-      {
-        pageTitle: 'Test Report'
-      }
-    ]
-  ],
-  collectCoverageFrom: ['**/*.{js,jsx,ts}', '!**/node_modules/**', '!**/vendor/**']
+  moduleNameMapper: {
+    '^uuid$': '<rootDir>/__mocks__/uuid.cjs'
+  },
+  collectCoverageFrom: ['src/**/*.ts', '!**/node_modules/**', '!**/vendor/**']
 };

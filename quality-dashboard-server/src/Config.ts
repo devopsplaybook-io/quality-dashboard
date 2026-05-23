@@ -11,14 +11,14 @@ export class Config implements ConfigOTelInterface {
   public readonly CONFIG_FILE: string = "config.json";
   public readonly SERVICE_ID = "quality-dashboard-server";
   public VERSION = "2";
-  public readonly API_PORT: number = 8080;
+  public readonly API_PORT = 8080;
   public readonly PROCESSORS_SYSTEM_DIR = path.join(
     __dirname,
     "../processors_system",
   );
 
   // Can be set with config
-  public JWT_VALIDITY_DURATION: number = 31 * 24 * 3600;
+  public JWT_VALIDITY_DURATION = 31 * 24 * 3600;
   public CORS_POLICY_ORIGIN: string;
   public TMP_DIR = process.env.TMP_DIR || "/tmp";
   public DATA_DIR = process.env.DATA_DIR || "/data";
@@ -26,21 +26,21 @@ export class Config implements ConfigOTelInterface {
   public JWT_KEY: string = uuidv4();
   public LOG_LEVEL = "info";
   public PROCESSORS_CUSTOM_DIR = path.join(__dirname, "../processors_custom");
-  public PROCESSOR_TIMEOUT_MS: number = Number(
+  public PROCESSOR_TIMEOUT_MS = Number(
     process.env.PROCESSOR_TIMEOUT_MS || 30000,
   );
-  public MAX_UPLOAD_BYTES: number = Number(
+  public MAX_UPLOAD_BYTES = Number(
     process.env.MAX_UPLOAD_BYTES || 200 * 1024 * 1024,
   );
 
   // OpenTelemetry configuration
-  public OPENTELEMETRY_COLLECTOR_HTTP_TRACES: string = "";
-  public OPENTELEMETRY_COLLECTOR_HTTP_METRICS: string = "";
-  public OPENTELEMETRY_COLLECTOR_HTTP_LOGS: string = "";
-  public OPENTELEMETRY_COLLECTOR_EXPORT_LOGS_INTERVAL_SECONDS: number = 5;
-  public OPENTELEMETRY_COLLECTOR_EXPORT_METRICS_INTERVAL_SECONDS: number = 10;
+  public OPENTELEMETRY_COLLECTOR_HTTP_TRACES = "";
+  public OPENTELEMETRY_COLLECTOR_HTTP_METRICS = "";
+  public OPENTELEMETRY_COLLECTOR_HTTP_LOGS = "";
+  public OPENTELEMETRY_COLLECTOR_EXPORT_LOGS_INTERVAL_SECONDS = 5;
+  public OPENTELEMETRY_COLLECTOR_EXPORT_METRICS_INTERVAL_SECONDS = 10;
   public OPENTELEMETRY_COLLECTOR_AWS = false;
-  public OPENTELEMETRY_COLLECT_AUTHORIZATION_HEADER: string = "";
+  public OPENTELEMETRY_COLLECT_AUTHORIZATION_HEADER = "";
 
   public async reload(): Promise<void> {
     const content = await fse.readJson(this.CONFIG_FILE);

@@ -22,7 +22,8 @@ export class TagsRoutes {
         if (!byTag.has(t.tag)) {
           byTag.set(t.tag, new Set());
         }
-        byTag.get(t.tag)!.add(t.value);
+        const values = byTag.get(t.tag) || new Set();
+        values.add(t.value);
       }
       return res.status(200).send({
         tags: Array.from(byTag.entries())
@@ -66,7 +67,7 @@ export class TagsRoutes {
       if (!report) {
         return res.status(404).send({ error: "Report not found" });
       }
-      const incoming = Array.isArray(req.body?.tags) ? req.body!.tags! : [];
+      const incoming = Array.isArray(req.body?.tags) ? req.body.tags : [];
       // Validate
       for (const t of incoming) {
         if (!t || typeof t.tag !== "string" || typeof t.value !== "string") {

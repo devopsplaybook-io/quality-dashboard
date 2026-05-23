@@ -61,7 +61,7 @@ export class User {
     };
   }
 
-  public toTransportJson(): any {
+  public toTransportJson(): Record<string, unknown> {
     return {
       id: this.id,
       name: this.name,

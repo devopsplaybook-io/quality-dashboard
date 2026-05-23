@@ -14,6 +14,7 @@ import { MetricType } from "./models/MetricType";
  * Persistence for Reports (named entities) and their ReportVersions.
  * Each Report has many ReportVersions; each ReportVersion has many Metrics.
  */
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class ReportsRepository {
   //
   // ---- Report ----------------------------------------------------------
@@ -370,7 +371,8 @@ export class ReportsRepository {
       if (!byVersion.has(m.report_version_id)) {
         byVersion.set(m.report_version_id, []);
       }
-      byVersion.get(m.report_version_id)!.push({
+      const list = byVersion.get(m.report_version_id) || [];
+      list.push({
         name: m.name,
         type: m.type as MetricType,
         value: Number(m.value),

@@ -69,7 +69,7 @@ function loadDir(dir: string, source: "system" | "custom"): void {
     const name = path.basename(file, ".js");
     const filePath = path.join(dir, file);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete require.cache[require.resolve(filePath)];
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const mod = require(filePath) as ProcessorModule;

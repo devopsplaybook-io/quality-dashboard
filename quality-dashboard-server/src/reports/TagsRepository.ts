@@ -11,6 +11,7 @@ import { ReportTag } from "./models/ReportTag";
  * Tags apply to all versions of a Report (past and future).
  * Model: one value per (reportKey, tag).
  */
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class TagsRepository {
   //
   public static async setTag(

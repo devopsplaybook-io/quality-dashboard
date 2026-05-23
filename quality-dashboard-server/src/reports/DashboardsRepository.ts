@@ -14,6 +14,7 @@ import {
  * Persistence for user-defined Dashboards.
  * The whole tree of levels is stored as JSON in the `definition` column.
  */
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class DashboardsRepository {
   //
   public static async add(context: Span, dashboard: Dashboard): Promise<void> {
@@ -122,7 +123,7 @@ export class DashboardsRepository {
     const d = new Dashboard();
     d.id = raw.id;
     d.name = raw.name;
-    let parsed: { schemaVersion?: number; root?: DashboardLevelNode[]; shownMetrics?: string[] } = {};
+    let parsed: { schemaVersion?: number; root?: DashboardLevelNode[]; shownMetrics?: string[] };
     try {
       parsed = JSON.parse(raw.definition || "{}");
     } catch {

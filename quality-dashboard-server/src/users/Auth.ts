@@ -13,6 +13,7 @@ import {
 const logger = OTelLogger().createModuleLogger("Auth");
 let config: Config;
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Auth {
   //
   public static async init(context: Span, configIn: Config) {
@@ -55,7 +56,7 @@ export class Auth {
       try {
         jwt.verify(req.headers.authorization.split(" ")[1], config.JWT_KEY);
         authenticated = true;
-      } catch (err) {
+      } catch {
         authenticated = false;
       }
     }
@@ -76,7 +77,7 @@ export class Auth {
         if (info.role === "admin") {
           return;
         }
-      } catch (err) {
+      } catch {
         // fall through
       }
     }
