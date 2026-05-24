@@ -207,13 +207,21 @@ const bulkError = ref<string | null>(null);
 
 const filteredReports = computed(() => {
   const q = searchQuery.value.toLowerCase().trim();
-  if (!q) return reportsStore.reports;
-  return reportsStore.reports.filter((r) => {
-    if ((r.displayName || "").toLowerCase().includes(q)) return true;
-    if (r.key.toLowerCase().includes(q)) return true;
-    if (r.tags.some((t) => `${t.tag}=${t.value}`.toLowerCase().includes(q)))
-      return true;
-    return false;
+  let list = reportsStore.reports;
+  if (q) {
+    list = list.filter((r) => {
+      if ((r.displayName || "").toLowerCase().includes(q)) return true;
+      if (r.key.toLowerCase().includes(q)) return true;
+      if (r.tags.some((t) => `${t.tag}=${t.value}`.toLowerCase().includes(q)))
+        return true;
+      return false;
+    });
+  }
+  // Sort by latest version date, newest first
+  return [...list].sort((a, b) => {
+    const dateA = new Date(a.latestVersion?.dateCreated || a.dateCreated).getTime();
+    const dateB = new Date(b.latestVersion?.dateCreated || b.dateCreated).getTime();
+    return dateB - dateA;
   });
 });
 

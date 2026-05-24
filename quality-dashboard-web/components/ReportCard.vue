@@ -9,7 +9,7 @@
       <span v-for="tag in report.tags" :key="tag.tag" class="tag-chip">
         {{ tag.tag }}={{ tag.value }}
       </span>
-      <span class="report-card-date">{{ formatDate(report.dateCreated) }}</span>
+      <span class="report-card-date">{{ formatDate(report.latestVersion?.dateCreated || report.dateCreated) }}</span>
     </div>
     <div v-if="report.latestVersion" class="report-card-body">
       <span class="report-card-metrics">
