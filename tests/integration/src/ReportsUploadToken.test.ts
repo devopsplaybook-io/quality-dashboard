@@ -1,84 +1,62 @@
-import axios from "axios";
-import * as fs from "fs/promises";
-import FormData from 'form-data';
-import { Config } from "./Config";
-
-let authToken;
-const uploadToken = 'abcd';
+import { TestHelpers } from "./TestHelpers";
 
 describe("/api/reports/ (with upload token)", () => {
   //
+  let authToken: string;
+  const uploadToken = "abcd";
+
   beforeEach(async () => {
-    await axios.delete(`${Config.APIURL}/reports`);
-
-    await axios.delete(`${Config.APIURL}/users/`);
-    const responseCreate = await axios.post(`${Config.APIURL}/users/`, {
-      username: "admin",
-      password: "admin",
+    authToken = await TestHelpers.resetAll();
+    await TestHelpers.setSettings(authToken, {
+      isDashboardPublic: true,
+      uploadToken,
     });
-    const responseLogin = await axios.post(`${Config.APIURL}/users/login/`, {
-      username: "admin",
-      password: "admin",
-    });
-    authToken = responseLogin.data.token;
-
-    const settings = { isDashboardPublic: true, uploadToken };
-    let response = await axios
-      .put(`${Config.APIURL}/settings/`, settings, { headers: { Authorization: `Bearer ${authToken}` } })
-      .catch((err) => {
-        return err.response;
-      });
   });
 
-  describe("POST /api/reports/:groupName/:projectName/:projectVersion/", () => {
-    //
-    test("Should be work if valid upload token", async () => {
-      const response = await sendFile(
-        `${__dirname}/../samples/test-report.html`,
-        `${Config.APIURL}/reports/quality-dashboard/server/dev/integration-test/jest-html-reporter`,
-        uploadToken
-      ).catch((err) => {
-        return err.response;
-      });
-      expect(response.status).toEqual(201);
+  test("Accepts upload with valid token", async () => {
+    const response = await TestHelpers.sendReport({
+      meta: {
+        key: "via-token",
+        processor: "json",
+        jsonPayload: { metrics: [{ name: "x", type: "count", value: 1 }] },
+      },
+      uploadToken,
     });
+    expect(response.status).toEqual(201);
+  });
 
-    test("Should be rejected if token missing", async () => {
-      const response = await sendFile(
-        `${__dirname}/../samples/test-report.html`,
-        `${Config.APIURL}/reports/quality-dashboard/server/dev/integration-test/jest-html-reporter`
-      ).catch((err) => {
-        return err.response;
-      });
-      expect(response.status).toEqual(403);
+  test("Rejects upload when token missing", async () => {
+    const response = await TestHelpers.sendReport({
+      meta: {
+        key: "no-token",
+        processor: "json",
+        jsonPayload: { metrics: [] },
+      },
     });
+    expect(response.status).toEqual(403);
+  });
 
-    test("Should be rejected if token wrong", async () => {
-      const response = await sendFile(
-        `${__dirname}/../samples/test-report.html`,
-        `${Config.APIURL}/reports/quality-dashboard/server/dev/integration-test/jest-html-reporter`,
-        "wrong_token"
-      ).catch((err) => {
-        return err.response;
-      });
-      expect(response.status).toEqual(403);
+  test("Rejects upload when token wrong", async () => {
+    const response = await TestHelpers.sendReport({
+      meta: {
+        key: "wrong-token",
+        processor: "json",
+        jsonPayload: { metrics: [] },
+      },
+      uploadToken: "wrong",
     });
+    expect(response.status).toEqual(403);
+  });
 
+  test("Authenticated upload works regardless of token", async () => {
+    const response = await TestHelpers.sendReport({
+      meta: {
+        key: "via-auth",
+        processor: "json",
+        jsonPayload: { metrics: [{ name: "x", type: "count", value: 2 }] },
+      },
+      authToken,
+    });
+    expect(response.status).toEqual(201);
   });
 });
-
-async function sendFile(filepath: string, url: string, token: string = ''): Promise<any> {
-
-    const reportBuffer = await fs.readFile(filepath);
-    const form = new FormData();
-    const headers = {
-      ...form.getHeaders(),
-    }
-    if (token) {
-      headers["upload-token"] = token;
-    }
-    form.append('report', reportBuffer, 'report.html');
-    return axios.post(url, form, {
-        headers
-      });
-}

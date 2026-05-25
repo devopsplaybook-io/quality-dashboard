@@ -1,0 +1,109 @@
+/* ============================================================
+   CSS Custom Properties — Quality Dashboard
+   Centralised design tokens for colors, fonts, spacing,
+   border radii, and shadows.
+   ============================================================ */
+
+:root {
+  /* ---------- Colors: Primary ---------- */
+  --color-primary: #1976d2;
+  --color-primary-hover: #1565c0;
+  --color-primary-focus-ring: rgba(25, 118, 210, 0.15);
+  --color-primary-light: #e3f2fd;
+  --color-primary-text: #1565c0;
+  --color-primary-dark: #0d47a1;
+
+  /* ---------- Colors: Text ---------- */
+  --color-text: #263238;
+  --color-text-secondary: #455a64;
+  --color-text-muted: #78909c;
+  --color-text-placeholder: #b0bec5;
+  --color-text-inverse: #fff;
+
+  /* ---------- Colors: Border ---------- */
+  --color-border: #cfd8dc;
+  --color-border-hover: #90a4ae;
+  --color-border-light: #eceff1;
+
+  /* ---------- Colors: Background ---------- */
+  --color-bg: #fff;
+  --color-bg-secondary: #f5f7f8;
+  --color-bg-hover: #eceff1;
+
+  /* ---------- Colors: Status ---------- */
+  --color-success: #43a047;
+  --color-warning: #f9a825;
+  --color-danger: #c62828;
+  --color-danger-hover: #b71c1c;
+  --color-error: #bf360c;
+  --color-error-bg: #fff3e0;
+  --color-error-border: #ffccbc;
+
+  /* ---------- Colors: Overlay & Shadow ---------- */
+  --color-overlay: rgba(0, 0, 0, 0.4);
+  --color-shadow-sm: rgba(0, 0, 0, 0.06);
+  --color-shadow-md: rgba(0, 0, 0, 0.1);
+  --color-shadow-lg: rgba(0, 0, 0, 0.2);
+
+  /* ---------- Font sizes ---------- */
+  --font-xs: 0.7em;
+  --font-sm: 0.75em;
+  --font-md: 0.8em;
+  --font-base: 0.85em;
+  --font-body: 0.9em;
+  --font-lg: 1em;
+
+  /* ---------- Spacing ---------- */
+  --space-xs: 0.25em;
+  --space-sm: 0.4em;
+  --space-md: 0.5em;
+  --space-compact: 0.6em;
+  --space-base: 0.8em;
+  --space-loose: 1em;
+  --space-xl: 1.5em;
+  --space-2xl: 2em;
+  --space-3xl: 3em;
+
+  /* ---------- Border radius ---------- */
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-full: 999px;
+}
+
+/* ============================================================
+   Dark mode overrides
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #64b5f6;
+    --color-primary-hover: #82b1ff;
+    --color-primary-focus-ring: rgba(100, 181, 246, 0.2);
+    --color-primary-light: #1a3a5c;
+    --color-primary-text: #82b1ff;
+    --color-primary-dark: #82b1ff;
+
+    --color-text: #cfd8dc;
+    --color-text-secondary: #b0bec5;
+    --color-text-muted: #90a4ae;
+    --color-text-placeholder: #546e7a;
+    --color-text-inverse: #1e2a32;
+
+    --color-border: #455a64;
+    --color-border-hover: #607d8b;
+    --color-border-light: #37474f;
+
+    --color-bg: #1e2a32;
+    --color-bg-secondary: #263238;
+    --color-bg-hover: #263238;
+
+    --color-success: #66bb6a;
+    --color-warning: #f9a825;
+    --color-danger: #ef5350;
+    --color-danger-hover: #ff8a80;
+    --color-error: #ffab91;
+    --color-error-bg: #3e2723;
+    --color-error-border: #5d4037;
+  }
+}

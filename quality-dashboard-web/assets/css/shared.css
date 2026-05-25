@@ -1,0 +1,334 @@
+/* ============================================================
+   Shared Component Styles — Quality Dashboard
+   Consolidates buttons, modals, form fields, status colors,
+   and animations that were previously duplicated across files.
+   ============================================================ */
+
+/* ---------- Buttons ---------- */
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+  padding: var(--space-sm) var(--space-loose);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-body);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  transition: all 0.15s;
+  line-height: 1.4;
+}
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn-sm {
+  font-size: var(--font-md);
+  padding: var(--space-xs) var(--space-base);
+}
+
+.btn-primary {
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn-secondary {
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border-hover);
+}
+
+.btn-danger {
+  border: 1px solid var(--color-danger);
+  background: var(--color-danger);
+  color: var(--color-text-inverse);
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-danger-hover);
+}
+
+/* Icon button — only icon inside (bordered variant) */
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-xs) var(--space-sm);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  font-size: var(--font-base);
+  line-height: 1;
+  min-width: 28px;
+  min-height: 26px;
+  transition: all 0.15s;
+}
+.icon-btn:hover:not(:disabled) {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.icon-btn.danger:hover:not(:disabled) {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+/* ---------- Modal ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-card {
+  background: var(--color-bg);
+  border-radius: var(--radius-xl);
+  padding: var(--space-loose) var(--space-xl);
+  width: min(520px, 92vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 24px var(--color-shadow-lg);
+}
+.modal-card--sm {
+  max-width: 380px;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 0.5em;
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: var(--font-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--color-text);
+}
+.modal-body {
+  padding: var(--space-md) 0 var(--space-loose);
+}
+.modal-body p {
+  margin: 0.5em 0;
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+}
+.modal-footer {
+  padding: var(--space-base) 0 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-md);
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-md);
+  margin-top: var(--space-loose);
+}
+.modal-card h3 {
+  margin: 0 0 0.5em;
+  font-size: var(--font-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.modal-card label {
+  display: block;
+  margin-top: 0.5em;
+  font-weight: 600;
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+}
+.modal-card input {
+  width: 100%;
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-top: 0.2em;
+  box-sizing: border-box;
+}
+
+/* ---------- Form fields ---------- */
+.field-row {
+  margin-bottom: var(--space-base);
+}
+.field-label {
+  display: block;
+  font-weight: 600;
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
+}
+.field-input {
+  display: block;
+  width: 100%;
+  padding: var(--space-md) var(--space-compact);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.field-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-focus-ring);
+}
+.field-input:disabled {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-muted);
+}
+.field-input::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+/* ---------- Cards ---------- */
+.card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+}
+
+/* ---------- Utility / status colors ---------- */
+.text-green {
+  color: var(--color-success);
+}
+.text-muted {
+  color: var(--color-text-muted);
+}
+.text-warning {
+  color: var(--color-warning);
+}
+.text-error {
+  color: var(--color-error);
+}
+
+/* ---------- Empty state ---------- */
+.empty-state {
+  text-align: center;
+  padding: var(--space-2xl);
+  color: var(--color-text-muted);
+}
+.empty-state .bi {
+  font-size: 2em;
+  display: block;
+  margin-bottom: var(--space-md);
+}
+.empty-state p {
+  margin: 0;
+  font-size: var(--font-base);
+}
+
+/* ---------- Hint text ---------- */
+.hint {
+  font-size: var(--font-md);
+  color: var(--color-text-muted);
+  margin: 0.2em 0;
+}
+
+/* ---------- Animations ---------- */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+/* ============================================================
+   Dark mode overrides
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  .btn-secondary {
+    color: var(--color-text-secondary);
+    border-color: var(--color-border);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border-hover);
+  }
+  .btn-danger {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+  }
+  .icon-btn {
+    background: transparent;
+    border-color: var(--color-border);
+    color: var(--color-text);
+  }
+  .icon-btn:hover:not(:disabled) {
+    color: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+  }
+  .icon-btn.danger:hover:not(:disabled) {
+    color: var(--color-danger-hover);
+    border-color: var(--color-danger-hover);
+  }
+  .modal-card {
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+  .modal-card label {
+    color: var(--color-text-secondary);
+  }
+  .modal-card input {
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+    border-color: var(--color-border);
+  }
+  .modal-header h3 {
+    color: var(--color-text);
+  }
+  .field-label {
+    color: var(--color-text-secondary);
+  }
+  .field-input {
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+    border-color: var(--color-border);
+  }
+  .field-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-focus-ring);
+  }
+  .field-input:disabled {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-placeholder);
+  }
+  .field-input::placeholder {
+    color: var(--color-text-placeholder);
+  }
+  .card {
+    background: var(--color-bg);
+    border-color: var(--color-border);
+  }
+  .modal-footer .btn-secondary {
+    background: var(--color-bg);
+    color: var(--color-text);
+    border-color: var(--color-border);
+  }
+}

@@ -2,7 +2,7 @@
 
 echo "Testing Container Images"
 
-UPLOAD_SERVER="http://localhost:8080/api"
+UPLOAD_SERVER="http://localhost:8080"
 
 rm -f /tmp/test-popeye
 mkdir -p /tmp/test-popeye
@@ -13,7 +13,9 @@ tar zxf popeye*.tar.gz
 POPEYE_REPORT_DIR=$(pwd) ./popeye --save --out html --output-file report.html
 
 curl -X POST \
+    -H "X-Upload-Token: $UPLOAD_TOKEN" \
+    -F 'meta={"key":"quality-dashboard/kubernetes/popeye","displayName":"Kubernetes Popeye","processor":"popeye-html"}' \
     -F report=@"./report.html" \
-    ${UPLOAD_SERVER}/reports/quality-dashboard/kubernetes/live/kubernetes/popeye-html
+    ${UPLOAD_SERVER}/api/reports
 
 rm -fr /tmp/test-popeye

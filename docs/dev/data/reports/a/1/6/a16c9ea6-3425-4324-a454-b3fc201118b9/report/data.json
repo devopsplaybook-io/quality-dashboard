@@ -1,0 +1,1 @@
+{"metrics":[{"name":"bugs","type":"count","value":4},{"name":"code_smells","type":"count","value":137},{"name":"technical_debt_days","type":"duration","value":3.5},{"name":"duplication_percent","type":"percentage","value":5.2},{"name":"reliability_rating","type":"percentage","value":85},{"name":"security_hotspots","type":"count","value":2}]}

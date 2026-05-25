@@ -1,31 +1,84 @@
+import * as fse from "fs-extra";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { ConfigOTelInterface } from "@devopsplaybook.io/otel-utils";
+import { Logger } from "./utils-std-ts/Logger";
 
-let DATA_PATH_PREFIX = "/opt";
-let UTILS_PATH_PREFIX = "/opt/app";
+const logger = new Logger("config");
 
-if (process.env.NODE_ENV && process.env.NODE_ENV === "dev") {
-  DATA_PATH_PREFIX = path.resolve(".data");
-  UTILS_PATH_PREFIX = path.resolve(".");
-}
-
-let BASEPATH = process.env.BASEPATH || '/api';
-if (BASEPATH.length > 0 && BASEPATH.slice(-1) === '/') {
-  BASEPATH = BASEPATH.substring(0,BASEPATH.length-1);
-}
-if (BASEPATH.length > 1 && BASEPATH.substring(0,1) !== '/') {
-  BASEPATH = `/${BASEPATH}`;
-}
-
-export class Config {
+export class Config implements ConfigOTelInterface {
   //
-  public static readonly REPORT_DIR: string = `${DATA_PATH_PREFIX}/data/reports`;
-  public static readonly DB_DIR: string = `${DATA_PATH_PREFIX}/data/db`;
-  public static readonly PROCESSOR_DIR_USER: string = `${UTILS_PATH_PREFIX}/plugins-user/processors`;
-  public static readonly PROCESSOR_DIR: string = `${UTILS_PATH_PREFIX}/plugins/processors`;
-  public static readonly API_BASE_PATH: string = BASEPATH;
-  public static readonly API_CORS: string = process.env.API_CORS || '*';
-  public static readonly API_PORT: number = 8080;
-  public static readonly AUTH_TOKEN_VALIDITY: number = Number(process.env.AUTH_TOKEN_VALIDITY) || 3600;
-  public static readonly AUTH_JWT_KEY: string = process.env.AUTH_JWT_KEY || uuidv4();
+  public readonly CONFIG_FILE: string = "config.json";
+  public readonly SERVICE_ID = "quality-dashboard-server";
+  public VERSION = "2";
+  public readonly API_PORT = 8080;
+  public readonly PROCESSORS_SYSTEM_DIR = path.join(
+    __dirname,
+    "../processors_system",
+  );
+
+  // Can be set with config
+  public JWT_VALIDITY_DURATION = 31 * 24 * 3600;
+  public CORS_POLICY_ORIGIN: string;
+  public TMP_DIR = process.env.TMP_DIR || "/tmp";
+  public DATA_DIR = process.env.DATA_DIR || "/data";
+  public REPORT_DIR = this.DATA_DIR + "/reports";
+  public JWT_KEY: string = uuidv4();
+  public LOG_LEVEL = "info";
+  public PROCESSORS_CUSTOM_DIR = path.join(__dirname, "../processors_custom");
+  public PROCESSOR_TIMEOUT_MS = Number(
+    process.env.PROCESSOR_TIMEOUT_MS || 30000,
+  );
+  public MAX_UPLOAD_BYTES = Number(
+    process.env.MAX_UPLOAD_BYTES || 200 * 1024 * 1024,
+  );
+
+  // OpenTelemetry configuration
+  public OPENTELEMETRY_COLLECTOR_HTTP_TRACES = "";
+  public OPENTELEMETRY_COLLECTOR_HTTP_METRICS = "";
+  public OPENTELEMETRY_COLLECTOR_HTTP_LOGS = "";
+  public OPENTELEMETRY_COLLECTOR_EXPORT_LOGS_INTERVAL_SECONDS = 5;
+  public OPENTELEMETRY_COLLECTOR_EXPORT_METRICS_INTERVAL_SECONDS = 10;
+  public OPENTELEMETRY_COLLECTOR_AWS = false;
+  public OPENTELEMETRY_COLLECT_AUTHORIZATION_HEADER = "";
+
+  public async reload(): Promise<void> {
+    const content = await fse.readJson(this.CONFIG_FILE);
+    const setIfSet = (field: string, displayLog = true) => {
+      let fromEnv = "defaults";
+      if (process.env[field]) {
+        this[field] = process.env[field];
+        fromEnv = "environment";
+      } else if (content[field]) {
+        this[field] = content[field];
+        fromEnv = "config";
+      }
+      if (displayLog) {
+        logger.info(
+          `Configuration Value: ${field}: ${this[field]} (from ${fromEnv})`,
+        );
+      } else {
+        logger.info(
+          `Configuration Value: ${field}: ******************** (from ${fromEnv})`,
+        );
+      }
+    };
+    logger.info(`Configuration Value: CONFIG_FILE: ${this.CONFIG_FILE}`);
+    logger.info(`Configuration Value: VERSION: ${this.VERSION}`);
+    setIfSet("JWT_VALIDITY_DURATION");
+    setIfSet("CORS_POLICY_ORIGIN");
+    setIfSet("DATA_DIR");
+    setIfSet("JWT_KEY", false);
+    setIfSet("LOG_LEVEL");
+    setIfSet("PROCESSORS_CUSTOM_DIR");
+    setIfSet("PROCESSOR_TIMEOUT_MS");
+    setIfSet("MAX_UPLOAD_BYTES");
+    setIfSet("OPENTELEMETRY_COLLECTOR_HTTP_TRACES");
+    setIfSet("OPENTELEMETRY_COLLECTOR_HTTP_METRICS");
+    setIfSet("OPENTELEMETRY_COLLECTOR_HTTP_LOGS");
+    setIfSet("OPENTELEMETRY_COLLECTOR_EXPORT_LOGS_INTERVAL_SECONDS");
+    setIfSet("OPENTELEMETRY_COLLECTOR_EXPORT_METRICS_INTERVAL_SECONDS");
+    setIfSet("OPENTELEMETRY_COLLECTOR_AWS");
+    setIfSet("OPENTELEMETRY_COLLECT_AUTHORIZATION_HEADER", false);
+  }
 }

@@ -2,49 +2,21 @@ name: PR Check
 
 on:
   pull_request:
-    branches: ["master"]
+    branches: ["main"]
 
   workflow_dispatch:
 
+concurrency:
+  group: pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Build Server
-        run: |
-          cd quality-dashboard-server
-          npm ci
-          npm run build
-          npm run lint
-          npm run test
-
-      - name: Build UI
-        run: |
-          cd quality-dashboard-ui
-          npm ci
-          npm run build
-          npm run lint
-          npm run test
-
-      - name: Start Test Environment
-        run: |
-          set -e
-          chmod +x _dev/*.sh
-          npm install -g pm2
-          ./_dev/run-test-env.sh
-          sleep 20
-
-      - name: E2E Test
-        uses: cypress-io/github-action@v4
-        with:
-          working-directory: tests/tests-e2e
-          browser: chrome
-
-      - name: Build Docker Images
-        run: |
-          set -e
-          chmod +x _dev/*.sh
-          ./_dev/docker-build-images.sh
+  pr-verify:
+    uses: devopsplaybook-io/common-utils/.github/workflows/reusable-pr-verify.yml@main
+    with:
+      node_app_directories: '["quality-dashboard-server"]'
+    secrets:
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      QUALITY_DASHBOARD_URL: ${{ secrets.QUALITY_DASHBOARD_URL }}
+      QUALITY_DASHBOARD_TOKEN: ${{ secrets.QUALITY_DASHBOARD_TOKEN }}

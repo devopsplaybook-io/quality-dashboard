@@ -1,0 +1,32 @@
+// https://nuxt.com/docs/api/configuration/nuxt-config
+export default defineNuxtConfig({
+  ssr: false,
+  experimental: {
+    viteEnvironmentApi: true,
+  },
+  app: {
+    head: {
+      charset: "utf-16",
+      viewport:
+        "width=device-width, initial-scale=1, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
+      title: "QualityDashboard",
+      meta: [
+        { name: "description", content: "QualityDashboard" },
+        { name: "theme-color", content: "#212121" },
+      ],
+      link: [
+        { rel: "manifest", href: "/manifest.json" },
+        { rel: "icon", href: "/icon.svg" },
+        { rel: "stylesheet", href: "/styles.css" },
+      ],
+    },
+  },
+  css: ["~/assets/css/app.css"],
+  modules: ["@pinia/nuxt"],
+  imports: {
+    dirs: ["./stores"],
+  },
+  pinia: {
+    autoImports: ["defineStore", "acceptHMRUpdate"],
+  },
+});

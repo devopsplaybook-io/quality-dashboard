@@ -1,128 +1,341 @@
 import axios from "axios";
-import * as fs from "fs";
-import * as request from "request";
 import { Config } from "./Config";
-
-let authToken;
+import { TestHelpers } from "./TestHelpers";
 
 describe("/api/reports/", () => {
+  //
+  let authToken: string;
 
   beforeEach(async () => {
-    await axios.delete(`${Config.APIURL}/reports`);
-
-    await axios.delete(`${Config.APIURL}/users/`);
-    const responseCreate = await axios.post(`${Config.APIURL}/users/`, {
-      username: "admin",
-      password: "admin",
-    });
-    const responseLogin = await axios.post(`${Config.APIURL}/users/login/`, {
-      username: "admin",
-      password: "admin",
-    });
-    authToken = responseLogin.data.token;
-
-    const settings = { isDashboardPublic: true, uploadToken: '' };
-    await axios
-      .put(`${Config.APIURL}/settings/`, settings, { headers: { Authorization: `Bearer ${authToken}` } })
-      .catch((err) => {
-        return err.response;
-      });
+    authToken = await TestHelpers.resetAll();
+    await TestHelpers.setSettings(authToken, { isDashboardPublic: true });
   });
 
-  //
-  test("GET /api/reports/", async () => {
-    const response = await axios.get(`${Config.APIURL}/reports`);
-    expect(response.data).toHaveProperty("groups");
-    expect(Array.isArray(response.data.groups)).toBeTruthy();
-  });
-
-  describe("POST /api/reports/:groupName/:projectName/:projectVersion/:reportName/:processorType", () => {
-    //
-    beforeEach(async () => {
-      await axios.delete(`${Config.APIURL}/reports`);
-    });
-
-    test("Send a report", async () => {
-      await sendFile(
-        `${__dirname}/../samples/test-report.html`,
-        `${Config.APIURL}/reports/quality-dashboard/server/dev/integration-test/jest-html-reporter`
+  describe("GET /api/reports/processors", () => {
+    test("Lists available processors", async () => {
+      const response = await axios.get(`${Config.APIURL}/reports/processors`);
+      expect(response.status).toEqual(200);
+      expect(response.data).toHaveProperty("processors");
+      expect(Array.isArray(response.data.processors)).toBeTruthy();
+      const names = response.data.processors.map(
+        (p: { name: string }) => p.name,
       );
+      expect(names).toContain("json");
+    });
+  });
+
+  describe("GET /api/reports/", () => {
+    test("Lists empty initially", async () => {
       const response = await axios.get(`${Config.APIURL}/reports`);
-      expect(response.data).toHaveProperty("groups");
-      expect(Array.isArray(response.data.groups)).toBeTruthy();
+      expect(response.status).toEqual(200);
+      expect(response.data).toHaveProperty("reports");
+      expect(Array.isArray(response.data.reports)).toBeTruthy();
+      expect(response.data.reports).toHaveLength(0);
     });
   });
 
-  describe("DELETE /api/reports/:groupName/:projectName/:projectVersion/", () => {
-    //
-    beforeEach(async () => {
-      await axios.delete(`${Config.APIURL}/reports`);
-      await axios.delete(`${Config.APIURL}/users`);
-      await axios.post(`${Config.APIURL}/users`, {
-        username: "admin",
-        password: "admin",
+  describe("POST /api/reports/", () => {
+    test("Send a JSON report (no file) creates Report + Version", async () => {
+      const response = await TestHelpers.sendReport({
+        meta: {
+          key: "unit-tests",
+          displayName: "Unit Tests",
+          processor: "json",
+          jsonPayload: {
+            metrics: [
+              { name: "tests.passed", type: "count", value: 42 },
+              { name: "tests.coverage", type: "percentage", value: 87.3 },
+            ],
+          },
+        },
+        authToken,
       });
-      authToken = (
-        await axios.post(`${Config.APIURL}/users/login`, {
-          username: "admin",
-          password: "admin",
-        })
-      ).data.token;
+      expect(response.status).toEqual(201);
+      expect(response.data.report.key).toEqual("unit-tests");
+      expect(response.data.report.displayName).toEqual("Unit Tests");
+      expect(response.data.version).toHaveProperty("id");
+      expect(response.data.version.processor).toEqual("json");
+      expect(response.data.version.metrics).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "tests.passed",
+            type: "count",
+            value: 42,
+          }),
+          expect.objectContaining({
+            name: "tests.coverage",
+            type: "percentage",
+            value: 87.3,
+          }),
+        ]),
+      );
+      expect(response.data.version.hasFile).toBeFalsy();
     });
 
-    test("Delete a version", async () => {
-      await sendFile(
-        `${__dirname}/../samples/test-report.html`,
-        `${Config.APIURL}/reports/quality-dashboard/server/dev/integration-test/jest-html-reporter`
-      );
-      let response = await axios.get(`${Config.APIURL}/reports`);
-      expect(response.data.groups[0].projects[0].versions).toHaveLength(1);
-      response = await axios.delete(`${Config.APIURL}/reports/quality-dashboard/server/dev`, {
-        headers: {
-          authorization: `Bearer ${authToken}`,
+    test("Same key creates a new version (keeps old)", async () => {
+      await TestHelpers.sendReport({
+        meta: {
+          key: "same-key",
+          processor: "json",
+          jsonPayload: {
+            metrics: [{ name: "n", type: "count", value: 1 }],
+          },
         },
+        authToken,
       });
-      response = await axios.get(`${Config.APIURL}/reports`);
-      expect(response.data.groups).toHaveLength(0);
+      await TestHelpers.sendReport({
+        meta: {
+          key: "same-key",
+          processor: "json",
+          jsonPayload: {
+            metrics: [{ name: "n", type: "count", value: 2 }],
+          },
+        },
+        authToken,
+      });
+      const versions = await axios.get(
+        `${Config.APIURL}/reports/same-key/versions`,
+      );
+      expect(versions.status).toEqual(200);
+      expect(versions.data.versions).toHaveLength(2);
     });
 
-    test("Delete a version among 2", async () => {
-      await sendFile(
-        `${__dirname}/../samples/test-report.html`,
-        `${Config.APIURL}/reports/quality-dashboard/server/dev/integration-test/jest-html-reporter`
-      );
-      await sendFile(
-        `${__dirname}/../samples/test-report.html`,
-        `${Config.APIURL}/reports/quality-dashboard/server/dev-2/integration-test/jest-html-reporter`
-      );
-      let response = await axios.get(`${Config.APIURL}/reports`);
-      expect(response.data.groups[0].projects[0].versions).toHaveLength(2);
-      response = await axios.delete(`${Config.APIURL}/reports/quality-dashboard/server/dev`, {
-        headers: {
-          authorization: `Bearer ${authToken}`,
+    test("Send a jest-html-reporter HTML file", async () => {
+      const response = await TestHelpers.sendReport({
+        meta: {
+          key: "unit-tests",
+          processor: "jest-html-reporter",
         },
+        filePath: `${__dirname}/../samples/test-report.html`,
+        fileName: "test-report.html",
+        authToken,
       });
-      response = await axios.get(`${Config.APIURL}/reports`);
-      expect(response.data.groups[0].projects[0].versions).toHaveLength(1);
+      expect(response.status).toEqual(201);
+      expect(response.data.version.hasFile).toBeTruthy();
+      expect(response.data.version.fileEntrypoint).toEqual("test-report.html");
+      const metricNames = response.data.version.metrics.map(
+        (m: { name: string }) => m.name,
+      );
+      expect(metricNames).toEqual(expect.arrayContaining(["tests.total"]));
+    });
+
+    test("Listed report is returned by GET /", async () => {
+      await TestHelpers.sendReport({
+        meta: {
+          key: "r1",
+          displayName: "Report One",
+          processor: "json",
+          jsonPayload: { metrics: [{ name: "n", type: "count", value: 1 }] },
+        },
+        authToken,
+      });
+      const response = await axios.get(`${Config.APIURL}/reports`);
+      expect(response.data.reports).toHaveLength(1);
+      expect(response.data.reports[0].key).toEqual("r1");
+      expect(response.data.reports[0].displayName).toEqual("Report One");
+    });
+
+    test("Reject missing 'meta' field", async () => {
+      const response = await TestHelpers.sendReport({
+        // @ts-expect-error: simulating missing meta
+        meta: undefined,
+        authToken,
+      });
+      expect(response.status).toEqual(400);
+    });
+
+    test("Reject unknown processor", async () => {
+      const response = await TestHelpers.sendReport({
+        meta: {
+          key: "x",
+          processor: "non-existent-processor",
+          jsonPayload: { metrics: [] },
+        },
+        authToken,
+      });
+      expect(response.status).toBeGreaterThanOrEqual(400);
+      expect(response.status).toBeLessThan(500);
+    });
+
+    test("Reject missing key", async () => {
+      const response = await TestHelpers.sendReport({
+        // @ts-expect-error: missing key
+        meta: { processor: "json" },
+        authToken,
+      });
+      expect(response.status).toEqual(400);
+    });
+  });
+
+  describe("GET /api/reports/recent", () => {
+    test("Returns versions in reverse chronological order", async () => {
+      await TestHelpers.sendReport({
+        meta: {
+          key: "first",
+          processor: "json",
+          jsonPayload: { metrics: [] },
+        },
+        authToken,
+      });
+      // Wait for clock to advance to ensure ordering
+      await new Promise((r) => setTimeout(r, 1100));
+      await TestHelpers.sendReport({
+        meta: {
+          key: "second",
+          processor: "json",
+          jsonPayload: { metrics: [] },
+        },
+        authToken,
+      });
+      const response = await axios.get(`${Config.APIURL}/reports/recent`);
+      expect(response.status).toEqual(200);
+      expect(response.data.versions).toHaveLength(2);
+      expect(response.data.versions[0].reportKey).toEqual("second");
+      expect(response.data.versions[1].reportKey).toEqual("first");
+    });
+  });
+
+  describe("GET /api/reports/:key", () => {
+    test("Returns the report", async () => {
+      await TestHelpers.sendReport({
+        meta: {
+          key: "single",
+          displayName: "Single",
+          processor: "json",
+          jsonPayload: { metrics: [{ name: "x", type: "count", value: 5 }] },
+        },
+        authToken,
+      });
+      const response = await axios.get(`${Config.APIURL}/reports/single`);
+      expect(response.status).toEqual(200);
+      expect(response.data.report.key).toEqual("single");
+      expect(response.data.report.displayName).toEqual("Single");
+    });
+
+    test("Returns 404 for unknown key", async () => {
+      const response = await axios
+        .get(`${Config.APIURL}/reports/does-not-exist`)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .catch((err: any) => err.response);
+      expect(response.status).toEqual(404);
+    });
+  });
+
+  describe("GET /api/reports/:key/versions/:versionId/file/*", () => {
+    test("Streams the version file", async () => {
+      const created = await TestHelpers.sendReport({
+        meta: {
+          key: "with-file",
+          processor: "jest-html-reporter",
+        },
+        filePath: `${__dirname}/../samples/test-report.html`,
+        fileName: "test-report.html",
+        authToken,
+      });
+      const versionId = created.data.version.id;
+      const response = await axios.get(
+        `${Config.APIURL}/reports/with-file/versions/${versionId}/file/test-report.html`,
+        { responseType: "text" },
+      );
+      expect(response.status).toEqual(200);
+      expect(String(response.headers["content-type"])).toContain("text/html");
+      expect(typeof response.data).toEqual("string");
+      expect(response.data.length).toBeGreaterThan(0);
+    });
+
+    test("Path traversal is rejected", async () => {
+      const created = await TestHelpers.sendReport({
+        meta: {
+          key: "trav",
+          processor: "jest-html-reporter",
+        },
+        filePath: `${__dirname}/../samples/test-report.html`,
+        fileName: "test-report.html",
+        authToken,
+      });
+      const versionId = created.data.version.id;
+      const response = await axios
+        .get(
+          `${Config.APIURL}/reports/trav/versions/${versionId}/file/../../../etc/passwd`,
+        )
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .catch((err: any) => err.response);
+      expect(response.status).toEqual(404);
+    });
+  });
+
+  describe("DELETE", () => {
+    test("DELETE /:key deletes the report and all its versions", async () => {
+      await TestHelpers.sendReport({
+        meta: {
+          key: "to-delete",
+          processor: "json",
+          jsonPayload: { metrics: [] },
+        },
+        authToken,
+      });
+      await TestHelpers.sendReport({
+        meta: {
+          key: "to-delete",
+          processor: "json",
+          jsonPayload: { metrics: [] },
+        },
+        authToken,
+      });
+      const del = await axios.delete(`${Config.APIURL}/reports/to-delete`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      expect(del.status).toEqual(200);
+      const list = await axios.get(`${Config.APIURL}/reports`);
+      expect(
+        list.data.reports.find((r: { key: string }) => r.key === "to-delete"),
+      ).toBeUndefined();
+    });
+
+    test("DELETE /:key/versions/:versionId deletes a single version", async () => {
+      const r1 = await TestHelpers.sendReport({
+        meta: {
+          key: "many-versions",
+          processor: "json",
+          jsonPayload: { metrics: [] },
+        },
+        authToken,
+      });
+      await TestHelpers.sendReport({
+        meta: {
+          key: "many-versions",
+          processor: "json",
+          jsonPayload: { metrics: [] },
+        },
+        authToken,
+      });
+      const versionId = r1.data.version.id;
+      const del = await axios.delete(
+        `${Config.APIURL}/reports/many-versions/versions/${versionId}`,
+        { headers: { Authorization: `Bearer ${authToken}` } },
+      );
+      expect(del.status).toEqual(200);
+      const versions = await axios.get(
+        `${Config.APIURL}/reports/many-versions/versions`,
+      );
+      expect(versions.data.versions).toHaveLength(1);
+      expect(versions.data.versions[0].id).not.toEqual(versionId);
+    });
+
+    test("Anonymous cannot delete", async () => {
+      await TestHelpers.sendReport({
+        meta: {
+          key: "to-delete",
+          processor: "json",
+          jsonPayload: { metrics: [] },
+        },
+        authToken,
+      });
+      const response = await axios
+        .delete(`${Config.APIURL}/reports/to-delete`)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .catch((err: any) => err.response);
+      expect(response.status).toEqual(403);
     });
   });
 });
-
-function sendFile(filepath: string, url: string): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const req = request.post(url, (err, resp, body) => {
-      if (err) {
-        reject("Error!");
-      } else if (resp.statusCode > 299) {
-        reject(body);
-      } else {
-        resolve(body);
-      }
-    });
-    const form = req.form();
-    form.append("report", fs.createReadStream(filepath), {
-      filename: filepath,
-      contentType: "text/plain",
-    });
-  });
-}

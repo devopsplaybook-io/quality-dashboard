@@ -21,38 +21,44 @@ cd "${APP_DIR}/quality-dashboard-server"
 npm run test
 tar czf coverage.tar.gz coverage
 curl -X POST \
-   -F report=@"./coverage.tar.gz" \
-   ${UPLOAD_SERVER}/api/reports/quality-dashboard/server/master/unit-test-coverage/lcov-coverage
+    -H "X-Upload-Token: $UPLOAD_TOKEN" \
+    -F 'meta={"key":"quality-dashboard/server/unit-test-coverage","displayName":"Server Coverage","processor":"lcov-coverage"}' \
+    -F file=@"./coverage.tar.gz" \
+    ${UPLOAD_SERVER}/api/reports
 curl -X POST \
-    -F report=@"./test-report.html" \
-    ${UPLOAD_SERVER}/api/reports/quality-dashboard/server/master/unit-test/jest-html-reporter
+    -H "X-Upload-Token: $UPLOAD_TOKEN" \
+    -F 'meta={"key":"quality-dashboard/server/unit-test","displayName":"Server Unit Tests","processor":"jest-html-reporter"}' \
+    -F file=@"./test-report.html" \
+    ${UPLOAD_SERVER}/api/reports
 rm -f ./coverage.tar.gz
 
 
 # --------------------------------------------------
 # Integration tests
 # --------------------------------------------------
-cd "${APP_DIR}/test/integration"
+cd "${APP_DIR}/tests/integration"
 npm run test
 curl -X POST \
-    -F report=@"./test-report.html" \
-    ${UPLOAD_SERVER}/api/reports/quality-dashboard/integration/master/integration-test/jest-html-reporter
+    -H "X-Upload-Token: $UPLOAD_TOKEN" \
+    -F 'meta={"key":"quality-dashboard/integration/integration-test","displayName":"Integration Tests","processor":"jest-html-reporter"}' \
+    -F file=@"./test-report.html" \
+    ${UPLOAD_SERVER}/api/reports
 
 
 # --------------------------------------------------
 # Test Json Processor
 # --------------------------------------------------
 curl -X POST \
-    -d '{"link":"https://github.com/DidierHoarau/quality-dashboard", "success": 10, "error": 9, "warning": 8, "total": 27, "coverage": 80 }' \
-    -H "Content-Type: application/json" \
-    ${UPLOAD_SERVER}/api/reports/quality-dashboard/integration/master/test-processors/json
+    -H "X-Upload-Token: $UPLOAD_TOKEN" \
+    -F 'meta={"key":"quality-dashboard/integration/test-processors","displayName":"Test Processors","processor":"json","jsonPayload":{"metrics":[{"name":"success","type":"count","value":10},{"name":"error","type":"count","value":9},{"name":"warning","type":"count","value":8},{"name":"total","type":"count","value":27},{"name":"coverage","type":"percentage","value":80}]}}' \
+    ${UPLOAD_SERVER}/api/reports
 
 curl -X POST \
-    -d '{"success": 10, "error": 9, "warning": 8, "total": 27, "coverage": 80 }' \
-    -H "Content-Type: application/json" \
-    ${UPLOAD_SERVER}/api/reports/quality-dashboard/integration/master/test-processors-2/json
+    -H "X-Upload-Token: $UPLOAD_TOKEN" \
+    -F 'meta={"key":"quality-dashboard/integration/test-processors-2","displayName":"Test Processors 2","processor":"json","jsonPayload":{"metrics":[{"name":"success","type":"count","value":10},{"name":"error","type":"count","value":9},{"name":"warning","type":"count","value":8},{"name":"total","type":"count","value":27},{"name":"coverage","type":"percentage","value":80}]}}' \
+    ${UPLOAD_SERVER}/api/reports
 
 curl -X POST \
-    -d '{"link":"./TEST/", "success": 10, "error": 9, "warning": 8, "total": 27, "coverage": 80 }' \
-    -H "Content-Type: application/json" \
-    ${UPLOAD_SERVER}/api/reports/quality-dashboard/integration/master/test-processors-3/json
+    -H "X-Upload-Token: $UPLOAD_TOKEN" \
+    -F 'meta={"key":"quality-dashboard/integration/test-processors-3","displayName":"Test Processors 3","processor":"json","jsonPayload":{"metrics":[{"name":"success","type":"count","value":10},{"name":"error","type":"count","value":9},{"name":"warning","type":"count","value":8},{"name":"total","type":"count","value":27},{"name":"coverage","type":"percentage","value":80},{"name":"link","type":"count","value":1}]}}' \
+    ${UPLOAD_SERVER}/api/reports

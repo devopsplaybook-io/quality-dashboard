@@ -1,59 +1,46 @@
 import axios from "axios";
-import * as fs from "fs";
-import * as request from "request";
 import { Config } from "./Config";
+import { TestHelpers } from "./TestHelpers";
 
-let authToken;
-describe("/api/reports/", () => {
+describe("/api/reports/ (public access)", () => {
   //
+  let authToken: string;
+
   beforeEach(async () => {
-    await axios.delete(`${Config.APIURL}/reports`);
-
-    await axios.delete(`${Config.APIURL}/users/`);
-    const responseCreate = await axios.post(`${Config.APIURL}/users/`, {
-      username: "admin",
-      password: "admin",
+    authToken = await TestHelpers.resetAll();
+    await TestHelpers.setSettings(authToken, { isDashboardPublic: true });
+    await TestHelpers.sendReport({
+      meta: {
+        key: "public-test",
+        processor: "json",
+        jsonPayload: {
+          metrics: [{ name: "x", type: "count", value: 1 }],
+        },
+      },
+      authToken,
     });
-    const responseLogin = await axios.post(`${Config.APIURL}/users/login/`, {
-      username: "admin",
-      password: "admin",
-    });
-    authToken = responseLogin.data.token;
-
-    const settings = { isDashboardPublic: true, uploadToken: '' };
-    await axios
-      .put(`${Config.APIURL}/settings/`, settings, { headers: { Authorization: `Bearer ${authToken}` } })
-      .catch((err) => {
-        return err.response;
-      });
-    await sendFile(
-      `${__dirname}/../samples/test-report.html`,
-      `${Config.APIURL}/reports/quality-dashboard/server/dev/integration-test/jest-html-reporter`
-    );
   });
 
-  test("GET /api/reports/", async () => {
+  test("Anonymous can list reports when public", async () => {
     const response = await axios.get(`${Config.APIURL}/reports`);
-    expect(response.data).toHaveProperty("groups");
-    expect(Array.isArray(response.data.groups)).toBeTruthy();
+    expect(response.status).toEqual(200);
+    expect(response.data.reports.length).toBeGreaterThan(0);
+  });
+
+  test("Anonymous cannot list reports when private", async () => {
+    await TestHelpers.setSettings(authToken, { isDashboardPublic: false });
+    const response = await axios
+      .get(`${Config.APIURL}/reports`)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .catch((err: any) => err.response);
+    expect(response.status).toEqual(403);
+  });
+
+  test("Authenticated can list reports when private", async () => {
+    await TestHelpers.setSettings(authToken, { isDashboardPublic: false });
+    const response = await axios.get(`${Config.APIURL}/reports`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+    expect(response.status).toEqual(200);
   });
 });
-
-function sendFile(filepath: string, url: string): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const req = request.post(url, (err, resp, body) => {
-      if (err) {
-        reject("Error!");
-      } else if (resp.statusCode > 299) {
-        reject(body);
-      } else {
-        resolve(body);
-      }
-    });
-    const form = req.form();
-    form.append("report", fs.createReadStream(filepath), {
-      filename: filepath,
-      contentType: "text/plain",
-    });
-  });
-}

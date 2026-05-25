@@ -1,0 +1,35 @@
+{
+  "id": "55991a78-a024-45ff-a566-d6d2aaaad23c",
+  "reportKey": "quality-dashboard/logging/errors",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "total_logs",
+      "type": "count",
+      "value": 124500
+    },
+    {
+      "name": "errors",
+      "type": "count",
+      "value": 342
+    },
+    {
+      "name": "warnings",
+      "type": "count",
+      "value": 1890
+    },
+    {
+      "name": "error_rate_per_1k",
+      "type": "percentage",
+      "value": 2.7
+    },
+    {
+      "name": "unique_error_signatures",
+      "type": "count",
+      "value": 48
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-17T09:25:03.910Z"
+}

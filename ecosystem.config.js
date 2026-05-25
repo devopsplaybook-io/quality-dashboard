@@ -1,29 +1,43 @@
+const fs = require("fs");
+let devEnv = {};
+if (fs.existsSync("./env-dev.js")) {
+  devEnv = require("./env-dev");
+}
+
 module.exports = {
   apps: [
+    {
+      name: "quality-dashboard-proxy",
+      cwd: "quality-dashboard-proxy",
+      script: "npm",
+      args: "run start",
+      autorestart: false,
+      ignore_watch: ["node_modules"],
+    },
     {
       name: "quality-dashboard-server",
       cwd: "quality-dashboard-server",
       script: "npm",
       args: "run dev",
-      watch: true,
-      ignore_watch: ["node_modules", ".data"],
-      watch_options: {
-        usePolling: true,
-        interval: 1000,
-      },
+      autorestart: true,
       env_development: {
-        NODE_ENV: "dev",
-        AUTH_TOKEN_VALIDITY: "5000",
-        AUTH_JWT_KEY: "TO_CHANGE"
+        ...devEnv,
+        DEV_MODE: "true",
+        DATA_DIR: "../docs/dev/data",
+        TMP_DIR: "../docs/dev/data/tmp",
+        OPENTELEMETRY_COLLECTOR_HTTP: "http://localhost:4318/v1/traces",
+        OPENTELEMETRY_COLLECTOR_AWS: true,
       },
     },
     {
-      name: "quality-dashboard-ui",
-      cwd: "quality-dashboard-ui",
+      name: "quality-dashboard-web",
+      cwd: "quality-dashboard-web",
       script: "npm",
       args: "run dev",
-      watch: false,
       autorestart: false,
+      env_development: {
+        DEV_MODE: "true",
+      },
     },
   ],
 };

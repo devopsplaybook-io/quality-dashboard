@@ -1,0 +1,1 @@
+{"metrics":[{"name":"total_logs","type":"count","value":124500},{"name":"errors","type":"count","value":342},{"name":"warnings","type":"count","value":1890},{"name":"error_rate_per_1k","type":"percentage","value":2.7},{"name":"unique_error_signatures","type":"count","value":48}]}

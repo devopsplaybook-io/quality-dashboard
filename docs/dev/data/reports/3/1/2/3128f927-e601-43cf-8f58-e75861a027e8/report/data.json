@@ -1,0 +1,1 @@
+{"metrics":[{"name":"avg_query_ms","type":"duration","value":12},{"name":"slow_queries_gt_1s","type":"count","value":3},{"name":"active_connections","type":"count","value":8},{"name":"pool_utilization","type":"percentage","value":44},{"name":"deadlocks","type":"count","value":0}]}

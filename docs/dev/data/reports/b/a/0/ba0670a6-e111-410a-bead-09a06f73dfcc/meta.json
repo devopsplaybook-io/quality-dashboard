@@ -1,0 +1,35 @@
+{
+  "id": "ba0670a6-e111-410a-bead-09a06f73dfcc",
+  "reportKey": "quality-dashboard/typescript/strictness",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "total_files",
+      "type": "count",
+      "value": 186
+    },
+    {
+      "name": "any_usage",
+      "type": "count",
+      "value": 22
+    },
+    {
+      "name": "ts_ignore",
+      "type": "count",
+      "value": 5
+    },
+    {
+      "name": "explicit_any",
+      "type": "count",
+      "value": 14
+    },
+    {
+      "name": "strictness_score",
+      "type": "percentage",
+      "value": 78
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-17T09:25:03.704Z"
+}

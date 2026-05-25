@@ -1,0 +1,30 @@
+{
+  "id": "9cf0b0e3-a95b-4f46-895c-b04aff85aa26",
+  "reportKey": "quality-dashboard/build/performance",
+  "processor": "json",
+  "metrics": [
+    {
+      "name": "build_time_seconds",
+      "type": "duration",
+      "value": 127
+    },
+    {
+      "name": "cache_hits",
+      "type": "count",
+      "value": 43
+    },
+    {
+      "name": "cache_misses",
+      "type": "count",
+      "value": 12
+    },
+    {
+      "name": "cache_hit_rate",
+      "type": "percentage",
+      "value": 78.2
+    }
+  ],
+  "info": {},
+  "hasFile": false,
+  "dateCreated": "2026-05-17T09:25:02.491Z"
+}

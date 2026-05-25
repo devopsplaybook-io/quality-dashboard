@@ -1,0 +1,21 @@
+{
+  "name": "quality-dashboard",
+  "version": "2.0.0",
+  "description": "",
+  "main": "ecosystem.config.js",
+  "scripts": {
+    "dev": "./docs/dev/run-dev-env.sh",
+    "dependencies": "./docs/dev/run-dev-dependencies-rebuild.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devopsplaybook-io/quality-dashboard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/devopsplaybook-io/quality-dashboard/issues"
+  },
+  "homepage": "https://github.com/devopsplaybook-io/quality-dashboard#readme"
+}
