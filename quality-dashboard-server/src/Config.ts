@@ -1,30 +1,15 @@
-import * as fse from "fs-extra";
-import * as path from "path";
-import { v4 as uuidv4 } from "uuid";
-import { ConfigOTelInterface } from "@devopsplaybook.io/otel-utils";
-import { Logger } from "./utils-std-ts/Logger";
+import { ConfigBase } from "@devopsplaybook.io/common-utils";
+import path from "path";
+import { OTelLogger } from "./OTelContext";
 
-const logger = new Logger("config");
+const logger = OTelLogger().createModuleLogger("config");
 
-export class Config implements ConfigOTelInterface {
-  //
-  public readonly CONFIG_FILE: string = "config.json";
-  public readonly SERVICE_ID = "quality-dashboard-server";
-  public VERSION = "2";
-  public readonly API_PORT = 8080;
-  public readonly PROCESSORS_SYSTEM_DIR = path.join(
-    __dirname,
-    "../processors_system",
-  );
-
-  // Can be set with config
-  public JWT_VALIDITY_DURATION = 31 * 24 * 3600;
-  public CORS_POLICY_ORIGIN: string;
+export class Config extends ConfigBase {
+  // Project-specific fields
   public TMP_DIR = process.env.TMP_DIR || "/tmp";
-  public DATA_DIR = process.env.DATA_DIR || "/data";
   public REPORT_DIR = this.DATA_DIR + "/reports";
-  public JWT_KEY: string = uuidv4();
   public LOG_LEVEL = "info";
+  public PROCESSORS_SYSTEM_DIR = path.join(__dirname, "../processors_system");
   public PROCESSORS_CUSTOM_DIR = path.join(__dirname, "../processors_custom");
   public PROCESSOR_TIMEOUT_MS = Number(
     process.env.PROCESSOR_TIMEOUT_MS || 30000,
@@ -33,52 +18,20 @@ export class Config implements ConfigOTelInterface {
     process.env.MAX_UPLOAD_BYTES || 200 * 1024 * 1024,
   );
 
-  // OpenTelemetry configuration
-  public OPENTELEMETRY_COLLECTOR_HTTP_TRACES = "";
-  public OPENTELEMETRY_COLLECTOR_HTTP_METRICS = "";
-  public OPENTELEMETRY_COLLECTOR_HTTP_LOGS = "";
-  public OPENTELEMETRY_COLLECTOR_EXPORT_LOGS_INTERVAL_SECONDS = 5;
-  public OPENTELEMETRY_COLLECTOR_EXPORT_METRICS_INTERVAL_SECONDS = 10;
-  public OPENTELEMETRY_COLLECTOR_AWS = false;
-  public OPENTELEMETRY_COLLECT_AUTHORIZATION_HEADER = "";
+  constructor() {
+    super("quality-dashboard-server");
+    this.VERSION = "2";
+
+    // Register project-specific fields so reload() processes them
+    this.addConfigField({ field: "TMP_DIR" });
+    this.addConfigField({ field: "PROCESSORS_CUSTOM_DIR" });
+    this.addConfigField({ field: "PROCESSOR_TIMEOUT_MS" });
+    this.addConfigField({ field: "MAX_UPLOAD_BYTES" });
+  }
 
   public async reload(): Promise<void> {
-    const content = await fse.readJson(this.CONFIG_FILE);
-    const setIfSet = (field: string, displayLog = true) => {
-      let fromEnv = "defaults";
-      if (process.env[field]) {
-        this[field] = process.env[field];
-        fromEnv = "environment";
-      } else if (content[field]) {
-        this[field] = content[field];
-        fromEnv = "config";
-      }
-      if (displayLog) {
-        logger.info(
-          `Configuration Value: ${field}: ${this[field]} (from ${fromEnv})`,
-        );
-      } else {
-        logger.info(
-          `Configuration Value: ${field}: ******************** (from ${fromEnv})`,
-        );
-      }
-    };
-    logger.info(`Configuration Value: CONFIG_FILE: ${this.CONFIG_FILE}`);
-    logger.info(`Configuration Value: VERSION: ${this.VERSION}`);
-    setIfSet("JWT_VALIDITY_DURATION");
-    setIfSet("CORS_POLICY_ORIGIN");
-    setIfSet("DATA_DIR");
-    setIfSet("JWT_KEY", false);
-    setIfSet("LOG_LEVEL");
-    setIfSet("PROCESSORS_CUSTOM_DIR");
-    setIfSet("PROCESSOR_TIMEOUT_MS");
-    setIfSet("MAX_UPLOAD_BYTES");
-    setIfSet("OPENTELEMETRY_COLLECTOR_HTTP_TRACES");
-    setIfSet("OPENTELEMETRY_COLLECTOR_HTTP_METRICS");
-    setIfSet("OPENTELEMETRY_COLLECTOR_HTTP_LOGS");
-    setIfSet("OPENTELEMETRY_COLLECTOR_EXPORT_LOGS_INTERVAL_SECONDS");
-    setIfSet("OPENTELEMETRY_COLLECTOR_EXPORT_METRICS_INTERVAL_SECONDS");
-    setIfSet("OPENTELEMETRY_COLLECTOR_AWS");
-    setIfSet("OPENTELEMETRY_COLLECT_AUTHORIZATION_HEADER", false);
+    await super.reload((message: string) => logger.info(message));
+    // Keep REPORT_DIR in sync when DATA_DIR changes
+    this.REPORT_DIR = this.DATA_DIR + "/reports";
   }
 }

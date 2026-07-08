@@ -1,1 +1,0 @@
-{"metrics":[{"name":"total_files","type":"count","value":186},{"name":"any_usage","type":"count","value":22},{"name":"ts_ignore","type":"count","value":5},{"name":"explicit_any","type":"count","value":14},{"name":"strictness_score","type":"percentage","value":78}]}
