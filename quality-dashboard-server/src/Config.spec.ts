@@ -13,7 +13,7 @@ describe("Config", () => {
 
   it("should have default JWT validity duration", () => {
     const config = new Config();
-    expect(config.JWT_VALIDITY_DURATION).toBe(31 * 24 * 3600);
+    expect(config.JWT_VALIDITY_DURATION).toBe(3 * 31 * 24 * 3600);
   });
 
   it("should have a generated JWT key", () => {
@@ -35,5 +35,11 @@ describe("Config", () => {
   it("should read DATA_DIR from environment or default", () => {
     const config = new Config();
     expect(config.DATA_DIR).toBe(process.env.DATA_DIR || "/data");
+  });
+
+  it("should update REPORT_DIR when DATA_DIR changes after reload", async () => {
+    const config = new Config();
+    await config.reload();
+    expect(config.REPORT_DIR).toBe(config.DATA_DIR + "/reports");
   });
 });

@@ -23,7 +23,7 @@ import { SettingsDB } from "./settings/SettingsDB";
 import { SettingsRoutes } from "./settings/SettingsRoutes";
 import { Auth } from "./users/Auth";
 import { UsersRoutes } from "./users/UsersRoutes";
-import { SqlDbUtilsInit } from "./utils-std-ts/SqlDbUtils";
+import { SqlDbUtilsSetOTel, SqlDbUtilsInit } from "./utils-std-ts/SqlDbUtils";
 
 const logger = OTelLogger().createModuleLogger("app");
 
@@ -43,9 +43,11 @@ Promise.resolve()
     OTelSetMeter(new StandardMeter(config));
     OTelLogger().initOTel(config);
 
+    SqlDbUtilsSetOTel(OTelTracer(), OTelLogger());
+
     const span = OTelTracer().startSpan("init");
 
-    await SqlDbUtilsInit(span, config);
+    await SqlDbUtilsInit(span, config, path.join(__dirname, "../sql"));
     await Auth.init(span, config);
     await SettingsDB.init(span, config);
 
