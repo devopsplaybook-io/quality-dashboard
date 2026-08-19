@@ -1,6 +1,6 @@
 {
   "name": "tests-e2e",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -11,6 +11,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cypress": "^10.3.0"
+    "cypress": "^15.21.0"
   }
 }
