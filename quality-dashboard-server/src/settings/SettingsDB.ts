@@ -14,10 +14,8 @@ export interface SettingsValue {
 const KEY = "settings_v2";
 const DEFAULT: SettingsValue = { isDashboardPublic: false, uploadToken: "" };
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class SettingsDB {
   //
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public static async init(context: Span, _config: Config): Promise<void> {
     const span = OTelTracer().startSpan("SettingsDB_init", context);
     try {

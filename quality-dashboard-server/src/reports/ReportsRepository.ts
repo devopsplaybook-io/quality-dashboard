@@ -14,7 +14,6 @@ import { MetricType } from "./models/MetricType";
  * Persistence for Reports (named entities) and their ReportVersions.
  * Each Report has many ReportVersions; each ReportVersion has many Metrics.
  */
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class ReportsRepository {
   //
   // ---- Report ----------------------------------------------------------
@@ -351,7 +350,6 @@ export class ReportsRepository {
 
   private static async attachMetrics(
     span: Span,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rows: any[],
   ): Promise<ReportVersion[]> {
     if (rows.length === 0) {
@@ -383,7 +381,6 @@ export class ReportsRepository {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static reportFromRaw(raw: any): Report {
     const report = new Report();
     report.key = raw.key;
@@ -392,7 +389,6 @@ export class ReportsRepository {
     return report;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static versionFromRaw(raw: any, metrics: Metric[]): ReportVersion {
     const v = new ReportVersion();
     v.id = raw.id;

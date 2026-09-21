@@ -167,7 +167,6 @@ export class DashboardsRoutes {
  *  - enforce max depth and forbid duplicate tag along the same ancestor path.
  */
 function sanitizeRoot(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   input: any,
   depth: number,
   ancestorTags: string[],
@@ -244,7 +243,6 @@ type ShownMetricsResult =
   | { kind: "error"; error: string };
 
 function sanitizeShownMetrics(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   input: any,
 ): ShownMetricsResult {
   if (input === undefined || input === null) {

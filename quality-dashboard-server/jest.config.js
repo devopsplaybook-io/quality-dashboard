@@ -1,15 +1,13 @@
 module.exports = {
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.spec.json'
-    }
-  },
   moduleFileExtensions: ['ts', 'js'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: 'tsconfig.spec.json'
+    '^.+\\.(ts|tsx)$': ['@swc/jest', {
+      jsc: {
+        target: 'es2020'
+      }
     }]
   },
+  coverageProvider: 'v8',
   testMatch: ['**/src/**/*.spec.(ts|js)'],
   testEnvironment: 'node',
   moduleNameMapper: {

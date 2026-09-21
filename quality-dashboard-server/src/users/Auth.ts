@@ -13,7 +13,6 @@ import {
 const logger = OTelLogger().createModuleLogger("Auth");
 let config: Config;
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Auth {
   //
   public static async init(context: Span, configIn: Config) {
@@ -49,7 +48,6 @@ export class Auth {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static async mustBeAuthenticated(req: any, res: any): Promise<void> {
     let authenticated = false;
     if (req.headers.authorization) {
@@ -66,7 +64,6 @@ export class Auth {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static async mustBeAdmin(req: any, res: any): Promise<void> {
     if (req.headers.authorization) {
       try {
@@ -85,7 +82,6 @@ export class Auth {
     throw new Error("Access Denied");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static async getUserSession(req: any): Promise<UserSession> {
     const userSession: UserSession = { isAuthenticated: false };
     if (req.headers.authorization) {

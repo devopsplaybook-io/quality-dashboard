@@ -474,13 +474,11 @@ async function ensureCanWrite(
 }
 
 interface ParsedMultipart {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   meta: any;
   file?: { filename: string; buffer: Buffer };
 }
 
 async function parseMultipart(req: FastifyRequest): Promise<ParsedMultipart> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const reqAny = req as any;
   if (typeof reqAny.parts !== "function") {
     throw new HttpError(
