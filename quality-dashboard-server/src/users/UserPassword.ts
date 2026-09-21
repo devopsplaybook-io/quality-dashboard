@@ -2,7 +2,6 @@ import { Span } from "@opentelemetry/sdk-trace-base";
 import * as bcrypt from "bcrypt";
 import { User } from "./model/User";
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UserPassword {
   //
   public static async setPassword(

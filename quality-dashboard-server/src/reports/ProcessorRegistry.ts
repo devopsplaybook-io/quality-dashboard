@@ -10,26 +10,22 @@ const logger = OTelLogger().createModuleLogger("ProcessorRegistry");
 
 export interface ProcessorContext {
   reportDir: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   jsonPayload?: any;
 }
 
 export interface ProcessorResult {
   fileEntrypoint?: string;
   metrics: Metric[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   info?: any;
 }
 
 export interface ProcessorDescriptor {
   name: string;
   source: "system" | "custom";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   describe?: any;
 }
 
 interface ProcessorModule {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   describe?: () => any;
   analyse: (ctx: ProcessorContext) => Promise<ProcessorResult>;
   formatReportPreview?: (
@@ -69,9 +65,7 @@ function loadDir(dir: string, source: "system" | "custom"): void {
     const name = path.basename(file, ".js");
     const filePath = path.join(dir, file);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete require.cache[require.resolve(filePath)];
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const mod = require(filePath) as ProcessorModule;
       if (typeof mod.analyse !== "function") {
         logger.error(`Processor ${name} missing analyse(): skipped`);

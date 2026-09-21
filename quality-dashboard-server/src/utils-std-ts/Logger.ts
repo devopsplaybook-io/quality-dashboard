@@ -12,26 +12,21 @@ export class Logger {
     this.module = `${module}`;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public debug(message: Error | string | any): void {
     if (DEV_MODE) {
       this.display("debug", message);
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public info(message: Error | string | any): void {
     this.display("info", message);
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public warn(message: Error | string | any): void {
     this.display("warn", message);
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public error(message: Error | string | any): void {
     this.display("error", message);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private display(level: string, message: any): void {
     if (typeof message === "string") {
       // eslint:disable-next-line:no-console

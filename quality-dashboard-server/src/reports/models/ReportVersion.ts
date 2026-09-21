@@ -11,7 +11,6 @@ export class ReportVersion {
   public metrics: Metric[];
   public fileEntrypoint?: string;
   public hasFile: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public info: any;
   public dateCreated: Date;
 

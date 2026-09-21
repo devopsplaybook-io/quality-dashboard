@@ -6,7 +6,6 @@ import {
   SqlDbUtilsQuerySQL,
 } from "../utils-std-ts/SqlDbUtils";
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UsersData {
   //
   public static async get(context: Span, id: string): Promise<User> {
@@ -92,7 +91,6 @@ export class UsersData {
     span.end();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static fromRaw(userRaw: any): User {
     const user = new User();
     user.id = userRaw.id;

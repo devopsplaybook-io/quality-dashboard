@@ -99,7 +99,7 @@ cd quality-dashboard-web && npm install
 npm run dev   # runs docs/dev/run-dev-env.sh
 
 # Build
-cd quality-dashboard-server && npm run build   # tsc → dist/
+cd quality-dashboard-server && npm run build   # tsc → dist/, then type-checks the spec files (tsc --noEmit)
 cd quality-dashboard-web && npm run build      # nuxt build → .output/
 
 # Docker
@@ -116,7 +116,7 @@ The `ecosystem.config.js` sets `DATA_DIR` to `../docs/dev/data` and `TMP_DIR` to
 # Server unit tests (Jest)
 cd quality-dashboard-server && npm test
 
-# Server linter (ESLint with typescript-eslint)
+# Server linter (oxlint)
 cd quality-dashboard-server && npm run lint
 
 # Integration tests
@@ -129,7 +129,7 @@ cd tests/tests-e2e && npx cypress run
 ### Test Conventions
 
 - Unit tests: `*.spec.ts` colocated next to source files
-- Tests use `ts-jest` with `tsconfig.spec.json`
+- Tests are transformed by `@swc/jest` (coverage provider: v8); spec files are type-checked by the build via `tsconfig.spec.json`
 - UUID module is mocked via `__mocks__/uuid.cjs` for deterministic IDs
 - Coverage collected from `src/**/*.ts`
 
@@ -144,11 +144,11 @@ cd tests/tests-e2e && npx cypress run
 ## Coding Conventions
 
 - TypeScript with relaxed strictness (`strict: false`, `noImplicitAny: false`)
-- ESLint: `@eslint/js` recommended + `typescript-eslint` strict + stylistic
+- Linting with oxlint (recommended preset)
 - Module-level singletons for config and OTel context (set at startup, read everywhere)
 - Repository pattern for database access (static methods on `*Repository` classes)
 - All DB operations wrapped in OTel spans for tracing
-- `// eslint-disable-next-line` used sparingly for `any` types at API boundaries
+- `// eslint-disable-next-line` directives used sparingly (compatibility suppressions honored by oxlint) for `any` types at API boundaries
 
 ## Docker
 

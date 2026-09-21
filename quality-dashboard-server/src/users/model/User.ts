@@ -14,7 +14,6 @@ export class User {
     canConfigureReportTags: false,
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static fromJson(json: any): User {
     if (!json) {
       return null;
@@ -50,7 +49,6 @@ export class User {
     this.id = uuidv4();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public toJson(): any {
     return {
       id: this.id,

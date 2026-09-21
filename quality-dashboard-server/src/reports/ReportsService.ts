@@ -28,7 +28,6 @@ export interface IngestInput {
   /** Optional human display name (only applied if Report does not yet exist or is empty). */
   displayName?: string | null;
   processor: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   jsonPayload?: any;
   file?: {
     filename: string;
@@ -41,7 +40,6 @@ export interface IngestResult {
   version: ReportVersion;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class ReportsService {
   //
   /**
