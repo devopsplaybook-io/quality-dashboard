@@ -194,6 +194,7 @@ const reportsStore = ReportsStore();
 const authenticationStore = AuthenticationStore();
 const applicationSettingsStore = ApplicationSetttingsStore();
 const router = useRouter();
+const route = useRoute();
 
 const showCreate = ref(false);
 const showEdit = ref(false);
@@ -308,13 +309,21 @@ onMounted(async () => {
     reportsStore.fetchReports(),
   ]);
   const first = dashboardsStore.dashboards[0];
-  if (first) {
+  const requested = route.query.dashboard;
+  const requestedId = typeof requested === "string" ? requested : null;
+  const match = requestedId
+    ? dashboardsStore.dashboards.find((d) => d.id === requestedId)
+    : null;
+  if (match) {
+    selectDashboard(match.id);
+  } else if (first) {
     selectDashboard(first.id);
   }
 });
 
 async function selectDashboard(id: string): Promise<void> {
   selectedId.value = id;
+  router.replace({ query: { dashboard: id } });
   loadingData.value = true;
   try {
     selectedData.value = await dashboardsStore.fetchDashboardData(id);
