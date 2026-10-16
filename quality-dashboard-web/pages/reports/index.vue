@@ -301,13 +301,21 @@ onMounted(async () => {
       return;
     }
   }
-  await Promise.all([tagsStore.fetchAll(), reportsStore.fetchReports()]);
+  await Promise.all([
+    tagsStore.fetchAll(),
+    reportsStore.fetchReports(),
+    reportsStore.fetchMetricHistory(),
+  ]);
 });
 
 onBeforeUnmount(() => {});
 
 async function refresh(): Promise<void> {
-  await Promise.all([tagsStore.fetchAll(), reportsStore.fetchReports()]);
+  await Promise.all([
+    tagsStore.fetchAll(),
+    reportsStore.fetchReports(),
+    reportsStore.fetchMetricHistory(),
+  ]);
 }
 
 function openEdit(report: Report): void {

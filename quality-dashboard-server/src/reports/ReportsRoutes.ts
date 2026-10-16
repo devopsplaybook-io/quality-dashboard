@@ -23,6 +23,9 @@ let config: Config;
 const RECENT_DEFAULT_LIMIT = 100;
 const RECENT_MAX_LIMIT = 500;
 
+const HISTORY_DEFAULT_LIMIT = 50;
+const HISTORY_MAX_LIMIT = 100;
+
 export function ReportsRoutesInit(_context: unknown, configIn: Config): void {
   config = configIn;
 }
@@ -81,6 +84,26 @@ export class ReportsRoutes {
         versions: versions.map((v) =>
           toApiVersion(v, reportsByKey.get(v.reportKey) || null, tagsByKey),
         ),
+      });
+    });
+
+    // ---- Metric history (bounded, per report) ------------------------------
+    fastify.get("/history", async (req, res) => {
+      if (!(await ensureCanRead(req, res))) {
+        return;
+      }
+      const q = req.query as { limit?: string };
+      let limit = Number(q.limit || HISTORY_DEFAULT_LIMIT);
+      if (!Number.isFinite(limit) || limit <= 0) {
+        limit = HISTORY_DEFAULT_LIMIT;
+      }
+      if (limit > HISTORY_MAX_LIMIT) {
+        limit = HISTORY_MAX_LIMIT;
+      }
+      const span = OTelRequestSpan(req);
+      const versions = await ReportsRepository.listHistoryPerReport(span, limit);
+      return res.status(200).send({
+        versions: versions.map(toApiHistoryVersion),
       });
     });
 
@@ -421,6 +444,15 @@ function toApiVersion(
     hasPreview: hasFormatReportPreview(v.processor),
     dateCreated: v.dateCreated.toISOString(),
     tags: (tagsByKey.get(v.reportKey) || []).map(toApiTag),
+  };
+}
+
+function toApiHistoryVersion(v: ReportVersion): Record<string, unknown> {
+  return {
+    id: v.id,
+    reportKey: v.reportKey,
+    metrics: v.metrics,
+    dateCreated: v.dateCreated.toISOString(),
   };
 }
 

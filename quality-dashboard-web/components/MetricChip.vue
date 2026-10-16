@@ -23,6 +23,7 @@
 
 <script setup lang="ts">
 import type { Metric } from "~~/stores/ReportsStore";
+import { formatCount, formatDuration, formatPercentage } from "~~/services/MetricFormat";
 
 const props = defineProps<{
   metric: Metric;
@@ -34,26 +35,6 @@ const title = computed(() => {
   const a = props.aggregated ? " (aggregated)" : "";
   return `${props.metric.name}${a}`;
 });
-
-function formatCount(v: number): string {
-  if (Math.abs(v - Math.round(v)) < 1e-9) {
-    return Math.round(v).toString();
-  }
-  return v.toFixed(2);
-}
-
-function formatPercentage(v: number): string {
-  return `${v.toFixed(1)}%`;
-}
-
-function formatDuration(ms: number): string {
-  if (!Number.isFinite(ms)) return "";
-  if (ms < 1000) return `${Math.round(ms)} ms`;
-  if (ms < 60_000) return `${(ms / 1000).toFixed(1)} s`;
-  if (ms < 3_600_000) return `${Math.round(ms / 60_000)} min`;
-  if (ms < 86_400_000) return `${Math.round(ms / 3_600_000)} h`;
-  return `${Math.round(ms / 86_400_000)} d`;
-}
 </script>
 
 <style scoped>

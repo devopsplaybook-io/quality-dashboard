@@ -33,6 +33,22 @@
         </p>
       </div>
 
+      <section
+        v-if="metricHistorySeries.length > 0"
+        class="metric-history-section"
+      >
+        <h3>Metric history</h3>
+        <div class="metric-history-grid">
+          <MetricHistoryChart
+            v-for="s in metricHistorySeries"
+            :key="s.name"
+            :points="s.points"
+            :metric-name="s.name"
+            :metric-type="s.type"
+          />
+        </div>
+      </section>
+
       <section class="versions-section">
         <div class="versions-header">
           <h3>
@@ -108,7 +124,7 @@
 
 <script setup lang="ts">
 import { AuthService } from "~~/services/AuthService";
-import type { Report, ReportVersion } from "~~/stores/ReportsStore";
+import type { Metric, Report, ReportVersion } from "~~/stores/ReportsStore";
 
 definePageMeta({});
 
@@ -132,6 +148,34 @@ const showHistory = ref(false);
 const displayVersions = computed(() => {
   if (showHistory.value) return versions.value;
   return versions.value.length > 0 ? [versions.value[0]] : [];
+});
+
+/** Per-metric chronological series (oldest first) across the fetched versions. */
+const metricHistorySeries = computed(() => {
+  if (versions.value.length < 2) {
+    return [];
+  }
+  const names: string[] = [];
+  const types = new Map<string, Metric["type"]>();
+  for (const v of versions.value) {
+    for (const m of v.metrics) {
+      if (!types.has(m.name)) {
+        names.push(m.name);
+        types.set(m.name, m.type);
+      }
+    }
+  }
+  const chronological = [...versions.value].reverse();
+  return names.map((name) => ({
+    name,
+    type: types.get(name) as Metric["type"],
+    points: chronological
+      .map((v) => {
+        const m = v.metrics.find((x) => x.name === name);
+        return m ? { date: v.dateCreated, value: m.value } : null;
+      })
+      .filter((p): p is { date: string; value: number } => p !== null),
+  }));
 });
 
 onMounted(async () => {
@@ -273,8 +317,19 @@ async function onDeleteReport(): Promise<void> {
 
 .tags-section,
 .versions-section,
+.metric-history-section,
 .danger-zone {
   margin-top: var(--space-xl);
+}
+.metric-history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-md);
+}
+@media (max-width: 640px) {
+  .metric-history-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .versions-header {
   display: flex;

@@ -116,6 +116,23 @@ Returns the most recent **ReportVersions** (across all reports), reverse-chronol
 }
 ```
 
+#### `GET /api/reports/history?limit=50`
+
+Returns a bounded metric history: the `limit` most recent **ReportVersions** **per report** (default `50`, max `100`), grouped per report in the payload, each group ordered newest first. This is what powers the report cards' sparklines and trend arrows with a single request.
+
+```json
+{
+  "versions": [
+    {
+      "id": "01HZX...",
+      "reportKey": "my-team/my-app/unit-tests",
+      "metrics": [{ "name": "tests.passed", "type": "count", "value": 42 }],
+      "dateCreated": "2026-05-16T10:00:00.000Z"
+    }
+  ]
+}
+```
+
 #### `GET /api/reports/:key`
 
 Returns a single Report (with tags). The `:key` segment must be URL-encoded (it may contain `.`, `:`, `/`).

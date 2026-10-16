@@ -297,6 +297,29 @@ export class ReportsRepository {
     }
   }
 
+  public static async listHistoryPerReport(
+    context: Span,
+    limit: number,
+  ): Promise<ReportVersion[]> {
+    const span = OTelTracer().startSpan(
+      "ReportsRepository_listHistoryPerReport",
+      context,
+    );
+    try {
+      const rows = SqlDbUtilsQuerySQL(
+        span,
+        `SELECT * FROM (
+           SELECT v.*, ROW_NUMBER() OVER (PARTITION BY v.report_key ORDER BY v.date_created DESC) AS rn
+           FROM report_versions v
+         ) WHERE rn <= ? ORDER BY report_key, date_created DESC`,
+        [limit] as never[],
+      );
+      return ReportsRepository.attachMetrics(span, rows);
+    } finally {
+      span.end();
+    }
+  }
+
   public static async getVersion(
     context: Span,
     versionId: string,
