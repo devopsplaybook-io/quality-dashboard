@@ -1,43 +1,45 @@
 <template>
-  <span v-if="trend === 'up'" class="trend trend-up" title="Increased">
-    <i class="bi bi-arrow-up-short"></i>
-  </span>
-  <span v-else-if="trend === 'down'" class="trend trend-down" title="Decreased">
-    <i class="bi bi-arrow-down-short"></i>
+  <span
+    v-if="direction"
+    class="trend"
+    :class="improved ? 'trend-good' : 'trend-bad'"
+    :title="title"
+  >
+    <i :class="direction === 'up' ? 'bi bi-arrow-up-short' : 'bi bi-arrow-down-short'"></i>
   </span>
 </template>
 
 <script setup lang="ts">
+import { isImprovement, trendDirection } from "~~/services/MetricTrend";
+
 const props = defineProps<{
-  reportKey: string;
-  metricName: string;
   currentValue: number;
+  /** Value to compare against (e.g. TREND_WINDOW versions back), or null when unknown. */
+  pastValue: number | null;
+  lowerIsBetter: boolean;
 }>();
 
-const reportsStore = ReportsStore();
-const trend = ref<"up" | "down" | null>(null);
+const direction = computed(() =>
+  props.pastValue === null
+    ? null
+    : trendDirection(props.currentValue, props.pastValue, props.lowerIsBetter),
+);
 
-onMounted(async () => {
-  try {
-    const versions = await reportsStore.fetchVersionsForReport(props.reportKey);
-    // Need at least 2 versions to compare (index 0 = latest, index 1 = previous)
-    if (versions.length >= 2) {
-      const prev = versions[1] as {
-        metrics: { name: string; value: number }[];
-      };
-      const prevMetric = prev.metrics.find((m) => m.name === props.metricName);
-      if (prevMetric) {
-        if (props.currentValue > prevMetric.value) {
-          trend.value = "up";
-        } else if (props.currentValue < prevMetric.value) {
-          trend.value = "down";
-        }
-      }
-    }
-  } catch {
-    // Silently fail — trend just won't show
-  }
-});
+const improved = computed(() =>
+  props.pastValue === null
+    ? false
+    : isImprovement(props.currentValue, props.pastValue, props.lowerIsBetter),
+);
+
+const title = computed(() =>
+  direction.value === "up"
+    ? improved.value
+      ? "Increased (improvement)"
+      : "Increased (regression)"
+    : improved.value
+      ? "Decreased (improvement)"
+      : "Decreased (regression)",
+);
 </script>
 
 <style scoped>
@@ -53,17 +55,17 @@ onMounted(async () => {
 .trend i {
   font-size: 1.1em;
 }
-.trend-up {
+.trend-good {
   color: var(--color-success);
 }
-.trend-down {
+.trend-bad {
   color: var(--color-danger);
 }
 @media (prefers-color-scheme: dark) {
-  .trend-up {
+  .trend-good {
     color: var(--color-success);
   }
-  .trend-down {
+  .trend-bad {
     color: var(--color-danger);
   }
 }

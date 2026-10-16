@@ -29,19 +29,37 @@ export interface SendReportResult {
 export const TestHelpers = {
   //
   async resetAll(): Promise<string> {
-    // Reset users
-    await axios.delete(`${Config.APIURL}/users/`);
+    // Login as the admin left by a previous reset (admin/admin),
+    // or initialize a fresh server with it.
+    let authToken: string;
+    let adminId: string;
+    try {
+      const responseLogin = await axios.post(`${Config.APIURL}/users/session`, {
+        name: "admin",
+        password: "admin",
+      });
+      authToken = responseLogin.data.token;
+      adminId = responseLogin.data.user.id;
+    } catch {
+      const init = await axios.post(`${Config.APIURL}/users/`, {
+        name: "admin",
+        password: "admin",
+      });
+      authToken = (await axios.post(`${Config.APIURL}/users/session`, {
+        name: "admin",
+        password: "admin",
+      })).data.token;
+      adminId = init.data.user.id;
+    }
+    const headers = { Authorization: `Bearer ${authToken}` };
 
-    // Create admin
-    await axios.post(`${Config.APIURL}/users/`, {
-      username: "admin",
-      password: "admin",
-    });
-    const responseLogin = await axios.post(`${Config.APIURL}/users/login/`, {
-      username: "admin",
-      password: "admin",
-    });
-    const authToken: string = responseLogin.data.token;
+    // Remove all users except the logged-in admin
+    const users = await axios.get(`${Config.APIURL}/users/`, { headers });
+    for (const user of users.data as { id: string }[]) {
+      if (user.id !== adminId) {
+        await axios.delete(`${Config.APIURL}/users/${user.id}`, { headers });
+      }
+    }
 
     // Reset reports (requires auth)
     await axios.delete(`${Config.APIURL}/reports`, {

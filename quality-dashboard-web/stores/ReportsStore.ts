@@ -47,12 +47,22 @@ export interface ReportVersion {
   tags: ReportTag[];
 }
 
+/** Lean version entry returned by GET /reports/history (metric history feed). */
+export interface MetricHistoryVersion {
+  id: string;
+  reportKey: string;
+  metrics: Metric[];
+  dateCreated: string;
+}
+
 export const ReportsStore = defineStore("ReportsStore", {
   state: () => ({
     reports: [] as Report[],
     recentVersions: [] as ReportVersion[],
+    metricHistory: {} as Record<string, MetricHistoryVersion[]>,
     isFetching: false,
     isFetchingRecent: false,
+    isFetchingMetricHistory: false,
     lastError: null as string | null,
     lastFetched: 0 as number,
     lastFetchedRecent: 0 as number,
@@ -104,6 +114,32 @@ export const ReportsStore = defineStore("ReportsStore", {
         handleError(err);
       } finally {
         this.isFetchingRecent = false;
+      }
+    },
+
+    async fetchMetricHistory(limit = 50): Promise<void> {
+      if (this.isFetchingMetricHistory) return;
+      this.isFetchingMetricHistory = true;
+      try {
+        const res = await axios.get(
+          `${(await Config.get()).SERVER_URL}/reports/history?limit=${limit}`,
+          await AuthService.getAuthHeader(),
+        );
+        const versions = (res.data.versions || []) as MetricHistoryVersion[];
+        const grouped: Record<string, MetricHistoryVersion[]> = {};
+        for (const v of versions) {
+          if (!grouped[v.reportKey]) {
+            grouped[v.reportKey] = [];
+          }
+          grouped[v.reportKey].push(v);
+        }
+        this.metricHistory = grouped;
+        this.lastError = null;
+      } catch (err) {
+        this.lastError = (err as Error).message;
+        handleError(err);
+      } finally {
+        this.isFetchingMetricHistory = false;
       }
     },
 

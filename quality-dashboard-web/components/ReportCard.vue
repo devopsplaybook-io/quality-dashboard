@@ -19,10 +19,14 @@
           class="metric-with-trend"
         >
           <MetricChip :metric="metric" />
-          <LazyMetricTrend
-            :report-key="report.key"
-            :metric-name="metric.name"
+          <MetricSparkline
+            :values="metricSeries(report.key, metric.name)"
+            :lower-is-better="lowerIsBetter(metric.name, metric.type)"
+          />
+          <MetricTrend
             :current-value="metric.value"
+            :past-value="metricPastValue(report.key, metric.name)"
+            :lower-is-better="lowerIsBetter(metric.name, metric.type)"
           />
         </span>
       </span>
@@ -97,6 +101,7 @@ import { AuthService } from "~~/services/AuthService";
 import type { Report } from "~~/stores/ReportsStore";
 import Config from "~~/services/Config";
 import { FileUtils } from "~~/services/FileUtils";
+import { lowerIsBetter, windowPastValue } from "~~/services/MetricTrend";
 
 const props = defineProps<{
   report: Report;
@@ -108,8 +113,26 @@ const emit = defineEmits<{
   delete: [report: Report];
 }>();
 
+const reportsStore = ReportsStore();
 const router = useRouter();
 const serverUrl = ref("");
+
+/** Chronological series (oldest first) of a metric across the report's history. */
+function metricSeries(reportKey: string, metricName: string): number[] {
+  const history = reportsStore.metricHistory[reportKey] || [];
+  const series: number[] = [];
+  for (const v of history) {
+    const m = v.metrics.find((x) => x.name === metricName);
+    if (m) {
+      series.push(m.value);
+    }
+  }
+  return series.reverse();
+}
+
+function metricPastValue(reportKey: string, metricName: string): number | null {
+  return windowPastValue(metricSeries(reportKey, metricName));
+}
 
 onMounted(async () => {
   serverUrl.value = (await Config.get()).SERVER_URL;
