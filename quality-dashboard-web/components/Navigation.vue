@@ -26,6 +26,11 @@
       </template>
       <template v-else>
         <li>
+          <NuxtLink to="/" title="Activity"
+            ><i class="bi bi-activity"></i
+          ></NuxtLink>
+        </li>
+        <li>
           <NuxtLink to="/reports" title="Reports"
             ><i class="bi bi-bar-chart-line-fill"></i
           ></NuxtLink>
@@ -60,6 +65,7 @@ const route = useRoute();
 
 const pageTitle = computed(() => {
   const path = route.path;
+  if (path === "/") return "Activity";
   if (path === "/reports") return "Reports";
   if (path === "/dashboards") return "Dashboards";
   if (path === "/settings") return "Settings";
