@@ -16,6 +16,49 @@
 const fse = require("fs-extra");
 const path = require("path");
 
+const METRIC_TYPES = ["count", "percentage", "duration", "boolean"];
+const METRICS_EXPECTED =
+  "array of { name: string, type: 'count'|'percentage'|'duration'|'boolean', value: number }";
+
+function throwWithDetail(message, detail) {
+  const err = new Error(message);
+  Object.assign(err, detail);
+  throw err;
+}
+
+function validateMetrics(metrics) {
+  for (let i = 0; i < metrics.length; i++) {
+    const m = metrics[i];
+    const base = { expected: METRICS_EXPECTED };
+    if (!m || typeof m !== "object" || Array.isArray(m)) {
+      throwWithDetail(`json: metric at index ${i} must be an object`, {
+        ...base,
+        field: `metrics[${i}]`,
+      });
+    }
+    if (typeof m.name !== "string" || !m.name.trim()) {
+      throwWithDetail(
+        `json: metric at index ${i} must have a non-empty string 'name'`,
+        { ...base, field: `metrics[${i}].name` },
+      );
+    }
+    if (!METRIC_TYPES.includes(m.type)) {
+      throwWithDetail(
+        `json: metric '${m.name}' has invalid type '${m.type}' (expected one of: ${METRIC_TYPES.join(", ")})`,
+        { ...base, field: `metrics[${i}].type` },
+      );
+    }
+    const valueIsNumber = typeof m.value === "number" && Number.isFinite(m.value);
+    const valueIsBoolean = m.type === "boolean" && typeof m.value === "boolean";
+    if (!valueIsNumber && !valueIsBoolean) {
+      throwWithDetail(
+        `json: metric '${m.name}' has invalid value (expected a finite number${m.type === "boolean" ? " or a boolean" : ""})`,
+        { ...base, field: `metrics[${i}].value` },
+      );
+    }
+  }
+}
+
 module.exports = {
   describe: () => ({
     name: "json",
@@ -31,12 +74,21 @@ module.exports = {
         payload = await fse.readJson(file);
       }
     }
-    if (!payload || typeof payload !== "object") {
-      throw new Error("json: no JSON payload provided");
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      throwWithDetail("json: no JSON payload provided", {
+        field: "jsonPayload",
+        expected:
+          "meta.jsonPayload object containing a 'metrics' array (or a data.json file in the uploaded archive)",
+        hint: 'curl -F \'meta={"key":"...","processor":"json","jsonPayload":{"metrics":[{"name":"tests.passed","type":"count","value":42}]}};type=application/json\' <url>/api/reports',
+      });
     }
     if (!Array.isArray(payload.metrics)) {
-      throw new Error("json: payload must include a 'metrics' array");
+      throwWithDetail("json: payload must include a 'metrics' array", {
+        field: "metrics",
+        expected: METRICS_EXPECTED,
+      });
     }
+    validateMetrics(payload.metrics);
     return {
       fileEntrypoint: payload.fileEntrypoint,
       metrics: payload.metrics,

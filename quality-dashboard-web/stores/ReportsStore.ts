@@ -55,14 +55,26 @@ export interface MetricHistoryVersion {
   dateCreated: string;
 }
 
+/** A report processor returned by GET /reports/processors. */
+export interface ProcessorInfo {
+  name: string;
+  source?: "system" | "custom";
+  describe?: {
+    accepts?: string[];
+    summary?: string;
+  };
+}
+
 export const ReportsStore = defineStore("ReportsStore", {
   state: () => ({
     reports: [] as Report[],
     recentVersions: [] as ReportVersion[],
     metricHistory: {} as Record<string, MetricHistoryVersion[]>,
+    processors: [] as ProcessorInfo[],
     isFetching: false,
     isFetchingRecent: false,
     isFetchingMetricHistory: false,
+    isFetchingProcessors: false,
     lastError: null as string | null,
     lastFetched: 0 as number,
     lastFetchedRecent: 0 as number,
@@ -140,6 +152,24 @@ export const ReportsStore = defineStore("ReportsStore", {
         handleError(err);
       } finally {
         this.isFetchingMetricHistory = false;
+      }
+    },
+
+    async fetchProcessors(): Promise<void> {
+      if (this.isFetchingProcessors) return;
+      this.isFetchingProcessors = true;
+      try {
+        const res = await axios.get(
+          `${(await Config.get()).SERVER_URL}/reports/processors`,
+          await AuthService.getAuthHeader(),
+        );
+        this.processors = (res.data.processors || []) as ProcessorInfo[];
+        this.lastError = null;
+      } catch (err) {
+        this.lastError = (err as Error).message;
+        handleError(err);
+      } finally {
+        this.isFetchingProcessors = false;
       }
     },
 

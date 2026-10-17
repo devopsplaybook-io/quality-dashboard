@@ -349,16 +349,21 @@ export class ReportsRoutes {
         }
         const ct = String(req.headers["content-type"] || "");
         if (!ct.startsWith("multipart/form-data")) {
-          return res
-            .status(400)
-            .send({ error: "Request must be multipart/form-data" });
+          return res.status(400).send({
+            error: "Request must be multipart/form-data",
+            expected:
+              "multipart/form-data with 'meta' (JSON) and optional 'file' parts",
+            hint: "curl -F 'meta={\"key\":\"...\",\"processor\":\"...\"}' -F file=@report.html $URL",
+          });
         }
         const parsed = await parseMultipart(req);
         const meta = parsed.meta;
         if (!meta || typeof meta !== "object") {
-          return res
-            .status(400)
-            .send({ error: "Field required: 'meta' (JSON)" });
+          return res.status(400).send({
+            error: "Field required: 'meta' (JSON)",
+            field: "meta",
+            expected: "JSON part named 'meta' with at least key and processor",
+          });
         }
         const span = OTelRequestSpan(req);
         const { report, version } = await ReportsService.ingest(span, config, {
@@ -375,7 +380,16 @@ export class ReportsRoutes {
         });
       } catch (err) {
         if (err instanceof HttpError) {
-          return res.status(err.status).send({ error: err.message });
+          logger.warn(
+            `Ingest rejected (${err.status}): ${err.message}${
+              err.details ? ` | details: ${JSON.stringify(err.details)}` : ""
+            }`,
+          );
+          const body: Record<string, unknown> = { error: err.message };
+          if (err.details) {
+            Object.assign(body, err.details);
+          }
+          return res.status(err.status).send(body);
         }
         logger.error(`Ingest failed: ${(err as Error).message}`);
         return res
@@ -527,7 +541,10 @@ async function parseMultipart(req: FastifyRequest): Promise<ParsedMultipart> {
       try {
         result.meta = JSON.parse(part.value);
       } catch {
-        throw new HttpError(400, "'meta' field must be valid JSON");
+        throw new HttpError(400, "'meta' field must be valid JSON", {
+          field: "meta",
+          expected: "valid JSON string",
+        });
       }
     }
   }

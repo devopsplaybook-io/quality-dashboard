@@ -144,6 +144,13 @@
             <span class="setting-hint">
               Token used by CI/CD pipelines to upload reports via the API.
             </span>
+            <button
+              class="btn-secondary btn-sm how-to-upload-btn"
+              type="button"
+              @click="showUploadHelp = true"
+            >
+              <i class="bi bi-question-circle"></i> How to upload
+            </button>
           </div>
           <div class="setting-input-wrap">
             <input
@@ -162,6 +169,11 @@
         </button>
       </div>
     </div>
+
+    <UploadHelpDialog
+      :visible="showUploadHelp"
+      @close="showUploadHelp = false"
+    />
 
     <!-- ======================== CREATE/EDIT USER MODAL ======================== -->
     <div v-if="showUserModal" class="modal" @click.self="closeUserModal">
@@ -304,12 +316,15 @@ import { UserService } from "~~/services/UserService";
 import axios from "axios";
 import Config from "~~/services/Config.ts";
 import { handleError, EventBus, EventTypes } from "~~/services/EventBus";
+import UploadHelpDialog from "~~/components/UploadHelpDialog.vue";
 
 export default defineComponent({
+  components: { UploadHelpDialog },
   data() {
     return {
       currentTab: "reports",
       config: { isDashboardPublic: false, uploadToken: "" },
+      showUploadHelp: false,
       // Users
       users: [],
       currentUserId: null,
@@ -628,6 +643,10 @@ export default defineComponent({
   font-size: var(--font-md);
   color: var(--color-text-muted);
   line-height: 1.3;
+}
+.how-to-upload-btn {
+  margin-top: var(--space-sm);
+  align-self: flex-start;
 }
 .setting-row--toggle {
   align-items: center;
