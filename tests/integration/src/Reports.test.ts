@@ -142,6 +142,8 @@ describe("/api/reports/", () => {
         authToken,
       });
       expect(response.status).toEqual(400);
+      expect(response.data.field).toEqual("meta");
+      expect(response.data.expected).toBeTruthy();
     });
 
     test("Reject unknown processor", async () => {
@@ -155,6 +157,10 @@ describe("/api/reports/", () => {
       });
       expect(response.status).toBeGreaterThanOrEqual(400);
       expect(response.status).toBeLessThan(500);
+      expect(response.data.error).toBeTruthy();
+      expect(response.data.processor).toEqual("non-existent-processor");
+      expect(response.data.field).toEqual("processor");
+      expect(response.data.expected).toBeTruthy();
     });
 
     test("Reject missing key", async () => {
@@ -164,6 +170,49 @@ describe("/api/reports/", () => {
         authToken,
       });
       expect(response.status).toEqual(400);
+      expect(response.data.field).toEqual("key");
+      expect(response.data.expected).toBeTruthy();
+    });
+
+    test("json processor without payload returns actionable 400", async () => {
+      const response = await TestHelpers.sendReport({
+        meta: { key: "err-1", processor: "json" },
+        authToken,
+      });
+      expect(response.status).toEqual(400);
+      expect(response.data.error).toBeTruthy();
+      expect(response.data.processor).toEqual("json");
+      expect(response.data.field).toEqual("jsonPayload");
+      expect(response.data.expected).toBeTruthy();
+      expect(response.data.hint).toBeTruthy();
+    });
+
+    test("json processor payload without metrics returns actionable 400", async () => {
+      const response = await TestHelpers.sendReport({
+        meta: { key: "err-2", processor: "json", jsonPayload: {} },
+        authToken,
+      });
+      expect(response.status).toEqual(400);
+      expect(response.data.processor).toEqual("json");
+      expect(response.data.field).toEqual("metrics");
+      expect(response.data.expected).toBeTruthy();
+    });
+
+    test("json processor invalid metric type returns actionable 400", async () => {
+      const response = await TestHelpers.sendReport({
+        meta: {
+          key: "err-3",
+          processor: "json",
+          jsonPayload: {
+            metrics: [{ name: "x", type: "bogus", value: 1 }],
+          },
+        },
+        authToken,
+      });
+      expect(response.status).toEqual(400);
+      expect(response.data.processor).toEqual("json");
+      expect(response.data.field).toContain("type");
+      expect(response.data.expected).toBeTruthy();
     });
   });
 

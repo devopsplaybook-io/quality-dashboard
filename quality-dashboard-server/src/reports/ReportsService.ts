@@ -5,6 +5,7 @@ import { Config } from "../Config";
 import { OTelLogger, OTelTracer } from "../OTelContext";
 import { Report } from "./models/Report";
 import { ReportVersion } from "./models/ReportVersion";
+import { HttpError } from "./HttpError";
 import { ReportsRepository } from "./ReportsRepository";
 import {
   ensureReportTmpDir,
@@ -40,6 +41,8 @@ export interface IngestResult {
   version: ReportVersion;
 }
 
+export { HttpError } from "./HttpError";
+
 export class ReportsService {
   //
   /**
@@ -57,7 +60,11 @@ export class ReportsService {
     try {
       validateInput(input);
       if (!hasProcessor(input.processor)) {
-        throw new HttpError(404, `Processor not found: ${input.processor}`);
+        throw new HttpError(404, `Processor not found: ${input.processor}`, {
+          processor: input.processor,
+          field: "processor",
+          expected: "one of the processors listed by GET /api/reports/processors",
+        });
       }
 
       const report = await ReportsRepository.upsertReport(
@@ -202,25 +209,32 @@ export class ReportsService {
   }
 }
 
-export class HttpError extends Error {
-  public readonly status: number;
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-  }
-}
+const KEY_HINT =
+  'Pass key in the \'meta\' JSON field, e.g. {"key":"my-team/my-app/unit-tests"}';
 
 function validateInput(input: IngestInput): void {
   if (!input.key || typeof input.key !== "string") {
-    throw new HttpError(400, "Field required: key");
+    throw new HttpError(400, "Field required: key", {
+      field: "key",
+      expected: "non-empty string (unique report key)",
+      hint: KEY_HINT,
+    });
   }
   if (!/^[a-zA-Z0-9._:\-/]{1,200}$/.test(input.key)) {
     throw new HttpError(
       400,
       "Field 'key' must be 1..200 chars and contain only [a-zA-Z0-9._:-/]",
+      {
+        field: "key",
+        expected: "1..200 chars matching ^[a-zA-Z0-9._:\\-/]+$",
+        hint: KEY_HINT,
+      },
     );
   }
   if (!input.processor || typeof input.processor !== "string") {
-    throw new HttpError(400, "Field required: processor");
+    throw new HttpError(400, "Field required: processor", {
+      field: "processor",
+      expected: "name of a registered processor (GET /api/reports/processors)",
+    });
   }
 }

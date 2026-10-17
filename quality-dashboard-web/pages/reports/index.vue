@@ -82,6 +82,13 @@
         Upload a report via <code>POST /api/reports</code> with a multipart
         payload <code>meta = { key, processor, displayName? }</code>.
       </p>
+      <button
+        class="btn-primary"
+        type="button"
+        @click="showUploadHelp = true"
+      >
+        <i class="bi bi-question-circle"></i> How to upload
+      </button>
     </div>
 
     <ul v-if="filteredReports.length > 0" class="reports-list">
@@ -180,6 +187,11 @@
         </div>
       </div>
     </div>
+
+    <UploadHelpDialog
+      :visible="showUploadHelp"
+      @close="showUploadHelp = false"
+    />
   </div>
 </template>
 
@@ -196,6 +208,8 @@ const showEdit = ref(false);
 const editingReport = ref<Report | null>(null);
 const editDisplayName = ref("");
 const editTags = ref<{ tag: string; value: string }[]>([]);
+
+const showUploadHelp = ref(false);
 
 const searchQuery = ref("");
 
@@ -451,6 +465,9 @@ async function onDelete(report: Report): Promise<void> {
   background-color: var(--color-bg-hover);
   padding: 0.1em var(--space-sm);
   border-radius: var(--radius-sm);
+}
+.reports-empty .btn-primary {
+  margin-top: var(--space-md);
 }
 .reports-list {
   list-style: none;

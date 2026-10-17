@@ -208,6 +208,26 @@ curl -X POST "$API/reports" \
   -F 'meta={"key":"my-team/my-app/summary","processor":"json","jsonPayload":{"metrics":[{"name":"tests.passed","type":"count","value":42},{"name":"tests.coverage","type":"percentage","value":87.3}]}};type=application/json'
 ```
 
+##### Error responses
+
+Payload and content problems return **400** with a body that self-explains what was wrong:
+
+```json
+{
+  "error": "json: payload must include a 'metrics' array",
+  "processor": "json",
+  "field": "metrics",
+  "expected": "array of { name: string, type: 'count'|'percentage'|'duration'|'boolean', value: number }",
+  "hint": "curl -F 'meta={\"key\":\"...\",\"processor\":\"json\",\"jsonPayload\":{\"metrics\":[...]}};type=application/json' <url>/api/reports"
+}
+```
+
+- `error` (always present): human-readable message.
+- `processor`: the processor that rejected the payload (when known).
+- `field`: the offending field (e.g. `key`, `meta`, `processor`, `metrics[2].type`).
+- `expected`: the expected format of that field.
+- `hint`: an optional remediation hint (e.g. a ready-to-run curl).
+
 #### `DELETE /api/reports`
 
 Deletes all reports (and all versions). Requires authentication.

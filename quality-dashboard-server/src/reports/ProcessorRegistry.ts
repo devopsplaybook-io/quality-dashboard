@@ -5,6 +5,7 @@ import { Config } from "../Config";
 import { OTelLogger } from "../OTelContext";
 import { Metric } from "./models/Metric";
 import { MetricType, MetricTypeValues } from "./models/MetricType";
+import { HttpError } from "./HttpError";
 
 const logger = OTelLogger().createModuleLogger("ProcessorRegistry");
 
@@ -146,15 +147,39 @@ export async function runProcessor(
     throw new Error(`Processor not found: ${name}`);
   }
 
-  const result = await withTimeout(entry.module.analyse(ctx), timeoutMs, name);
+  let result: ProcessorResult;
+  try {
+    result = await withTimeout(entry.module.analyse(ctx), timeoutMs, name);
+  } catch (err) {
+    if (err instanceof ProcessorTimeoutError) {
+      // Timeouts are a server-side problem and stay 5xx
+      throw err;
+    }
+    const thrown = err as Error & {
+      field?: unknown;
+      expected?: unknown;
+      hint?: unknown;
+    };
+    // Content problems in the uploaded payload are client errors (400),
+    // enriched with the processor name and any structured detail the
+    // processor attached to the thrown error.
+    throw new HttpError(400, thrown.message || `Processor '${name}' failed`, {
+      processor: name,
+      ...(thrown.field !== undefined ? { field: thrown.field } : {}),
+      ...(thrown.expected !== undefined ? { expected: thrown.expected } : {}),
+      ...(thrown.hint !== undefined ? { hint: thrown.hint } : {}),
+    });
+  }
   return validateResult(name, result);
 }
+
+class ProcessorTimeoutError extends Error {}
 
 function withTimeout<T>(p: Promise<T>, ms: number, name: string): Promise<T> {
   let handle: NodeJS.Timeout;
   const timeout = new Promise<T>((_resolve, reject) => {
     handle = setTimeout(() => {
-      reject(new Error(`Processor '${name}' timed out after ${ms}ms`));
+      reject(new ProcessorTimeoutError(`Processor '${name}' timed out after ${ms}ms`));
     }, ms);
   });
   return Promise.race([p, timeout]).finally(() => clearTimeout(handle));
