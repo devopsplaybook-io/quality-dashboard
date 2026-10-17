@@ -7,6 +7,15 @@
         </NuxtLink>
         <span class="version-card-processor">{{ version.processor }}</span>
       </div>
+      <span
+        v-if="version.gateStatus"
+        class="gate-pill"
+        :class="`gate-pill-${version.gateStatus}`"
+        :title="`Quality gate: ${version.gateStatus}`"
+      >
+        <span class="gate-pill-dot"></span>
+        {{ version.gateStatus }}
+      </span>
       <div class="version-card-actions">
         <button
           v-if="version.hasFile && version.fileEntrypoint"
@@ -57,6 +66,7 @@
         v-for="m in version.metrics"
         :key="`${version.id}-${m.name}`"
         :metric="m"
+        :gate-status="gateByMetric.get(m.name)"
       />
       <span v-if="version.metrics.length === 0" class="version-card-empty">
         No metrics
@@ -80,7 +90,7 @@
 
 <script setup lang="ts">
 import { AuthService } from "~~/services/AuthService";
-import type { ReportVersion } from "~~/stores/ReportsStore";
+import type { ReportVersion, GateStatus } from "~~/stores/ReportsStore";
 import Config from "~~/services/Config";
 import { FileUtils } from "~~/services/FileUtils";
 
@@ -88,6 +98,15 @@ const props = defineProps<{ version: ReportVersion; canDelete?: boolean }>();
 const emit = defineEmits<{
   (e: "delete", payload: { key: string; versionId: string }): void;
 }>();
+
+/** Per-metric gate status of this version. */
+const gateByMetric = computed(() => {
+  const m = new Map<string, GateStatus>();
+  for (const r of props.version.gateResults || []) {
+    m.set(r.metric, r.status);
+  }
+  return m;
+});
 
 const serverUrl = ref("");
 onMounted(async () => {
@@ -188,7 +207,7 @@ function formatRelative(date: Date): string {
 }
 .version-card-header {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto;
   align-items: center;
   gap: var(--space-md);
 }
@@ -216,6 +235,37 @@ function formatRelative(date: Date): string {
   grid-template-columns: repeat(auto-fit, minmax(28px, auto));
   gap: var(--space-xs);
   justify-content: end;
+}
+.gate-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.05em 0.55em;
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  align-self: center;
+}
+.gate-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.gate-pill-pass {
+  color: #2e7d32;
+  background: #e8f5e9;
+}
+.gate-pill-warn {
+  color: #9a7d0a;
+  background: #fff8e1;
+}
+.gate-pill-fail {
+  color: #c62828;
+  background: #ffebee;
 }
 
 .version-card-tags {
@@ -255,6 +305,18 @@ function formatRelative(date: Date): string {
   .version-card-tag {
     background-color: var(--color-bg-secondary);
     color: var(--color-text);
+  }
+  .gate-pill-pass {
+    color: #81c784;
+    background: #1f3d24;
+  }
+  .gate-pill-warn {
+    color: #ffd54f;
+    background: #4a3b12;
+  }
+  .gate-pill-fail {
+    color: #e57373;
+    background: #4a1f1f;
   }
 }
 </style>

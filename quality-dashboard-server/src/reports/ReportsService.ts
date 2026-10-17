@@ -20,6 +20,9 @@ import {
   runProcessor,
   ProcessorResult,
 } from "./ProcessorRegistry";
+import { GateEvaluator } from "./GateEvaluator";
+import { WebhookNotifier } from "./WebhookNotifier";
+import { SettingsDB } from "../settings/SettingsDB";
 
 const logger = OTelLogger().createModuleLogger("ReportsService");
 
@@ -122,6 +125,15 @@ export class ReportsService {
           version.fileEntrypoint = result.fileEntrypoint;
         }
 
+        // 2b) Evaluate quality gate rules for this report
+        const rules = await ReportsRepository.listGatesForReport(
+          span,
+          report.key,
+        );
+        const gate = GateEvaluator.evaluate(rules, version.metrics);
+        version.gateStatus = gate.status;
+        version.gateResults = gate.results;
+
         // 3) Persist meta.json next to content (in tmp), then move to final
         await fse.writeJson(
           path.join(tmpDir, "meta.json"),
@@ -133,6 +145,8 @@ export class ReportsService {
             info: version.info,
             fileEntrypoint: version.fileEntrypoint,
             hasFile: version.hasFile,
+            gateStatus: version.gateStatus,
+            gateResults: version.gateResults,
             dateCreated: version.dateCreated.toISOString(),
           },
           { spaces: 2 },
@@ -140,6 +154,20 @@ export class ReportsService {
 
         await moveTmpToFinal(version.id);
         await ReportsRepository.addVersion(span, version);
+        if (version.gateStatus === "fail") {
+          const settings = await SettingsDB.get(span);
+          await WebhookNotifier.notifyGateFailure(span, settings.webhookUrl, {
+            event: "quality.gate.failed",
+            report: { key: report.key, displayName: report.displayName },
+            version: {
+              id: version.id,
+              processor: version.processor,
+              dateCreated: version.dateCreated.toISOString(),
+            },
+            gate: { status: version.gateStatus, results: version.gateResults },
+            metrics: version.metrics,
+          });
+        }
         return { report, version };
       } catch (err) {
         // Cleanup tmp on failure

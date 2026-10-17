@@ -18,6 +18,7 @@
           :key="`${node.path}-${m.name}`"
           :metric="m"
           :aggregated="true"
+          :gate-status="aggregatedGateByMetric.get(m.name)"
         />
       </div>
     </div>
@@ -45,7 +46,7 @@
 
 <script setup lang="ts">
 import type { AggregatedNode } from "~~/services/DashboardAggregator";
-import type { Report } from "~~/stores/ReportsStore";
+import type { Report, GateStatus } from "~~/stores/ReportsStore";
 import { filterMetrics } from "~~/services/MetricFilter";
 
 /** Bus for "expand all" / "collapse all" broadcasts from the page. */
@@ -78,6 +79,21 @@ const nodeReports = computed(() => {
   return props.node.reportKeys
     .map((k) => reportsStore.reportsByKey.get(k))
     .filter((r): r is Report => r !== undefined);
+});
+
+/** Worst per-metric gate status across the node's member reports. */
+const aggregatedGateByMetric = computed(() => {
+  const rank: Record<GateStatus, number> = { pass: 0, warn: 1, fail: 2 };
+  const worst = new Map<string, GateStatus>();
+  for (const r of nodeReports.value) {
+    for (const result of r.latestVersion?.gateResults || []) {
+      const current = worst.get(result.metric);
+      if (!current || rank[result.status] > rank[current]) {
+        worst.set(result.metric, result.status);
+      }
+    }
+  }
+  return worst;
 });
 
 watch(

@@ -14,6 +14,28 @@ export interface ReportTag {
   value: string;
 }
 
+/** A quality gate rule attached to a report (evaluated on every upload). */
+export type GateOperator = "<=" | ">=";
+export type GateStatus = "pass" | "warn" | "fail";
+
+export interface GateRule {
+  id: string;
+  metric: string;
+  operator: GateOperator;
+  warnValue?: number | null;
+  failValue: number;
+  dateCreated: string;
+}
+
+/** Result of evaluating one gate rule against one version. */
+export interface GateResult {
+  ruleId: string;
+  metric: string;
+  operator: GateOperator;
+  value: number | null;
+  status: GateStatus;
+}
+
 /** A logical Report (one row per unique key). */
 export interface Report {
   key: string;
@@ -27,6 +49,8 @@ export interface Report {
     hasFile: boolean;
     fileEntrypoint?: string;
     hasPreview?: boolean;
+    gateStatus?: GateStatus | null;
+    gateResults?: GateResult[];
     dateCreated: string;
   };
 }
@@ -43,6 +67,8 @@ export interface ReportVersion {
   hasFile: boolean;
   fileEntrypoint?: string;
   hasPreview?: boolean;
+  gateStatus?: GateStatus | null;
+  gateResults?: GateResult[];
   dateCreated: string;
   tags: ReportTag[];
 }
@@ -225,6 +251,30 @@ export const ReportsStore = defineStore("ReportsStore", {
       this.recentVersions = this.recentVersions.filter(
         (v) => v.id !== versionId,
       );
+    },
+
+    async fetchGates(key: string): Promise<GateRule[]> {
+      const res = await axios.get(
+        `${(await Config.get()).SERVER_URL}/reports/${encodeURIComponent(key)}/gates`,
+        await AuthService.getAuthHeader(),
+      );
+      return (res.data.gates || []) as GateRule[];
+    },
+
+    async setGates(key: string, rules: GateRule[]): Promise<GateRule[]> {
+      const res = await axios.put(
+        `${(await Config.get()).SERVER_URL}/reports/${encodeURIComponent(key)}/gates`,
+        {
+          gates: rules.map((r) => ({
+            metric: r.metric,
+            operator: r.operator,
+            warnValue: r.warnValue == null ? null : r.warnValue,
+            failValue: r.failValue,
+          })),
+        },
+        await AuthService.getAuthHeader(),
+      );
+      return (res.data.gates || []) as GateRule[];
     },
   },
 });

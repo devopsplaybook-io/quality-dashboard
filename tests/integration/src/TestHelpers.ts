@@ -86,16 +86,45 @@ export const TestHelpers = {
 
   async setSettings(
     authToken: string,
-    settings: { isDashboardPublic?: boolean; uploadToken?: string },
+    settings: { isDashboardPublic?: boolean; uploadToken?: string; webhookUrl?: string },
   ): Promise<void> {
     await axios.put(
       `${Config.APIURL}/settings/`,
       {
         isDashboardPublic: settings.isDashboardPublic ?? true,
         uploadToken: settings.uploadToken ?? "",
+        webhookUrl: settings.webhookUrl ?? "",
       },
       { headers: { Authorization: `Bearer ${authToken}` } },
     );
+  },
+
+  async setGates(
+    authToken: string,
+    key: string,
+    gates: {
+      metric: string;
+      operator: string;
+      warnValue?: number | null;
+      failValue: number;
+    }[],
+  ): Promise<{ status: number; data: { gates?: { id: string; metric: string; operator: string; warnValue: number | null; failValue: number }[] } }> {
+    const headers = { Authorization: `Bearer ${authToken}` };
+    try {
+      const response = await axios.put(
+        `${Config.APIURL}/reports/${encodeURIComponent(key)}/gates`,
+        { gates },
+        { headers },
+      );
+      return { status: response.status, data: response.data };
+    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const e = err as any;
+      if (e.response) {
+        return { status: e.response.status, data: e.response.data };
+      }
+      throw err;
+    }
   },
 
   async sendReport(opts: SendReportOptions): Promise<SendReportResult> {

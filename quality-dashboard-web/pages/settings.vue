@@ -161,6 +161,24 @@
             />
           </div>
         </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">Webhook Notifications</span>
+            <span class="setting-hint">
+              A JSON payload is POSTed to this URL whenever a report version
+              fails its quality gate. Leave empty to disable.
+            </span>
+          </div>
+          <div class="setting-input-wrap">
+            <input
+              type="url"
+              v-model="config.webhookUrl"
+              placeholder="https://example.com/webhook"
+              class="setting-input setting-input-wide"
+            />
+          </div>
+        </div>
       </div>
 
       <div class="settings-actions">
@@ -323,7 +341,7 @@ export default defineComponent({
   data() {
     return {
       currentTab: "reports",
-      config: { isDashboardPublic: false, uploadToken: "" },
+      config: { isDashboardPublic: false, uploadToken: "", webhookUrl: "" },
       showUploadHelp: false,
       // Users
       users: [],
@@ -368,6 +386,7 @@ export default defineComponent({
         if (res.data) {
           this.config.isDashboardPublic = !!res.data.isDashboardPublic;
           this.config.uploadToken = res.data.uploadToken || "";
+          this.config.webhookUrl = res.data.webhookUrl || "";
         }
       } catch (err) {
         handleError(err);
@@ -390,6 +409,7 @@ export default defineComponent({
           {
             isDashboardPublic: this.config.isDashboardPublic,
             uploadToken: this.config.uploadToken,
+            webhookUrl: this.config.webhookUrl,
           },
           await AuthService.getAuthHeader(),
         );
@@ -667,6 +687,10 @@ export default defineComponent({
 }
 .setting-input::placeholder {
   color: var(--color-text-placeholder);
+}
+.setting-input-wide {
+  max-width: 340px;
+  min-width: 240px;
 }
 .settings-actions {
   padding: var(--space-base) 1.2em 1.2em;

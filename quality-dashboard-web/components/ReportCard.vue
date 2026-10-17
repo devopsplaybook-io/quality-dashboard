@@ -4,6 +4,15 @@
       <span class="report-card-title">
         {{ report.displayName || report.key }}
       </span>
+      <span
+        v-if="overallGateStatus"
+        class="gate-pill"
+        :class="`gate-pill-${overallGateStatus}`"
+        :title="`Quality gate: ${overallGateStatus}`"
+      >
+        <span class="gate-pill-dot"></span>
+        {{ overallGateStatus }}
+      </span>
     </div>
     <div class="report-card-tags">
       <span v-for="tag in report.tags" :key="tag.tag" class="tag-chip">
@@ -18,7 +27,7 @@
           :key="metric.name"
           class="metric-with-trend"
         >
-          <MetricChip :metric="metric" />
+          <MetricChip :metric="metric" :gate-status="gateByMetric.get(metric.name)" />
           <MetricSparkline
             :values="metricSeries(report.key, metric.name)"
             :lower-is-better="lowerIsBetter(metric.name, metric.type)"
@@ -98,7 +107,7 @@
 
 <script setup lang="ts">
 import { AuthService } from "~~/services/AuthService";
-import type { Report } from "~~/stores/ReportsStore";
+import type { Report, GateStatus } from "~~/stores/ReportsStore";
 import Config from "~~/services/Config";
 import { FileUtils } from "~~/services/FileUtils";
 import { lowerIsBetter, windowPastValue } from "~~/services/MetricTrend";
@@ -116,6 +125,19 @@ const emit = defineEmits<{
 const reportsStore = ReportsStore();
 const router = useRouter();
 const serverUrl = ref("");
+
+/** Per-metric gate status of the latest version. */
+const gateByMetric = computed(() => {
+  const m = new Map<string, GateStatus>();
+  for (const r of props.report.latestVersion?.gateResults || []) {
+    m.set(r.metric, r.status);
+  }
+  return m;
+});
+
+const overallGateStatus = computed(
+  () => props.report.latestVersion?.gateStatus || null,
+);
 
 /** Chronological series (oldest first) of a metric across the report's history. */
 function metricSeries(reportKey: string, metricName: string): number[] {
@@ -261,9 +283,10 @@ function relativeDate(iso: string): string {
   box-shadow: 0 1px 4px var(--color-shadow-sm);
 }
 .report-card-header {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
   align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
 }
 .report-card-title {
   font-weight: 600;
@@ -273,6 +296,39 @@ function relativeDate(iso: string): string {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+  flex: 1;
+  min-width: 0;
+}
+.gate-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.05em 0.55em;
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.gate-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.gate-pill-pass {
+  color: #2e7d32;
+  background: #e8f5e9;
+}
+.gate-pill-warn {
+  color: #9a7d0a;
+  background: #fff8e1;
+}
+.gate-pill-fail {
+  color: #c62828;
+  background: #ffebee;
 }
 .report-card-tags {
   display: flex;
@@ -353,6 +409,18 @@ function relativeDate(iso: string): string {
   }
   .report-card-title {
     color: var(--color-primary-hover);
+  }
+  .gate-pill-pass {
+    color: #81c784;
+    background: #1f3d24;
+  }
+  .gate-pill-warn {
+    color: #ffd54f;
+    background: #4a3b12;
+  }
+  .gate-pill-fail {
+    color: #e57373;
+    background: #4a1f1f;
   }
   .tag-chip {
     background: var(--color-primary-light);

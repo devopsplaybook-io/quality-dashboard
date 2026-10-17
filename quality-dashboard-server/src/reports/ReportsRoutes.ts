@@ -16,6 +16,8 @@ import { getReportContentDir, resolveSafeReportFile } from "./FileStorage";
 import { SettingsDB } from "../settings/SettingsDB";
 import { Report } from "./models/Report";
 import { ReportVersion } from "./models/ReportVersion";
+import { GateRule, GateStatus } from "./models/GateRule";
+import { GateEvaluator } from "./GateEvaluator";
 
 const logger = OTelLogger().createModuleLogger("ReportsRoutes");
 let config: Config;
@@ -165,6 +167,96 @@ export class ReportsRoutes {
       }
       return res.status(200).send({});
     });
+
+    // ---- List gate rules of a report -------------------------------------
+    fastify.get<{ Params: { key: string } }>(
+      "/:key/gates",
+      async (req, res) => {
+        if (!(await ensureCanRead(req, res))) {
+          return;
+        }
+        const span = OTelRequestSpan(req);
+        const report = await ReportsRepository.getReport(span, req.params.key);
+        if (!report) {
+          return res.status(404).send({ error: "Report not found" });
+        }
+        const gates = await ReportsRepository.listGatesForReport(
+          span,
+          report.key,
+        );
+        return res.status(200).send({ gates: gates.map(toApiGate) });
+      },
+    );
+
+    // ---- Replace gate rules of a report (retro-applies to all versions) --
+    fastify.put<{
+      Params: { key: string };
+      Body: { gates?: unknown };
+    }>("/:key/gates", async (req, res) => {
+      if (!(await ensureAuthenticated(req, res))) {
+        return;
+      }
+      const span = OTelRequestSpan(req);
+      const report = await ReportsRepository.getReport(span, req.params.key);
+      if (!report) {
+        return res.status(404).send({ error: "Report not found" });
+      }
+      const incoming = Array.isArray(req.body?.gates) ? req.body.gates : [];
+      const validationError = validateGates(incoming);
+      if (validationError) {
+        return res.status(400).send(validationError);
+      }
+      const stored = await ReportsRepository.replaceGatesForReport(
+        span,
+        report.key,
+        incoming as {
+          metric: string;
+          operator: string;
+          warnValue?: number | null;
+          failValue: number;
+        }[],
+      );
+      // Rules describe the report's quality expectations: retro-apply them to
+      // every stored version so statuses stay consistent without a new upload.
+      const versions = await ReportsRepository.listVersions(span, report.key);
+      for (const version of versions) {
+        const gate = GateEvaluator.evaluate(stored, version.metrics);
+        await ReportsRepository.updateVersionGate(
+          span,
+          version.id,
+          gate.status,
+          gate.results,
+        );
+      }
+      return res.status(200).send({ gates: stored.map(toApiGate) });
+    });
+
+    // ---- Status badge (shields-style SVG of the latest version's gate) ---
+    fastify.get<{ Params: { key: string }; Querystring: { token?: string } }>(
+      "/:key/badge.svg",
+      async (req, res) => {
+        const span = OTelRequestSpan(req);
+        const report = await ReportsRepository.getReport(span, req.params.key);
+        if (!report) {
+          return res.status(404).send({ error: "Report not found" });
+        }
+        const settings = await SettingsDB.get(span);
+        const allowed =
+          settings.isDashboardPublic ||
+          (!!req.query.token &&
+            !!settings.uploadToken &&
+            req.query.token === settings.uploadToken) ||
+          (await Auth.getUserSession(req)).isAuthenticated;
+        if (!allowed) {
+          return res.status(403).send({ error: "Access Denied" });
+        }
+        const versions = await ReportsRepository.listVersions(span, report.key);
+        const gateStatus: GateStatus | null = versions[0]?.gateStatus ?? null;
+        res.header("Content-Type", "image/svg+xml");
+        res.header("Cache-Control", "no-cache");
+        return res.status(200).send(renderGateBadge(gateStatus));
+      },
+    );
 
     // ---- Delete a report (and all its versions) ---------------------------
     fastify.delete<{ Params: { key: string } }>("/:key", async (req, res) => {
@@ -428,10 +520,23 @@ function toApiReport(
       hasFile: latestVersion.hasFile,
       fileEntrypoint: latestVersion.fileEntrypoint,
       hasPreview: hasFormatReportPreview(latestVersion.processor),
+      gateStatus: latestVersion.gateStatus ?? null,
+      gateResults: latestVersion.gateResults ?? [],
       dateCreated: latestVersion.dateCreated.toISOString(),
     };
   }
   return result;
+}
+
+function toApiGate(rule: GateRule): Record<string, unknown> {
+  return {
+    id: rule.id,
+    metric: rule.metric,
+    operator: rule.operator,
+    warnValue: rule.warnValue == null ? null : rule.warnValue,
+    failValue: rule.failValue,
+    dateCreated: rule.dateCreated.toISOString(),
+  };
 }
 
 function toApiTag(t: { tag: string; value: string }): {
@@ -456,6 +561,8 @@ function toApiVersion(
     hasFile: v.hasFile,
     fileEntrypoint: v.fileEntrypoint,
     hasPreview: hasFormatReportPreview(v.processor),
+    gateStatus: v.gateStatus ?? null,
+    gateResults: v.gateResults ?? [],
     dateCreated: v.dateCreated.toISOString(),
     tags: (tagsByKey.get(v.reportKey) || []).map(toApiTag),
   };
@@ -517,6 +624,94 @@ async function ensureCanWrite(
   }
   res.status(403).send({ error: "Access Denied" });
   return false;
+}
+
+function validateGates(
+  incoming: unknown[],
+): { error: string; field?: string; expected?: string } | null {
+  for (let i = 0; i < incoming.length; i++) {
+    const g = incoming[i] as {
+      metric?: unknown;
+      operator?: unknown;
+      warnValue?: unknown;
+      failValue?: unknown;
+    };
+    if (!g || typeof g !== "object") {
+      return {
+        error: "Each gate must be { metric: string, operator: '<='|'>=', failValue: number, warnValue?: number }",
+        field: `gates[${i}]`,
+        expected: "object with metric, operator and failValue",
+      };
+    }
+    if (typeof g.metric !== "string" || !g.metric.trim()) {
+      return {
+        error: `Gate metric must be a non-empty string (gates[${i}])`,
+        field: `gates[${i}].metric`,
+        expected: "non-empty string (exact metric name)",
+      };
+    }
+    if (g.operator !== "<=" && g.operator !== ">=") {
+      return {
+        error: `Gate operator must be '<=' or '>=' (gates[${i}])`,
+        field: `gates[${i}].operator`,
+        expected: "'<=' (lower is better) or '>=' (higher is better)",
+      };
+    }
+    if (
+      typeof g.failValue !== "number" ||
+      !Number.isFinite(g.failValue)
+    ) {
+      return {
+        error: `Gate failValue must be a finite number (gates[${i}])`,
+        field: `gates[${i}].failValue`,
+        expected: "finite number",
+      };
+    }
+    if (
+      g.warnValue !== undefined &&
+      g.warnValue !== null &&
+      (typeof g.warnValue !== "number" || !Number.isFinite(g.warnValue))
+    ) {
+      return {
+        error: `Gate warnValue must be a finite number when provided (gates[${i}])`,
+        field: `gates[${i}].warnValue`,
+        expected: "finite number or null",
+      };
+    }
+  }
+  return null;
+}
+
+const BADGE_STATUS_META: Record<
+  GateStatus | "none",
+  { label: string; color: string }
+> = {
+  pass: { label: "passing", color: "#4c1" },
+  warn: { label: "warning", color: "#dfb317" },
+  fail: { label: "failing", color: "#e05d44" },
+  none: { label: "no gate", color: "#9f9f9f" },
+};
+
+/** Shields-style flat badge (~110x20) showing a version's overall gate status. */
+function renderGateBadge(status: GateStatus | null): string {
+  const meta = BADGE_STATUS_META[status || "none"];
+  const leftLabel = "quality";
+  const leftWidth = Math.round(leftLabel.length * 6.5) + 10;
+  const rightWidth = Math.round(meta.label.length * 6.5) + 10;
+  const totalWidth = leftWidth + rightWidth;
+  const escapeXml = (s: string): string =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" role="img" aria-label="${escapeXml(leftLabel)}: ${escapeXml(meta.label)}">
+<title>${escapeXml(leftLabel)}: ${escapeXml(meta.label)}</title>
+<g shape-rendering="crispEdges">
+<rect width="${leftWidth}" height="20" fill="#555"/>
+<rect x="${leftWidth}" width="${rightWidth}" height="20" fill="${meta.color}"/>
+</g>
+<g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11">
+<text x="${leftWidth / 2}" y="14">${escapeXml(leftLabel)}</text>
+<text x="${leftWidth + rightWidth / 2}" y="14">${escapeXml(meta.label)}</text>
+</g>
+</svg>`;
 }
 
 interface ParsedMultipart {

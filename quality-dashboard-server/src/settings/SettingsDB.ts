@@ -9,10 +9,15 @@ import {
 export interface SettingsValue {
   isDashboardPublic: boolean;
   uploadToken: string;
+  webhookUrl: string;
 }
 
 const KEY = "settings_v2";
-const DEFAULT: SettingsValue = { isDashboardPublic: false, uploadToken: "" };
+const DEFAULT: SettingsValue = {
+  isDashboardPublic: false,
+  uploadToken: "",
+  webhookUrl: "",
+};
 
 export class SettingsDB {
   //
@@ -53,6 +58,8 @@ export class SettingsDB {
           isDashboardPublic: !!parsed.isDashboardPublic,
           uploadToken:
             typeof parsed.uploadToken === "string" ? parsed.uploadToken : "",
+          webhookUrl:
+            typeof parsed.webhookUrl === "string" ? parsed.webhookUrl : "",
         };
       } catch {
         return { ...DEFAULT };
@@ -78,6 +85,10 @@ export class SettingsDB {
           typeof settings.uploadToken === "string"
             ? settings.uploadToken
             : current.uploadToken,
+        webhookUrl:
+          typeof settings.webhookUrl === "string"
+            ? settings.webhookUrl
+            : current.webhookUrl,
       };
       SqlDbUtilsExecSQL(span, "DELETE FROM metadata WHERE type = ?", [
         KEY,

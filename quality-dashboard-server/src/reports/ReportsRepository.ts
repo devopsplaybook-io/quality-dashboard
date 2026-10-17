@@ -9,6 +9,7 @@ import { Report } from "./models/Report";
 import { ReportVersion } from "./models/ReportVersion";
 import { Metric } from "./models/Metric";
 import { MetricType } from "./models/MetricType";
+import { GateResult, GateRule, GateStatus } from "./models/GateRule";
 
 /**
  * Persistence for Reports (named entities) and their ReportVersions.
@@ -143,6 +144,9 @@ export class ReportsRepository {
       SqlDbUtilsExecSQL(span, "DELETE FROM report_tags WHERE report_key = ?", [
         key,
       ] as never[]);
+      SqlDbUtilsExecSQL(span, "DELETE FROM report_gates WHERE report_key = ?", [
+        key,
+      ] as never[]);
       if (versionIds.length > 0) {
         const placeholders = versionIds.map(() => "?").join(",");
         SqlDbUtilsExecSQL(
@@ -170,6 +174,7 @@ export class ReportsRepository {
       SqlDbUtilsExecSQL(span, "DELETE FROM report_version_metrics");
       SqlDbUtilsExecSQL(span, "DELETE FROM report_versions");
       SqlDbUtilsExecSQL(span, "DELETE FROM report_tags");
+      SqlDbUtilsExecSQL(span, "DELETE FROM report_gates");
       SqlDbUtilsExecSQL(span, "DELETE FROM reports");
       return ids;
     } finally {
@@ -191,8 +196,8 @@ export class ReportsRepository {
       SqlDbUtilsExecSQL(
         span,
         `INSERT INTO report_versions
-         (id, report_key, processor, file_entrypoint, has_file, info, date_created)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         (id, report_key, processor, file_entrypoint, has_file, info, date_created, gate_status, gate_results)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           version.id,
           version.reportKey,
@@ -201,6 +206,8 @@ export class ReportsRepository {
           version.hasFile ? 1 : 0,
           JSON.stringify(version.info || {}),
           version.dateCreated.toISOString(),
+          version.gateStatus || null,
+          JSON.stringify(version.gateResults || []),
         ] as never[],
       );
       let order = 0;
@@ -369,6 +376,101 @@ export class ReportsRepository {
     }
   }
 
+  // ---- ReportGates -----------------------------------------------------
+
+  public static async listGatesForReport(
+    context: Span,
+    reportKey: string,
+  ): Promise<GateRule[]> {
+    const span = OTelTracer().startSpan(
+      "ReportsRepository_listGatesForReport",
+      context,
+    );
+    try {
+      const rows = SqlDbUtilsQuerySQL(
+        span,
+        "SELECT * FROM report_gates WHERE report_key = ? ORDER BY date_created ASC",
+        [reportKey] as never[],
+      );
+      return rows.map((r) => ReportsRepository.gateFromRaw(r));
+    } finally {
+      span.end();
+    }
+  }
+
+  /**
+   * Replace all gate rules of a report with the provided list.
+   * Gate data is derived (status + per-version results), so callers re-evaluate
+   * versions after replacing rules.
+   */
+  public static async replaceGatesForReport(
+    context: Span,
+    reportKey: string,
+    rules: { metric: string; operator: string; warnValue?: number | null; failValue: number }[],
+  ): Promise<GateRule[]> {
+    const span = OTelTracer().startSpan(
+      "ReportsRepository_replaceGatesForReport",
+      context,
+    );
+    try {
+      SqlDbUtilsExecSQL(span, "DELETE FROM report_gates WHERE report_key = ?", [
+        reportKey,
+      ] as never[]);
+      const now = new Date().toISOString();
+      const stored: GateRule[] = [];
+      for (const rule of rules) {
+        const id = uuidv4();
+        SqlDbUtilsExecSQL(
+          span,
+          `INSERT INTO report_gates
+           (id, report_key, metric, operator, warn_value, fail_value, date_created)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            id,
+            reportKey,
+            rule.metric,
+            rule.operator,
+            rule.warnValue == null ? null : rule.warnValue,
+            rule.failValue,
+            now,
+          ] as never[],
+        );
+        stored.push({
+          id,
+          metric: rule.metric,
+          operator: rule.operator as GateRule["operator"],
+          warnValue: rule.warnValue == null ? undefined : rule.warnValue,
+          failValue: rule.failValue,
+          dateCreated: new Date(now),
+        });
+      }
+      return stored;
+    } finally {
+      span.end();
+    }
+  }
+
+  public static async updateVersionGate(
+    context: Span,
+    versionId: string,
+    status: GateStatus | null,
+    results: GateResult[],
+  ): Promise<void> {
+    const span = OTelTracer().startSpan(
+      "ReportsRepository_updateVersionGate",
+      context,
+    );
+    try {
+      SqlDbUtilsExecSQL(
+        span,
+        "UPDATE report_versions SET gate_status = ?, gate_results = ? WHERE id = ?",
+        [status, JSON.stringify(results || []), versionId] as never[],
+      );
+    } finally {
+      span.end();
+    }
+  }
+
   // ---- helpers ---------------------------------------------------------
 
   private static async attachMetrics(
@@ -424,8 +526,25 @@ export class ReportsRepository {
     } catch {
       v.info = {};
     }
+    v.gateStatus = raw.gate_status || null;
+    try {
+      v.gateResults = JSON.parse(raw.gate_results || "[]");
+    } catch {
+      v.gateResults = [];
+    }
     v.dateCreated = new Date(raw.date_created);
     v.metrics = metrics;
     return v;
+  }
+
+  private static gateFromRaw(raw: any): GateRule {
+    return {
+      id: raw.id,
+      metric: raw.metric,
+      operator: raw.operator,
+      warnValue: raw.warn_value == null ? undefined : Number(raw.warn_value),
+      failValue: Number(raw.fail_value),
+      dateCreated: new Date(raw.date_created),
+    };
   }
 }
