@@ -13,6 +13,7 @@ The system is built around four entities:
 - **Report** — a logical, long-lived item identified by a unique **`key`** (slug) plus an optional **`displayName`**.
 - **ReportVersion** — every upload creates a new version of the report (older versions are kept). Each version owns the metrics, the optional file, and the timestamp.
 - **ReportTag** — `tag=value` pairs attached to a Report (not a version). Tags apply to all past and future versions and are managed independently from uploads.
+- **GateRule** — per-report quality thresholds (e.g. `tests.failed <= 0`, `coverage.lines >= 80`). Rules are evaluated at ingest; every version stores an overall **pass/warn/fail** gate status plus per-rule results, shown on report cards, version cards, dashboard nodes and the status badge.
 - **Dashboard** — a saved view, defined as an ordered list of **levels**. A level is either a `tag` (groups by every value of that tag) or `tag=value` (filters reports having that exact pair).
 
 Flow:
@@ -23,10 +24,12 @@ Flow:
    - **Data** — either a file (single, `.zip`, or `.tar.gz`) and/or a `jsonPayload` (passed to JSON-aware processors)
 2. The processor analyses the input and produces a flat list of **metrics**, each with `name`, `type`, and `value`. Supported types: `count`, `percentage`, `duration`, `boolean`.
 3. Metrics are stored per version in the database; files are stored on disk keyed by version id.
-4. Tags are managed separately by the user (UI or API).
-5. The web UI shows:
+4. **Quality gate rules** of the report are evaluated against the metrics: the worst result becomes the version's overall gate status. When a version **fails** its gate and a webhook URL is configured, a JSON notification is POSTed to it.
+5. Tags are managed separately by the user (UI or API).
+6. The web UI shows:
    - The **list of recent uploads** (chronological, up to 100 latest versions across all reports).
    - User-defined **dashboards** that aggregate the **latest version** of each matching report along the configured levels.
+   - A **status badge** per report (`/api/reports/:key/badge.svg`) with a copyable markdown snippet.
 
 ## Installation
 
@@ -157,6 +160,41 @@ Returns a specific version.
 
 Deletes a single version. Requires authentication.
 
+#### `GET /api/reports/:key/gates`
+
+Returns the quality gate rules of a Report:
+
+```json
+{
+  "gates": [
+    {
+      "id": "01HZX...",
+      "metric": "tests.failed",
+      "operator": "<=",
+      "warnValue": null,
+      "failValue": 0,
+      "dateCreated": "2026-05-16T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+Semantics: `<=` means lower is better (fail when `value > failValue`, warn when `value > warnValue`); `>=` means higher is better (fail when `value < failValue`, warn when `value < warnValue`). Metric matching is exact and case-sensitive; a rule whose metric is absent from an upload is skipped (does not fail the gate). `warnValue` is optional. The overall status of a version is the worst result across evaluable rules, or `null` when the report has no gate rules.
+
+#### `PUT /api/reports/:key/gates`
+
+Replaces all gate rules of a Report. Body: `{ "gates": [{ "metric": "tests.failed", "operator": "<=", "failValue": 0 }, ...] }`. Requires authentication.
+
+Each rule requires a non-empty `metric` string, an `operator` of `<=` or `>=`, a finite number `failValue`, and an optional finite number `warnValue` (or `null`).
+
+Rules are **retro-applied**: every stored version of the report is re-evaluated on save, so statuses stay consistent without re-uploading. Responds with the stored rules (including generated `id`s).
+
+#### `GET /api/reports/:key/badge.svg`
+
+Returns a shields-style SVG badge showing the latest version's overall gate status (`passing`, `warning`, `failing`, or `no gate`).
+
+Access: open when the dashboard is public; otherwise requires `?token=<uploadToken>` (the token configured in Settings) or an authenticated session. Responds `Content-Type: image/svg+xml`.
+
 #### `GET /api/reports/:key/versions/:versionId/file/*`
 
 Streams a file from the stored archive (or the single uploaded file) for a specific version. Path-traversal-safe.
@@ -164,6 +202,29 @@ Streams a file from the stored archive (or the single uploaded file) for a speci
 #### `POST /api/reports`
 
 Uploads a new ReportVersion. If the `key` does not yet exist, the Report is created first. **multipart/form-data** with two parts:
+
+Quality gates: after the processor produces the metrics, the report's gate rules are evaluated and the version carries `gateStatus` (`pass`/`warn`/`fail` or `null`) plus `gateResults`. When the overall status is `fail` and the `webhookUrl` setting is configured, a JSON payload is POSTed to it:
+
+```json
+{
+  "event": "quality.gate.failed",
+  "report": { "key": "my-team/my-app/unit-tests", "displayName": "Unit tests" },
+  "version": {
+    "id": "01HZX...",
+    "processor": "jest-html-reporter",
+    "dateCreated": "2026-05-16T10:00:00.000Z"
+  },
+  "gate": {
+    "status": "fail",
+    "results": [
+      { "ruleId": "01H...", "metric": "tests.failed", "operator": "<=", "value": 2, "status": "fail" }
+    ]
+  },
+  "metrics": [{ "name": "tests.failed", "type": "count", "value": 2 }]
+}
+```
+
+Delivery is best-effort (10s timeout, failures logged and ignored): a webhook problem never fails the upload.
 
 | Field  | Required | Description                                                    |
 | ------ | -------- | -------------------------------------------------------------- |
@@ -397,6 +458,7 @@ Aggregation always applies to the **latest version** of each matching report.
 - Subsequent operations use `Authorization: Bearer <jwt>` obtained from `POST /api/users/login`.
 - An **upload token** can be configured via the settings page; it allows CI jobs to upload without a user account by sending `X-Upload-Token: <token>`.
 - Read access is governed by the _Public Dashboard_ setting. When public, anyone can read reports.
+- A **webhook URL** can be configured via the settings page; a JSON payload is POSTed to it whenever a report version fails its quality gate (leave empty to disable).
 
 ## Tests
 

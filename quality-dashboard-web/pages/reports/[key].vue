@@ -113,6 +113,65 @@
         </div>
       </section>
 
+      <section class="gates-section">
+        <h3>Quality gates</h3>
+        <p class="gates-hint">
+          Rules are evaluated on every upload; the worst result becomes the
+          version's gate status (pass, warn or fail).
+        </p>
+        <GateRulesEditor
+          :rules="gates"
+          :editable="authenticationStore.isAuthenticated"
+          @save="saveGates"
+        />
+
+        <div v-if="badgeMarkdown" class="badge-block">
+          <h4>Status badge</h4>
+          <div class="snippet-block">
+            <div class="snippet-header">
+              <span class="snippet-title">
+                <i class="bi bi-markdown"></i> Markdown
+              </span>
+              <button
+                class="btn-secondary btn-copy"
+                type="button"
+                title="Badge markdown — copy to clipboard"
+                @click="copyText('badge-md', badgeMarkdown)"
+              >
+                <template v-if="copiedId === 'badge-md'">
+                  <i class="bi bi-check-lg"></i> Copied
+                </template>
+                <template v-else>
+                  <i class="bi bi-clipboard"></i> Copy
+                </template>
+              </button>
+            </div>
+            <pre class="snippet-pre"><code>{{ badgeMarkdown }}</code></pre>
+          </div>
+          <div class="snippet-block">
+            <div class="snippet-header">
+              <span class="snippet-title">
+                <i class="bi bi-filetype-svg"></i> Badge image URL
+              </span>
+              <button
+                class="btn-secondary btn-copy"
+                type="button"
+                title="Badge URL — copy to clipboard"
+                @click="copyText('badge-url', badgeUrl)"
+              >
+                <template v-if="copiedId === 'badge-url'">
+                  <i class="bi bi-check-lg"></i> Copied
+                </template>
+                <template v-else>
+                  <i class="bi bi-clipboard"></i> Copy
+                </template>
+              </button>
+            </div>
+            <pre class="snippet-pre"><code>{{ badgeUrl }}</code></pre>
+          </div>
+        </div>
+      </section>
+
       <section v-if="authenticationStore.isAuthenticated" class="danger-zone">
         <button class="btn-danger" @click="onDeleteReport">
           <i class="bi bi-trash"></i> Delete report (and all its versions)
@@ -124,7 +183,9 @@
 
 <script setup lang="ts">
 import { AuthService } from "~~/services/AuthService";
-import type { Metric, Report, ReportVersion } from "~~/stores/ReportsStore";
+import type { Metric, Report, ReportVersion, GateRule } from "~~/stores/ReportsStore";
+import Config from "~~/services/Config";
+import axios from "axios";
 
 definePageMeta({});
 
@@ -144,6 +205,7 @@ const editingName = ref(false);
 const newDisplayName = ref("");
 const editableTags = ref<{ tag: string; value: string }[]>([]);
 const showHistory = ref(false);
+const gates = ref<GateRule[]>([]);
 
 const displayVersions = computed(() => {
   if (showHistory.value) return versions.value;
@@ -191,22 +253,40 @@ onMounted(async () => {
       return;
     }
   }
-  await Promise.all([tagsStore.fetchAll(), refresh()]);
+  await Promise.all([tagsStore.fetchAll(), refresh(), loadBadgeToken()]);
 });
 
 async function refresh(): Promise<void> {
   loading.value = true;
   try {
-    const [r, vs] = await Promise.all([
+    const [r, vs, g] = await Promise.all([
       reportsStore.fetchReport(reportKey.value),
       reportsStore.fetchVersionsForReport(reportKey.value),
+      reportsStore
+        .fetchGates(reportKey.value)
+        .catch(() => [] as GateRule[]),
     ]);
     report.value = r;
     versions.value = vs;
+    gates.value = g;
     editableTags.value = (r?.tags || []).map((t) => ({ ...t }));
   } finally {
     loading.value = false;
   }
+}
+
+async function saveGates(
+  rules: {
+    metric: string;
+    operator: "<=" | ">=";
+    warnValue: number | null;
+    failValue: number;
+  }[],
+): Promise<void> {
+  if (!report.value) return;
+  gates.value = await reportsStore.setGates(report.value.key, rules as GateRule[]);
+  // Rules apply retroactively: refresh versions so statuses/pills update.
+  versions.value = await reportsStore.fetchVersionsForReport(report.value.key);
 }
 
 function startEditName(): void {
@@ -265,6 +345,79 @@ async function onDeleteReport(): Promise<void> {
   await reportsStore.removeReport(report.value.key);
   router.push("/reports");
 }
+
+// ---- Badge snippets ----------------------------------------------------
+
+const badgeToken = ref("");
+const copiedId = ref<string | null>(null);
+let copyTimer: ReturnType<typeof setTimeout> | null = null;
+
+const apiBaseUrl = computed(() => `${window.location.origin}/api`);
+
+const badgeUrl = computed(() => {
+  if (!report.value) return "";
+  let url = `${apiBaseUrl.value}/reports/${encodeURIComponent(report.value.key)}/badge.svg`;
+  if (
+    !applicationSettingsStore.isDashboardPublic &&
+    badgeToken.value
+  ) {
+    url += `?token=${encodeURIComponent(badgeToken.value)}`;
+  }
+  return url;
+});
+
+const badgeMarkdown = computed(() => {
+  if (!report.value || !badgeUrl.value) return "";
+  return `[![quality](${badgeUrl.value})](${window.location.origin}/reports/${encodeURIComponent(report.value.key)})`;
+});
+
+async function copyText(id: string, code: string): Promise<void> {
+  let ok = false;
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(code);
+      ok = true;
+    } catch {
+      ok = false;
+    }
+  }
+  if (!ok) {
+    // Fallback for non-secure contexts (self-hosted http)
+    const ta = document.createElement("textarea");
+    ta.value = code;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      ok = document.execCommand("copy");
+    } catch {
+      ok = false;
+    }
+    document.body.removeChild(ta);
+  }
+  if (ok) {
+    copiedId.value = id;
+    if (copyTimer) clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => {
+      copiedId.value = null;
+    }, 1500);
+  }
+}
+
+async function loadBadgeToken(): Promise<void> {
+  if (!authenticationStore.isAuthenticated) return;
+  try {
+    const res = await axios.get(
+      `${(await Config.get()).SERVER_URL}/settings`,
+      await AuthService.getAuthHeader(),
+    );
+    badgeToken.value = res.data.uploadToken || "";
+  } catch {
+    badgeToken.value = "";
+  }
+}
 </script>
 
 <style scoped>
@@ -318,8 +471,64 @@ async function onDeleteReport(): Promise<void> {
 .tags-section,
 .versions-section,
 .metric-history-section,
+.gates-section,
 .danger-zone {
   margin-top: var(--space-xl);
+}
+.gates-hint {
+  font-size: var(--font-base);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-compact);
+}
+.badge-block {
+  margin-top: var(--space-lg);
+}
+.badge-block h4 {
+  margin: 0 0 var(--space-xs);
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+}
+.snippet-block {
+  margin-bottom: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.snippet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+.snippet-title {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.btn-copy {
+  padding: 2px 10px;
+  font-size: var(--font-md);
+}
+.snippet-pre {
+  margin: 0;
+  padding: var(--space-md);
+  font-family:
+    ui-monospace, "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
+  font-size: var(--font-md);
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+  background: #263238;
+  color: #e0e0e0;
+}
+.snippet-pre code {
+  font-family: inherit;
 }
 .metric-history-grid {
   display: grid;
@@ -374,6 +583,17 @@ async function onDeleteReport(): Promise<void> {
     background: var(--color-bg);
     color: var(--color-text);
     border-color: var(--color-border);
+  }
+  .snippet-block {
+    border-color: var(--color-border);
+  }
+  .snippet-header {
+    background: var(--color-bg-secondary);
+    border-bottom-color: var(--color-border);
+  }
+  .snippet-pre {
+    background: #0d1b1e;
+    color: var(--color-text);
   }
 }
 </style>

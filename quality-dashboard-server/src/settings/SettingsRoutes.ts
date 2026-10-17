@@ -18,6 +18,7 @@ export class SettingsRoutes {
       };
       if (userSession.isAuthenticated) {
         payload.uploadToken = settings.uploadToken;
+        payload.webhookUrl = settings.webhookUrl;
       }
       return res.status(200).send(payload);
     });
@@ -26,6 +27,7 @@ export class SettingsRoutes {
       Body: {
         isDashboardPublic?: boolean;
         uploadToken?: string;
+        webhookUrl?: string;
       };
     }
     fastify.put<UpdateSettingsRequest>("/", async (req, res) => {
@@ -38,6 +40,7 @@ export class SettingsRoutes {
       const next = await SettingsDB.update(context, {
         isDashboardPublic: req.body.isDashboardPublic,
         uploadToken: req.body.uploadToken,
+        webhookUrl: req.body.webhookUrl,
       });
       return res.status(202).send(next);
     });
