@@ -41,7 +41,7 @@ Promise.resolve()
 
     OTelSetTracer(new StandardTracer(config));
     OTelSetMeter(new StandardMeter(config));
-    OTelLogger().initOTel(config);
+    await OTelLogger().initOTel(config);
 
     SqlDbUtilsSetOTel(OTelTracer(), OTelLogger());
 

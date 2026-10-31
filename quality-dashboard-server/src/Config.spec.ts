@@ -16,10 +16,10 @@ describe("Config", () => {
     expect(config.JWT_VALIDITY_DURATION).toBe(3 * 31 * 24 * 3600);
   });
 
-  it("should have a generated JWT key", () => {
+  it("should default the JWT key to the DB-managed value", () => {
     const config = new Config();
-    expect(config.JWT_KEY).toBeTruthy();
     expect(typeof config.JWT_KEY).toBe("string");
+    expect(config.JWT_KEY).toBe("");
   });
 
   it("should have default version", () => {

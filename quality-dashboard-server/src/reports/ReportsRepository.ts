@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { Span } from "@opentelemetry/sdk-trace-base";
+import { Span } from "@opentelemetry/sdk-trace";
 import { OTelTracer } from "../OTelContext";
 import {
   SqlDbUtilsExecSQL,
