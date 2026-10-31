@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { User } from "./model/User";
 import { UserSession } from "./model/UserSession";
 import { Config } from "../Config";
-import { Span } from "@opentelemetry/sdk-trace-base";
+import { Span } from "@opentelemetry/sdk-trace";
 import { OTelLogger, OTelTracer } from "../OTelContext";
 import {
   SqlDbUtilsExecSQL,
