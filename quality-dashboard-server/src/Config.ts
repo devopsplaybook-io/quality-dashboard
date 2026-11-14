@@ -22,6 +22,15 @@ export class Config extends ConfigBase {
     super("quality-dashboard-server");
     this.VERSION = "2";
 
+    // common-utils 2.6.0 cut the default JWT validity from 93 days to 1 hour,
+    // and since 2.9.0 reload() restores the registered default for fields that
+    // neither the environment nor config.json provides. Re-registering after
+    // the assignment keeps the long-lived tokens this application issues (the
+    // web frontend has no token refresh) and its own VERSION in telemetry.
+    this.JWT_VALIDITY_DURATION = 3 * 31 * 24 * 3600;
+    this.addConfigField({ field: "JWT_VALIDITY_DURATION" });
+    this.addConfigField({ field: "VERSION" });
+
     // Register project-specific fields so reload() processes them
     this.addConfigField({ field: "TMP_DIR" });
     this.addConfigField({ field: "PROCESSORS_CUSTOM_DIR" });
