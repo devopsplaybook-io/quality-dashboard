@@ -42,4 +42,11 @@ describe("Config", () => {
     await config.reload();
     expect(config.REPORT_DIR).toBe(config.DATA_DIR + "/reports");
   });
+
+  it("should keep the application JWT validity and version after reload", async () => {
+    const config = new Config();
+    await config.reload();
+    expect(config.JWT_VALIDITY_DURATION).toBe(3 * 31 * 24 * 3600);
+    expect(config.VERSION).toBe("2");
+  });
 });

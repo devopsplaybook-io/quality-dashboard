@@ -1,6 +1,6 @@
 {
   "name": "quality-dashboard-server",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "MIT",
   "scripts": {
     "build": "tsc && tsc -p tsconfig.spec.json --noEmit",
@@ -10,26 +10,26 @@
     "dev": "tsx watch ./src/App.ts"
   },
   "dependencies": {
-    "@devopsplaybook.io/common-utils": "^2.4.1",
-    "@devopsplaybook.io/otel-utils": "^1.9.1",
-    "@devopsplaybook.io/otel-utils-fastify": "^1.7.1",
-    "@fastify/cors": "^11.3.1",
-    "@fastify/multipart": "^10.1.6",
-    "@fastify/static": "^10.1.8",
+    "@devopsplaybook.io/common-utils": "^2.9.2",
+    "@devopsplaybook.io/otel-utils": "^1.14.2",
+    "@devopsplaybook.io/otel-utils-fastify": "^1.11.2",
+    "@fastify/cors": "^11.4.3",
+    "@fastify/multipart": "^10.1.8",
+    "@fastify/static": "^10.1.11",
     "adm-zip": "^0.6.1",
     "bcrypt": "^6.0.0",
-    "fastify": "^5.12.7",
+    "fastify": "^5.12.8",
     "fs-extra": "^11.4.1",
     "jsonwebtoken": "^9.0.3",
     "node-cron": "^4.6.0",
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "^13.2.0",
     "targz": "^1.0.1",
     "uuid": "^14.0.3"
   },
   "devDependencies": {
-    "@swc/core": "^1.16.21",
+    "@swc/core": "^1.16.22",
     "@swc/jest": "^0.2.39",
-    "@opentelemetry/sdk-trace": "^3.0.0",
+    "@opentelemetry/sdk-trace": "^3.1.1",
     "@types/fs-extra": "^11.0.4",
     "@types/adm-zip": "^0.6.0",
     "@types/jest": "^30.0.0",
@@ -37,7 +37,7 @@
     "@types/sinon": "^22.0.2",
     "@types/better-sqlite3": "^9.6.0",
     "jest": "^30.5.2",
-    "oxlint": "^1.90.0",
+    "oxlint": "^1.93.0",
     "sinon": "^22.1.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
