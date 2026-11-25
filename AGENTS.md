@@ -133,6 +133,16 @@ cd tests/tests-e2e && npx cypress run
 - UUID module is mocked via `__mocks__/uuid.cjs` for deterministic IDs
 - Coverage collected from `src/**/*.ts`
 
+## Session policy
+
+`JWT_VALIDITY_DURATION` is 93 days (literal `8035200`) and there is no
+absolute cap: `src/users/Auth.ts` signs `exp = now + JWT_VALIDITY_DURATION` and
+ignores the inherited `JWT_SESSION_MAX_DURATION` field (default `2592000`).
+The value is re-registered with `addConfigField` after assignment, which is why
+it survives `reload()` on common-utils 2.9.2. Keep it in sync with the
+[session policy](https://github.com/devopsplaybook-io/common-utils/blob/main/docs/auth-session-policy.md)
+and the literal assertions in `Config.spec.ts`.
+
 ## Shared Libraries
 
 | Package                                 | Source                     | Purpose                                                    |
