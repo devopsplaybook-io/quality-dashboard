@@ -13,7 +13,11 @@ describe("Config", () => {
 
   it("should have default JWT validity duration", () => {
     const config = new Config();
-    expect(config.JWT_VALIDITY_DURATION).toBe(3 * 31 * 24 * 3600);
+    // Literal effective value: 93 days, pinned by the session policy doc.
+    expect(config.JWT_VALIDITY_DURATION).toBe(8035200);
+    // Inherited from common-utils but unused: users/Auth.ts signs
+    // exp = now + JWT_VALIDITY_DURATION and never enforces an absolute cap.
+    expect(config.JWT_SESSION_MAX_DURATION).toBe(2592000);
   });
 
   it("should default the JWT key to the DB-managed value", () => {
@@ -46,7 +50,10 @@ describe("Config", () => {
   it("should keep the application JWT validity and version after reload", async () => {
     const config = new Config();
     await config.reload();
-    expect(config.JWT_VALIDITY_DURATION).toBe(3 * 31 * 24 * 3600);
+    // 93 days survives reload because the field is re-registered; there is no
+    // absolute cap in this app (the inherited cap field is never enforced).
+    expect(config.JWT_VALIDITY_DURATION).toBe(8035200);
+    expect(config.JWT_SESSION_MAX_DURATION).toBe(2592000);
     expect(config.VERSION).toBe("2");
   });
 });
