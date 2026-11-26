@@ -1,6 +1,6 @@
 {
   "name": "quality-dashboard-server",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "license": "MIT",
   "scripts": {
     "build": "tsc && tsc -p tsconfig.spec.json --noEmit",
@@ -10,7 +10,7 @@
     "dev": "tsx watch ./src/App.ts"
   },
   "dependencies": {
-    "@devopsplaybook.io/common-utils": "^2.9.2",
+    "@devopsplaybook.io/common-utils": "^2.12.0",
     "@devopsplaybook.io/otel-utils": "^1.14.2",
     "@devopsplaybook.io/otel-utils-fastify": "^1.11.2",
     "@fastify/cors": "^11.4.3",

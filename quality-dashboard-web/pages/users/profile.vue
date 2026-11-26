@@ -50,25 +50,44 @@
         </button>
       </div>
     </div>
+
+    <div v-if="loginCodeAvailable" class="users-card">
+      <div class="users-section">
+        <AuthorizeDeviceCard
+          :service="loginCodeService"
+          variant="plain"
+          :heading-level="3"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import AuthorizeDeviceCard from "@devopsplaybook.io/common-web/components/AuthorizeDeviceCard.vue";
 import axios from "axios";
 import Config from "~~/services/Config.ts";
 import { handleError, EventBus, EventTypes } from "~~/services/EventBus";
 import { AuthService } from "~~/services/AuthService";
+import {
+  createLoginCodeService,
+  isLoginCodeAvailable,
+} from "~~/utils/loginCodes";
 
 const router = useRouter();
 
 const newPassword = ref("");
 const oldPassword = ref("");
 const saving = ref(false);
+const loginCodeService = createLoginCodeService();
+const loginCodeAvailable = ref(false);
 
 onMounted(async () => {
   if (!(await AuthenticationStore().ensureAuthenticated())) {
     router.push({ path: "/users/login" });
+    return;
   }
+  loginCodeAvailable.value = await isLoginCodeAvailable(loginCodeService);
 });
 
 function logout() {

@@ -56,4 +56,27 @@ describe("Config", () => {
     expect(config.JWT_SESSION_MAX_DURATION).toBe(2592000);
     expect(config.VERSION).toBe("2");
   });
+
+  it("should disable login with a code by default", async () => {
+    const config = new Config();
+    expect(config.LOGIN_CODE_ENABLED).toBe(false);
+    await config.reload();
+    expect(config.LOGIN_CODE_ENABLED).toBe(false);
+  });
+
+  it("should enable login with a code from the environment", async () => {
+    const previous = process.env.LOGIN_CODE_ENABLED;
+    process.env.LOGIN_CODE_ENABLED = "true";
+    try {
+      const config = new Config();
+      await config.reload();
+      expect(config.LOGIN_CODE_ENABLED).toBe(true);
+    } finally {
+      if (previous === undefined) {
+        delete process.env.LOGIN_CODE_ENABLED;
+      } else {
+        process.env.LOGIN_CODE_ENABLED = previous;
+      }
+    }
+  });
 });

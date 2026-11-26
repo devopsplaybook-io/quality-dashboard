@@ -1,3 +1,4 @@
+import { LoginCodesRoutes } from "@devopsplaybook.io/common-utils";
 import { StandardMeter, StandardTracer } from "@devopsplaybook.io/otel-utils";
 import { StandardTracerFastifyRegisterHooks } from "@devopsplaybook.io/otel-utils-fastify";
 import fastifyCors from "@fastify/cors";
@@ -22,6 +23,7 @@ import { TagsRoutes } from "./reports/TagsRoutes";
 import { SettingsDB } from "./settings/SettingsDB";
 import { SettingsRoutes } from "./settings/SettingsRoutes";
 import { Auth } from "./users/Auth";
+import { LoginCodesBuildRoutesOptions } from "./users/LoginCodes";
 import { UsersRoutes } from "./users/UsersRoutes";
 import { SqlDbUtilsSetOTel, SqlDbUtilsInit } from "./utils-std-ts/SqlDbUtils";
 
@@ -87,6 +89,21 @@ Promise.resolve()
     fastify.register(new UsersRoutes().getRoutes, {
       prefix: "/api/users",
     });
+
+    // Cross-device "login with a code". The flag is read at boot, so enabling
+    // or disabling it needs a restart. Mounting is skipped when disabled so the
+    // routes (and the capabilities probe) are absent, not just answering 503.
+    if (config.LOGIN_CODE_ENABLED) {
+      fastify.register(
+        async (instance) => {
+          await LoginCodesRoutes(
+            instance,
+            LoginCodesBuildRoutesOptions(config),
+          );
+        },
+        { prefix: "/api/users/login-codes" },
+      );
+    }
 
     fastify.register(new ReportsRoutes().getRoutes, {
       prefix: "/api/reports",

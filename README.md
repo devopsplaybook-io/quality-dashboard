@@ -57,6 +57,7 @@ Deployment examples:
 | `PROCESSOR_TIMEOUT_MS` | `30000`                  | Per-processor timeout         |
 | `CORS_POLICY_ORIGIN`   | -                        | Allowed origin for the web UI |
 | `JWT_VALIDITY_DURATION` | `8035200` (93 days)     | Sliding JWT validity (seconds) |
+| `LOGIN_CODE_ENABLED`   | `false`                  | Enable cross-device login with a code |
 
 ## API
 
@@ -457,6 +458,7 @@ Aggregation always applies to the **latest version** of each matching report.
 - **First user** is created without auth via `POST /api/users`.
 - Subsequent operations use `Authorization: Bearer <jwt>` obtained from `POST /api/users/login`.
 - An **upload token** can be configured via the settings page; it allows CI jobs to upload without a user account by sending `X-Upload-Token: <token>`.
+- **Login with a code** (cross-device sign-in) is opt-in: set `LOGIN_CODE_ENABLED=true` and restart. The routes are then mounted at `/api/users/login-codes`, and the web login/profile pages show the code cards when `GET /api/users/login-codes/capabilities` reports the feature as available. Approval requires an interactive JWT session; the upload token can never approve.
 - Read access is governed by the _Public Dashboard_ setting. When public, anyone can read reports.
 - A **webhook URL** can be configured via the settings page; a JSON payload is POSTed to it whenever a report version fails its quality gate (leave empty to disable).
 
@@ -464,7 +466,7 @@ Aggregation always applies to the **latest version** of each matching report.
 
 This app keeps its historical session mechanism: `JWT_VALIDITY_DURATION` is 93 days (re-registered with `addConfigField` so the value survives `reload()`) and `users/Auth.ts` signs `exp = now + JWT_VALIDITY_DURATION`; there is **no absolute cap**, and the Navigation component reissues the token every 10 seconds through `POST /api/users/session`. This deviation is listed in the [session policy](https://github.com/devopsplaybook-io/common-utils/blob/main/docs/auth-session-policy.md); `Config.spec.ts` pins the literal effective values.
 
-> **Pitfall:** on `@devopsplaybook.io/common-utils` <= 2.9.2, a subclass field override is silently discarded on `reload()` unless the field is also declared with `this.addConfigField({ field: "..." })`. This app keeps `^2.9.2` intentionally and re-registers the field.
+> **Pitfall:** a subclass field override is discarded on `reload()` unless the field is also declared with `this.addConfigField({ field: "..." })`. This app tracks `@devopsplaybook.io/common-utils` `^2.12.0` and keeps re-registering the field so the value survives `reload()` at any version.
 
 ## Tests
 
