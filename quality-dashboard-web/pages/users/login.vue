@@ -39,20 +39,37 @@
         </button>
       </div>
     </div>
+
+    <div v-if="loginCodeAvailable" class="users-card">
+      <div class="users-section">
+        <LoginWithCodeCard
+          :service="loginCodeService"
+          variant="plain"
+          :heading-level="3"
+          @approved="onLoginCodeApproved"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import axios from "axios";
+import LoginWithCodeCard from "@devopsplaybook.io/common-web/components/LoginWithCodeCard.vue";
 import Config from "~~/services/Config.ts";
 import { handleError, EventBus, EventTypes } from "~~/services/EventBus";
 import { AuthService } from "~~/services/AuthService";
 import { UserService } from "~~/services/UserService";
+import {
+  createLoginCodeService,
+  isLoginCodeAvailable,
+} from "~~/utils/loginCodes";
 
 const router = useRouter();
 
 const account = reactive({ name: "", password: "" });
 const loggingIn = ref(false);
+const loginCodeService = createLoginCodeService();
+const loginCodeAvailable = ref(false);
 
 onMounted(async () => {
   if (!(await UserService.isInitialized())) {
@@ -60,7 +77,14 @@ onMounted(async () => {
     return;
   }
   await ApplicationSetttingsStore().refresh();
+  loginCodeAvailable.value = await isLoginCodeAvailable(loginCodeService);
 });
+
+async function onLoginCodeApproved() {
+  // The token was already stored by the service's onSession handler.
+  await AuthenticationStore().refreshFromToken();
+  router.push({ path: "/" });
+}
 
 async function login() {
   if (!account.name || !account.password) {
@@ -87,7 +111,9 @@ async function login() {
 <style scoped>
 .users-page {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-loose);
   padding-top: var(--space-2xl);
 }
 .users-card {

@@ -41,6 +41,7 @@ quality-dashboard/
 | `src/reports/ProcessorRegistry.ts` | Dynamic loading of JS processor plugins from `processors_system/` and `processors_custom/` dirs with hot-reload        |
 | `src/reports/FileStorage.ts`       | Report file storage with 3-level hash directory structure, archive extraction (zip, tar.gz), path traversal protection |
 | `src/users/`                       | Authentication (JWT), user management, password hashing (bcrypt)                                                       |
+| `src/users/LoginCodes.ts`          | Cross-device login with a code: route options, custom-auth hooks (approver/session/password), audit event log           |
 | `src/settings/`                    | Global settings (public dashboard toggle, upload token) stored in `metadata` table                                     |
 
 #### Data Model
@@ -60,6 +61,7 @@ quality-dashboard/
 | `/api/tags`       | TagsRoutes       | JWT required                                          |
 | `/api/dashboards` | DashboardsRoutes | JWT required                                          |
 | `/api/users`      | UsersRoutes      | Mixed (init endpoint public, others JWT)              |
+| `/api/users/login-codes` | LoginCodesRoutes | Mixed (create/poll public, preview/approve JWT) |
 | `/api/settings`   | SettingsRoutes   | JWT admin required                                    |
 | `/api/status`     | Health check     | Public                                                |
 
@@ -138,8 +140,8 @@ cd tests/tests-e2e && npx cypress run
 `JWT_VALIDITY_DURATION` is 93 days (literal `8035200`) and there is no
 absolute cap: `src/users/Auth.ts` signs `exp = now + JWT_VALIDITY_DURATION` and
 ignores the inherited `JWT_SESSION_MAX_DURATION` field (default `2592000`).
-The value is re-registered with `addConfigField` after assignment, which is why
-it survives `reload()` on common-utils 2.9.2. Keep it in sync with the
+The value is re-registered with `addConfigField` after assignment so it
+survives `reload()` on the pinned common-utils (`^2.12.0`). Keep it in sync with the
 [session policy](https://github.com/devopsplaybook-io/common-utils/blob/main/docs/auth-session-policy.md)
 and the literal assertions in `Config.spec.ts`.
 

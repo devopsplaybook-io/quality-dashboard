@@ -5,6 +5,11 @@
    ============================================================ */
 
 :root {
+  /* Needed by common-web cards' light-dark() fallbacks */
+  color-scheme: light dark;
+  --color-surface: var(--color-bg);
+  --color-on-primary: #fff;
+
   /* ---------- Colors: Primary ---------- */
   --color-primary: #1976d2;
   --color-primary-hover: #1565c0;
@@ -77,6 +82,9 @@
    ============================================================ */
 @media (prefers-color-scheme: dark) {
   :root {
+    /* dark label on the light-blue dark primary */
+    --color-on-primary: #1e2a32;
+
     --color-primary: #64b5f6;
     --color-primary-hover: #82b1ff;
     --color-primary-focus-ring: rgba(100, 181, 246, 0.2);

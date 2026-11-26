@@ -7,12 +7,17 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "echo TODO",
-    "test": "echo TODO"
+    "test": "vitest run"
   },
   "devDependencies": {
-    "nuxt": "^4.6.4"
+    "@vitejs/plugin-vue": "^6.0.11",
+    "@vue/test-utils": "^2.6.0",
+    "jsdom": "^31.0.1",
+    "nuxt": "^4.6.4",
+    "vitest": "^5.1.1"
   },
   "dependencies": {
+    "@devopsplaybook.io/common-web": "^0.15.0",
     "@picocss/pico": "^2.1.1",
     "@pinia/nuxt": "^1.0.3",
     "@vueuse/core": "^15.0.0",
